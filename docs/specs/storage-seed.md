@@ -192,6 +192,23 @@ uv run python -m scripts.seed [--demo-date YYYY-MM-DD]
 - 알려진 오류는 종료 코드 1과 한국어 안내(표준 오류)로 바꾼다. 대상은 `AppLockedError`, `ConfigError`, `SeedError`, `StoragePrepareError`, `StorageReplaceError`, `ResetBusyError`, `ResetCleanupError`다.
 - 시연 중 되돌리기 절차는 다음과 같다: 앱 종료 → `uv run python -m scripts.seed` → 앱 시작 → 화면 다시 불러오기.
 
+### 시연 전 준비
+
+시드의 `daily_intakes`·`alerts`는 적재할 때 설정된 `NUTRITION_ENGINE`으로 계산한다. Fake 엔진은 목표를 1,500 kcal(`kdri`), 경고를 `none`으로 고정한다. 그래서 Fake 엔진으로 시드하면 대표 시연 환자 NS03의 시작 상태가 "주의"가 되지 않는다. 시드 값은 다음과 같다.
+
+- 목표 1,700 kcal(`team_set`)
+- D0 아침 배식 698 kcal
+- 일별 환산율 D-4 47%, D-3 28%, D-2 21%, D-1 30%. 50% 이하가 4일 연속이다.
+
+실제 영양 엔진이 등록되면 시연 전에 다음 순서로 준비한다.
+
+1. `backend/.env`의 `NUTRITION_ENGINE`을 실제 엔진 이름으로 바꾼다.
+2. 앱을 끈다.
+3. `uv run python -m scripts.seed`로 리셋한다.
+4. 앱을 시작한다.
+
+기존 `app.db`가 있으면 앱 시작만으로는 파생 테이블을 다시 계산하지 않는다. 그래서 3단계 리셋이 필요하다.
+
 ## 제약사항
 
 - 리셋은 앱을 끈 상태에서 CLI로만 한다. `POST /api/admin/reset`, 화면의 리셋 버튼, 리셋 이벤트는 없다.
