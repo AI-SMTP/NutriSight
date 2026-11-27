@@ -17,6 +17,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "vitest run",
+    "e2e": "playwright test",
     "gen:api": "uv run --frozen --directory ../backend python -m scripts.export_openapi --out ../frontend/src/api/generated/openapi.json && openapi-typescript src/api/generated/openapi.json -o src/api/generated/schema.d.ts",
     "check:bundle": "pnpm build && node scripts/check-bundle.mjs --report .build-report/modules.default.json",
     "check:bundle:mock": "node scripts/hash-dir.mjs dist > .build-report/dist.before.sha256 && VITE_API_MOCK=1 vite build --outDir .build-report/dist-mock --emptyOutDir && node scripts/check-bundle.mjs --report .build-report/modules.mock.json --expect-mock && node scripts/hash-dir.mjs dist > .build-report/dist.after.sha256 && node scripts/compare-files.mjs .build-report/dist.before.sha256 .build-report/dist.after.sha256"

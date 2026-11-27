@@ -31,7 +31,8 @@ export default tseslint.config(
     languageOptions: { ecmaVersion: 2023, globals: globals.node },
   },
   {
-    files: ["vite.config.ts"],
+    // 설정 파일과 E2E 테스트는 Node에서 돈다(브라우저 안 코드는 page.evaluate 콜백뿐이다)
+    files: ["vite.config.ts", "playwright.config.ts", "tests/e2e/**/*.ts"],
     languageOptions: { globals: globals.node },
   },
 );
