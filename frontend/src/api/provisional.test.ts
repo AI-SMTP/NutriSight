@@ -1,8 +1,11 @@
-// 임시 계약(provisional.ts) 테스트. 공용 MSW 서버(기본 핸들러 없음)에 테스트마다 핸들러를 얹는다.
+// 임시 계약(provisional.ts) 테스트. 공용 MSW 서버에 테스트마다 핸들러를 얹는다(얹은 핸들러가 기본 모의
+// 핸들러보다 먼저 응답하므로 기본 핸들러 유무와 무관하게 돈다).
 import { delay, http, HttpResponse, type HttpResponseResolver } from "msw";
 
 import { orderBadge, type OrderStatusInput } from "../lib/mealStatus";
 import { server } from "../mocks/server";
+import { expectApiError, jpegBlob } from "../test/apiError";
+import { useNodeFileForMultipart } from "../test/nodeFile";
 import {
   ApiError,
   getMeal,
@@ -52,10 +55,6 @@ const mealDetail: MealDetail = {
   orders: [summary],
 };
 
-function jpegBlob(): Blob {
-  return new Blob([new Uint8Array([0xff, 0xd8, 0xff])], { type: "image/jpeg" });
-}
-
 /** 다섯 함수를 같은 표로 돌리기 위한 엔드포인트 정의 */
 interface Endpoint {
   name: string;
@@ -94,21 +93,6 @@ const endpoints: Endpoint[] = [
 
 function use(endpoint: Endpoint, resolver: HttpResponseResolver): void {
   server.use(http[endpoint.method](endpoint.path, resolver));
-}
-
-async function expectApiError(
-  promise: Promise<unknown>,
-  kind: ApiErrorKind,
-  status?: number,
-): Promise<void> {
-  const error = await promise.then(
-    () => {
-      throw new Error("예외가 나야 한다");
-    },
-    (err: unknown) => err,
-  );
-  expect(error).toBeInstanceOf(ApiError);
-  expect(error).toMatchObject({ kind, status });
 }
 
 describe("mealPlanId", () => {
@@ -163,15 +147,10 @@ describe("성공 응답", () => {
 });
 
 describe("multipart 업로드", () => {
-  // Vitest jsdom 환경에서는 전역 `File`이 jsdom 것이라 Node `FormData`가 파일 항목을 만들지 못한다
-  // (본문이 비거나 파싱 단언이 실패한다). 이 묶음에서만 Node `File`로 바꿔 둔다. 브라우저와는 무관하다.
-  beforeEach(async () => {
-    const { File: NodeFile } = await import("node:buffer");
-    vi.stubGlobal("File", NodeFile);
-  });
+  // jsdom `File`로는 multipart 본문이 깨지므로 이 묶음에서만 Node `File`로 바꿔 둔다(src/test/nodeFile.ts).
+  useNodeFileForMultipart();
 
   afterEach(() => {
-    vi.unstubAllGlobals();
     vi.restoreAllMocks();
   });
 
@@ -380,7 +359,7 @@ describe("getMeal 취소", () => {
 
 describe("경로 조각 검증", () => {
   // `.`·`..`은 URL 정규화로 경로를 위로 올리므로 요청을 보내지 않고 막는다.
-  // 요청이 나가면 공용 서버의 onUnhandledRequest 오류로 드러난다.
+  // 요청이 나가면 상태 코드가 붙은 오류나 처리되지 않은 요청 오류로 드러난다.
   it.each([".", ".."])("조각이 %s이면 요청 없이 invalid로 막는다", async (bad) => {
     await expectApiError(getMeal(bad, "lunch"), "invalid", undefined);
     await expectApiError(getMeal(DATE, bad as Meal), "invalid", undefined);
