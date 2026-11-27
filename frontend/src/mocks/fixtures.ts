@@ -144,20 +144,37 @@ function buildMeal(meal: Meal): { plan: MockPlan; orders: MockOrder[]; photos: M
 /** 발주 덮어쓰기. `null`이면 그 발주를 뺀다(예: "발주 없음" 409 사례) */
 export type OrderOverride = Partial<Omit<MockOrder, "meal_order_id">> | null;
 
+/** 사진 덮어쓰기(ID·종류·끼니·발주 연결은 바꾸지 않는다) */
+export type PhotoOverride = Partial<Pick<MockPhoto, "status" | "stage" | "uploaded_at">>;
+
+/** 배식 계획 덮어쓰기(기준 사진 유무) */
+export type PlanOverride = Partial<Pick<MockPlan, "baseline_photo_id">>;
+
 /** 테스트가 픽스처 초기값 위에 주입하는 값 */
 export interface StateOverrides {
   orders?: Readonly<Record<string, OrderOverride>>;
+  photos?: Readonly<Record<string, PhotoOverride>>;
+  plans?: Readonly<Record<string, PlanOverride>>;
+}
+
+/** 덮어쓰기 키가 모두 픽스처에 있는지 확인한다. 오타를 조용히 넘기지 않도록 던진다 */
+function assertKnownIds(label: string, ids: Iterable<string>, overrides: object): void {
+  const known = new Set(ids);
+  const unknown = Object.keys(overrides).filter((id) => !known.has(id));
+  if (unknown.length > 0) {
+    throw new Error(`픽스처에 없는 ${label} ID: ${unknown.join(", ")}`);
+  }
 }
 
 function applyOrderOverrides(
   orders: readonly MockOrder[],
   overrides: Readonly<Record<string, OrderOverride>>,
 ): MockOrder[] {
-  const known = new Set(orders.map((o) => o.meal_order_id));
-  const unknown = Object.keys(overrides).filter((id) => !known.has(id));
-  if (unknown.length > 0) {
-    throw new Error(`픽스처에 없는 발주 ID: ${unknown.join(", ")}`);
-  }
+  assertKnownIds(
+    "발주",
+    orders.map((o) => o.meal_order_id),
+    overrides,
+  );
   return orders.flatMap((order) => {
     if (!Object.hasOwn(overrides, order.meal_order_id)) return [order];
     const override = overrides[order.meal_order_id];
@@ -165,16 +182,42 @@ function applyOrderOverrides(
   });
 }
 
+/** ID별 부분 덮어쓰기(사진·계획 공용). 없는 ID는 던진다 */
+function applyPatches<T extends object>(
+  label: string,
+  items: readonly T[],
+  idOf: (item: T) => string,
+  patches: Readonly<Record<string, NoInfer<Partial<T>>>>,
+): T[] {
+  assertKnownIds(label, items.map(idOf), patches);
+  return items.map((item) =>
+    Object.hasOwn(patches, idOf(item)) ? { ...item, ...patches[idOf(item)] } : item,
+  );
+}
+
 /** 픽스처 초기 상태를 매번 새 객체로 만든다 */
 export function createInitialState(options: { overrides?: StateOverrides } = {}): MockState {
   const meals = MEALS.map(buildMeal);
-  const orders = meals.flatMap((m) => m.orders);
+  const overrides = options.overrides ?? {};
   return {
     demoDate: DEMO_DATE,
     patients: PATIENTS,
-    plans: meals.map((m) => m.plan),
-    orders: applyOrderOverrides(orders, options.overrides?.orders ?? {}),
-    photos: meals.flatMap((m) => m.photos),
+    plans: applyPatches(
+      "배식 계획",
+      meals.map((m) => m.plan),
+      (p) => p.meal_plan_id,
+      overrides.plans ?? {},
+    ),
+    orders: applyOrderOverrides(
+      meals.flatMap((m) => m.orders),
+      overrides.orders ?? {},
+    ),
+    photos: applyPatches(
+      "사진",
+      meals.flatMap((m) => m.photos),
+      (p) => p.photo_id,
+      overrides.photos ?? {},
+    ),
     nextPhotoSeq: 1,
   };
 }

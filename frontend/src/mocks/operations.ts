@@ -23,7 +23,7 @@ export function findPlan(state: MockState, date: string, meal: string): MockPlan
   return state.plans.find((p) => p.date === date && p.meal === meal);
 }
 
-function findPhoto(state: MockState, photoId: string | null): MockPhoto | undefined {
+export function findPhoto(state: MockState, photoId: string | null): MockPhoto | undefined {
   return photoId === null ? undefined : state.photos.find((p) => p.photo_id === photoId);
 }
 

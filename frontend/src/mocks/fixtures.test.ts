@@ -82,7 +82,63 @@ describe("createInitialState", () => {
   });
 });
 
+describe("createInitialState overrides(사진·계획)", () => {
+  it("photos로 특정 사진의 상태를 바꾼다(다른 사진은 그대로)", () => {
+    const state = createInitialState({
+      overrides: { photos: { fx_lunch_NS02: { status: "failed", stage: "intake" } } },
+    });
+    const base = createInitialState();
+
+    expect(state.photos.find((p) => p.photo_id === "fx_lunch_NS02")).toMatchObject({
+      status: "failed",
+      stage: "intake",
+      kind: "post",
+    });
+    expect(state.photos.filter((p) => p.photo_id !== "fx_lunch_NS02")).toEqual(
+      base.photos.filter((p) => p.photo_id !== "fx_lunch_NS02"),
+    );
+  });
+
+  it("plans로 끼니의 기준 사진 연결을 바꾼다", () => {
+    const lunchId = `${DEMO_DATE}_lunch_general`;
+    const state = createInitialState({
+      overrides: { plans: { [lunchId]: { baseline_photo_id: null } } },
+    });
+
+    expect(state.plans.find((p) => p.meal_plan_id === lunchId)?.baseline_photo_id).toBeNull();
+    expect(
+      state.plans.find((p) => p.meal_plan_id === `${DEMO_DATE}_breakfast_general`)
+        ?.baseline_photo_id,
+    ).toBe("fx_breakfast_baseline");
+  });
+
+  it("없는 사진 ID나 계획 ID를 주면 던진다", () => {
+    expect(() =>
+      createInitialState({ overrides: { photos: { fx_missing: { status: "done" } } } }),
+    ).toThrow(/fx_missing/);
+    expect(() =>
+      createInitialState({
+        overrides: { plans: { "2026-11-28_lunch_general": { baseline_photo_id: null } } },
+      }),
+    ).toThrow(/2026-11-28_lunch_general/);
+  });
+});
+
 describe("mockState", () => {
+  it("reset은 등록한 정리 콜백을 부르고, 해제한 콜백은 부르지 않는다", () => {
+    const kept = vi.fn();
+    const removed = vi.fn();
+    const unsubscribeKept = mockState.onReset(kept);
+    const unsubscribeRemoved = mockState.onReset(removed);
+    unsubscribeRemoved();
+
+    mockState.reset();
+
+    expect(kept).toHaveBeenCalledTimes(1);
+    expect(removed).not.toHaveBeenCalled();
+    unsubscribeKept();
+  });
+
   it("update는 새 상태로 바꾸고 reset은 픽스처 초기값으로 되돌린다", () => {
     const before = mockState.get();
 

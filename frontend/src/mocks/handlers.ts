@@ -3,8 +3,8 @@
  *
  * - 정본: 스펙 3.3절 임시 계약 표와 404·409 구분, 3.4절 MSW 모의 규칙, 3.5절 업로드·전량 기록 임시 규칙.
  * - 상태는 `mockState`(메모리)에 두고, 상태 전이는 `operations.ts`의 순수 함수가 만든다.
- * - 업로드된 식후 사진은 `uploaded`(기준 사진이 없으면 `waiting_baseline`)에 머문다.
- *   처리 단계 진행과 `photo.status_changed` 발행은 처리 단계 런타임이 맡는다.
+ * - 식후 사진·기준 사진 저장이 성공하면 처리 단계 런타임(`runtime.ts`)에 넘긴다. 단계 진행과
+ *   `photo.status_changed` 발행, 기준 사진 재처리 규칙은 런타임이 맡는다.
  */
 import { http, HttpResponse, type HttpHandler } from "msw";
 
@@ -18,6 +18,7 @@ import {
   type Outcome,
 } from "./operations";
 import { detailResponse as detail } from "./errorHandlers";
+import { currentMockRuntime } from "./runtime";
 import { mockState } from "./state";
 import type { MockState } from "./types";
 
@@ -31,12 +32,17 @@ function isStaffZeroReason(value: unknown): value is StaffZeroReason {
 
 const invalid = () => detail(422, "요청 형식이 올바르지 않습니다");
 
-/** 상태 전이를 적용하고 결과를 응답으로 바꾼다. 실패면 상태를 바꾸지 않는다 */
+/**
+ * 상태 전이를 적용하고 결과를 응답으로 바꾼다. 실패면 상태를 바꾸지 않는다.
+ * `after`는 성공해 상태를 바꾼 뒤 부른다(바뀌기 전 상태를 함께 받는다).
+ */
 function commit<T extends object>(
   run: (state: MockState) => Outcome<T>,
   successStatus: number,
+  after?: (value: T, before: MockState) => void,
 ): Response {
-  const outcome = run(mockState.get());
+  const before = mockState.get();
+  const outcome = run(before);
   if (!outcome.ok) {
     return detail(
       outcome.status,
@@ -44,6 +50,7 @@ function commit<T extends object>(
     );
   }
   mockState.update(() => outcome.state);
+  after?.(outcome.value, before);
   return HttpResponse.json(outcome.value, { status: successStatus });
 }
 
@@ -95,6 +102,13 @@ export const handlers: HttpHandler[] = [
       return commit(
         (state) => registerBaseline(state, { date: params.date, meal: params.meal, now: now() }),
         201,
+        (value, before) => {
+          const previous = findPlan(before, params.date, params.meal)?.baseline_photo_id ?? null;
+          currentMockRuntime().baselineRegistered({
+            photoId: value.photo_id,
+            replaced: previous !== null,
+          });
+        },
       );
     },
   ),
@@ -106,7 +120,11 @@ export const handlers: HttpHandler[] = [
     const date = textField(form, "date");
     const meal = textField(form, "meal");
     if (!patientId || !date || !meal) return invalid();
-    return commit((state) => acceptPostPhoto(state, { patientId, date, meal, now: now() }), 202);
+    return commit(
+      (state) => acceptPostPhoto(state, { patientId, date, meal, now: now() }),
+      202,
+      (value) => currentMockRuntime().photoAccepted(value.photo_id),
+    );
   }),
 
   http.post<{ id: string }>("/api/meal-orders/:id/staff-zero", async ({ params, request }) => {
