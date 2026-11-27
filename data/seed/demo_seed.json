@@ -1,9 +1,11 @@
 {
   "meta": {
-    "source": "NutriSight 가상 환자 10명과 7일 식사 기록 최종본 (팀 샘플, 11/23~11/29)",
-    "date_rule": "day_offset은 시연일(D=0) 기준 상대 날짜. 샘플 11/23~11/29 → D-7~D-1, D는 배식 계획과 발주만",
-    "added_slots": "국(slot_2) · 부찬 2(slot_5) · 김치(slot_6)는 변환 때 추가한 근사 모의값. 추가 칸 섭취율은 그 끼니 원본 3칸 섭취율의 최솟값. 단 NS03은 식욕 저하로 추가 칸을 먹지 않은 것으로 둠(0%)",
-    "served_g": "원본에 배식량이 없어 밥 210 g · 주찬 90 g · 부찬 60 g · 국 250 g · 부찬 2 50 g · 김치 40 g으로 둠 (근사 모의값)",
+    "source": "풀무원 요양시설용 주간 식단(2025-12-01~12-07)의 아침·점심·저녁 21끼를 팀 샘플 \"NutriSight 가상 환자 10명과 7일 식사 기록 최종본\"의 D-7~D-1에 적용 (원본 정리: docs/samples/pulmuone-weekly/source.md)",
+    "date_rule": "day_offset은 시연일(D=0) 기준 상대 날짜. 원본 식단 월~일 → D-7~D-1, D는 배식 계획과 발주만",
+    "menus": "D-7~D-1 메뉴와 끼니별 열량·단백질 합계는 풀무원 식단표 표기값. 칸별 열량·단백질은 음식 유형을 바탕으로 끼니 합계를 나눈 시연용 추정값. D의 메뉴는 팀 샘플 변환 때 정한 근사 모의값",
+    "served_g": "원본에 배식량이 없어 밥 210 g(2/3 표기는 140 g) · 국 250 g · 주찬 90 g · 부찬 60 g · 부찬 2 50 g · 김치 40 g으로 둠 (근사 모의값)",
+    "unserved_slot": "D-2 점심은 원본이 다섯 메뉴라 부찬 2(slot_5)를 미배식으로 둠: menu_name null, served_g·energy_kcal·protein_g 0, 칸별 섭취 행 없음",
+    "intakes": "칸별 섭취율·발주 상태·환자 정보는 팀 샘플 변환값 그대로. 끼니 섭취량은 새 배식 계획 기준으로 다시 계산",
     "data_source": "mock"
   },
   "patients": [
@@ -715,50 +717,50 @@
           "slot_id": "slot_1",
           "position": "아랫줄 왼쪽",
           "dish_type": "rice",
-          "menu_name": "쌀밥",
+          "menu_name": "미호현미밥",
           "served_g": 210,
-          "energy_kcal": 300,
+          "energy_kcal": 270,
           "protein_g": 5
         },
         {
           "slot_id": "slot_2",
           "position": "아랫줄 오른쪽",
           "dish_type": "soup",
-          "menu_name": "아욱된장국",
+          "menu_name": "조갯살연두부국",
           "served_g": 250,
-          "energy_kcal": 40,
-          "protein_g": 2.5
+          "energy_kcal": 31,
+          "protein_g": 2
         },
         {
           "slot_id": "slot_3",
-          "position": "윗줄 1",
+          "position": "윗줄 1 (왼쪽 끝)",
           "dish_type": "main",
-          "menu_name": "달걀찜",
+          "menu_name": "소고기숙주볶음",
           "served_g": 90,
-          "energy_kcal": 200,
-          "protein_g": 18
+          "energy_kcal": 119,
+          "protein_g": 13.4
         },
         {
           "slot_id": "slot_4",
           "position": "윗줄 2",
           "dish_type": "side",
-          "menu_name": "애호박볶음",
+          "menu_name": "방풍나물",
           "served_g": 60,
-          "energy_kcal": 80,
-          "protein_g": 2
+          "energy_kcal": 20,
+          "protein_g": 1
         },
         {
           "slot_id": "slot_5",
           "position": "윗줄 3",
           "dish_type": "side",
-          "menu_name": "어묵볶음",
+          "menu_name": "미나리초무침",
           "served_g": 50,
-          "energy_kcal": 75,
-          "protein_g": 4.0
+          "energy_kcal": 20,
+          "protein_g": 1
         },
         {
           "slot_id": "slot_6",
-          "position": "윗줄 4",
+          "position": "윗줄 4 (오른쪽 끝)",
           "dish_type": "kimchi",
           "menu_name": "배추김치",
           "served_g": 40,
@@ -778,50 +780,50 @@
           "slot_id": "slot_1",
           "position": "아랫줄 왼쪽",
           "dish_type": "rice",
-          "menu_name": "잡곡밥",
-          "served_g": 210,
-          "energy_kcal": 320,
-          "protein_g": 6
+          "menu_name": "미호현미밥2/3",
+          "served_g": 140,
+          "energy_kcal": 205,
+          "protein_g": 3.5
         },
         {
           "slot_id": "slot_2",
           "position": "아랫줄 오른쪽",
           "dish_type": "soup",
-          "menu_name": "미역국",
+          "menu_name": "팽이버섯맑은국",
           "served_g": 250,
-          "energy_kcal": 45,
-          "protein_g": 3.0
+          "energy_kcal": 47,
+          "protein_g": 1
         },
         {
           "slot_id": "slot_3",
-          "position": "윗줄 1",
+          "position": "윗줄 1 (왼쪽 끝)",
           "dish_type": "main",
-          "menu_name": "닭고기볶음",
+          "menu_name": "오징어우동볶음",
           "served_g": 90,
-          "energy_kcal": 250,
-          "protein_g": 27
+          "energy_kcal": 178,
+          "protein_g": 6.7
         },
         {
           "slot_id": "slot_4",
           "position": "윗줄 2",
           "dish_type": "side",
-          "menu_name": "시금치나물",
+          "menu_name": "브로컬리맛살무침",
           "served_g": 60,
-          "energy_kcal": 90,
-          "protein_g": 3
+          "energy_kcal": 59,
+          "protein_g": 1.7
         },
         {
           "slot_id": "slot_5",
           "position": "윗줄 3",
           "dish_type": "side",
-          "menu_name": "콩자반",
+          "menu_name": "애호박나물",
           "served_g": 50,
-          "energy_kcal": 70,
-          "protein_g": 4.5
+          "energy_kcal": 30,
+          "protein_g": 0.5
         },
         {
           "slot_id": "slot_6",
-          "position": "윗줄 4",
+          "position": "윗줄 4 (오른쪽 끝)",
           "dish_type": "kimchi",
           "menu_name": "배추김치",
           "served_g": 40,
@@ -841,50 +843,50 @@
           "slot_id": "slot_1",
           "position": "아랫줄 왼쪽",
           "dish_type": "rice",
-          "menu_name": "쌀밥",
+          "menu_name": "칼슘쏙쏙시금치찹쌀밥",
           "served_g": 210,
-          "energy_kcal": 300,
+          "energy_kcal": 270,
           "protein_g": 5
         },
         {
           "slot_id": "slot_2",
           "position": "아랫줄 오른쪽",
           "dish_type": "soup",
-          "menu_name": "소고기무국",
+          "menu_name": "달래된장국",
           "served_g": 250,
-          "energy_kcal": 60,
-          "protein_g": 5.0
+          "energy_kcal": 62,
+          "protein_g": 1.3
         },
         {
           "slot_id": "slot_3",
-          "position": "윗줄 1",
+          "position": "윗줄 1 (왼쪽 끝)",
           "dish_type": "main",
-          "menu_name": "두부조림",
+          "menu_name": "마약계란장",
           "served_g": 90,
-          "energy_kcal": 210,
-          "protein_g": 16
+          "energy_kcal": 238,
+          "protein_g": 9.1
         },
         {
           "slot_id": "slot_4",
           "position": "윗줄 2",
           "dish_type": "side",
-          "menu_name": "무나물",
+          "menu_name": "잔멸치볶음",
           "served_g": 60,
           "energy_kcal": 80,
-          "protein_g": 2
+          "protein_g": 2.3
         },
         {
           "slot_id": "slot_5",
           "position": "윗줄 3",
           "dish_type": "side",
-          "menu_name": "멸치볶음",
+          "menu_name": "가지나물",
           "served_g": 50,
-          "energy_kcal": 60,
-          "protein_g": 5.0
+          "energy_kcal": 40,
+          "protein_g": 0.7
         },
         {
           "slot_id": "slot_6",
-          "position": "윗줄 4",
+          "position": "윗줄 4 (오른쪽 끝)",
           "dish_type": "kimchi",
           "menu_name": "배추김치",
           "served_g": 40,
@@ -904,54 +906,54 @@
           "slot_id": "slot_1",
           "position": "아랫줄 왼쪽",
           "dish_type": "rice",
-          "menu_name": "쌀밥",
+          "menu_name": "혼합잡곡밥",
           "served_g": 210,
-          "energy_kcal": 300,
+          "energy_kcal": 270,
           "protein_g": 5
         },
         {
           "slot_id": "slot_2",
           "position": "아랫줄 오른쪽",
           "dish_type": "soup",
-          "menu_name": "콩나물국",
+          "menu_name": "들깨버섯국",
           "served_g": 250,
-          "energy_kcal": 30,
-          "protein_g": 2.5
+          "energy_kcal": 25,
+          "protein_g": 2.1
         },
         {
           "slot_id": "slot_3",
-          "position": "윗줄 1",
+          "position": "윗줄 1 (왼쪽 끝)",
           "dish_type": "main",
-          "menu_name": "두부달걀부침",
+          "menu_name": "닭살단호박조림",
           "served_g": 90,
-          "energy_kcal": 210,
-          "protein_g": 19
+          "energy_kcal": 97,
+          "protein_g": 14.1
         },
         {
           "slot_id": "slot_4",
           "position": "윗줄 2",
           "dish_type": "side",
-          "menu_name": "콩나물무침",
+          "menu_name": "파래자반볶음",
           "served_g": 60,
-          "energy_kcal": 80,
-          "protein_g": 3
+          "energy_kcal": 16,
+          "protein_g": 1.1
         },
         {
           "slot_id": "slot_5",
           "position": "윗줄 3",
           "dish_type": "side",
-          "menu_name": "도라지무침",
+          "menu_name": "세발나물",
           "served_g": 50,
-          "energy_kcal": 35,
-          "protein_g": 1.0
+          "energy_kcal": 16,
+          "protein_g": 1.1
         },
         {
           "slot_id": "slot_6",
-          "position": "윗줄 4",
+          "position": "윗줄 4 (오른쪽 끝)",
           "dish_type": "kimchi",
-          "menu_name": "깍두기",
+          "menu_name": "배추김치",
           "served_g": 40,
-          "energy_kcal": 12,
+          "energy_kcal": 8,
           "protein_g": 0.6
         }
       ]
@@ -967,37 +969,37 @@
           "slot_id": "slot_1",
           "position": "아랫줄 왼쪽",
           "dish_type": "rice",
-          "menu_name": "보리밥",
+          "menu_name": "칼슘쏙쏙홍국찹쌀밥",
           "served_g": 210,
-          "energy_kcal": 320,
-          "protein_g": 6
+          "energy_kcal": 270,
+          "protein_g": 5
         },
         {
           "slot_id": "slot_2",
           "position": "아랫줄 오른쪽",
           "dish_type": "soup",
-          "menu_name": "감자국",
+          "menu_name": "김치찌개",
           "served_g": 250,
-          "energy_kcal": 55,
-          "protein_g": 1.5
+          "energy_kcal": 83,
+          "protein_g": 4.5
         },
         {
           "slot_id": "slot_3",
-          "position": "윗줄 1",
+          "position": "윗줄 1 (왼쪽 끝)",
           "dish_type": "main",
-          "menu_name": "돼지고기채소볶음",
+          "menu_name": "치즈돈까스",
           "served_g": 90,
-          "energy_kcal": 250,
-          "protein_g": 26
+          "energy_kcal": 206,
+          "protein_g": 12.8
         },
         {
           "slot_id": "slot_4",
           "position": "윗줄 2",
           "dish_type": "side",
-          "menu_name": "당근볶음",
+          "menu_name": "햄마카로니샐러드",
           "served_g": 60,
-          "energy_kcal": 90,
-          "protein_g": 2
+          "energy_kcal": 69,
+          "protein_g": 3.2
         },
         {
           "slot_id": "slot_5",
@@ -1005,16 +1007,16 @@
           "dish_type": "side",
           "menu_name": "오이무침",
           "served_g": 50,
-          "energy_kcal": 20,
-          "protein_g": 0.5
+          "energy_kcal": 34,
+          "protein_g": 0.9
         },
         {
           "slot_id": "slot_6",
-          "position": "윗줄 4",
+          "position": "윗줄 4 (오른쪽 끝)",
           "dish_type": "kimchi",
-          "menu_name": "배추김치",
+          "menu_name": "깍두기",
           "served_g": 40,
-          "energy_kcal": 8,
+          "energy_kcal": 12,
           "protein_g": 0.6
         }
       ]
@@ -1030,50 +1032,50 @@
           "slot_id": "slot_1",
           "position": "아랫줄 왼쪽",
           "dish_type": "rice",
-          "menu_name": "쌀밥",
+          "menu_name": "혼합잡곡밥",
           "served_g": 210,
-          "energy_kcal": 300,
+          "energy_kcal": 270,
           "protein_g": 5
         },
         {
           "slot_id": "slot_2",
           "position": "아랫줄 오른쪽",
           "dish_type": "soup",
-          "menu_name": "시금치된장국",
+          "menu_name": "소고기무국",
           "served_g": 250,
-          "energy_kcal": 40,
+          "energy_kcal": 53,
           "protein_g": 2.5
         },
         {
           "slot_id": "slot_3",
-          "position": "윗줄 1",
+          "position": "윗줄 1 (왼쪽 끝)",
           "dish_type": "main",
-          "menu_name": "가자미구이",
+          "menu_name": "동태양념조림",
           "served_g": 90,
-          "energy_kcal": 210,
-          "protein_g": 23
+          "energy_kcal": 201,
+          "protein_g": 16.5
         },
         {
           "slot_id": "slot_4",
           "position": "윗줄 2",
           "dish_type": "side",
-          "menu_name": "감자조림",
+          "menu_name": "유채나물",
           "served_g": 60,
-          "energy_kcal": 100,
-          "protein_g": 2
+          "energy_kcal": 34,
+          "protein_g": 1.2
         },
         {
           "slot_id": "slot_5",
           "position": "윗줄 3",
           "dish_type": "side",
-          "menu_name": "미역줄기볶음",
+          "menu_name": "김구이",
           "served_g": 50,
-          "energy_kcal": 35,
-          "protein_g": 1.0
+          "energy_kcal": 33,
+          "protein_g": 1.2
         },
         {
           "slot_id": "slot_6",
-          "position": "윗줄 4",
+          "position": "윗줄 4 (오른쪽 끝)",
           "dish_type": "kimchi",
           "menu_name": "배추김치",
           "served_g": 40,
@@ -1093,55 +1095,55 @@
           "slot_id": "slot_1",
           "position": "아랫줄 왼쪽",
           "dish_type": "rice",
-          "menu_name": "쌀밥",
+          "menu_name": "미호현미밥",
           "served_g": 210,
-          "energy_kcal": 300,
+          "energy_kcal": 270,
           "protein_g": 5
         },
         {
           "slot_id": "slot_2",
           "position": "아랫줄 오른쪽",
           "dish_type": "soup",
-          "menu_name": "북어국",
+          "menu_name": "낙지연포탕",
           "served_g": 250,
-          "energy_kcal": 55,
-          "protein_g": 6.0
+          "energy_kcal": 28,
+          "protein_g": 2.3
         },
         {
           "slot_id": "slot_3",
-          "position": "윗줄 1",
+          "position": "윗줄 1 (왼쪽 끝)",
           "dish_type": "main",
-          "menu_name": "달걀말이",
+          "menu_name": "돈육장조림",
           "served_g": 90,
-          "energy_kcal": 210,
-          "protein_g": 19
+          "energy_kcal": 105,
+          "protein_g": 15.2
         },
         {
           "slot_id": "slot_4",
           "position": "윗줄 2",
           "dish_type": "side",
-          "menu_name": "가지나물",
+          "menu_name": "도토리묵&양념장",
           "served_g": 60,
-          "energy_kcal": 90,
-          "protein_g": 2
+          "energy_kcal": 35,
+          "protein_g": 3.8
         },
         {
           "slot_id": "slot_5",
           "position": "윗줄 3",
           "dish_type": "side",
-          "menu_name": "숙주나물",
+          "menu_name": "취나물볶음",
           "served_g": 50,
-          "energy_kcal": 20,
-          "protein_g": 1.5
+          "energy_kcal": 18,
+          "protein_g": 1.1
         },
         {
           "slot_id": "slot_6",
-          "position": "윗줄 4",
+          "position": "윗줄 4 (오른쪽 끝)",
           "dish_type": "kimchi",
-          "menu_name": "백김치",
+          "menu_name": "배추김치",
           "served_g": 40,
           "energy_kcal": 8,
-          "protein_g": 0.5
+          "protein_g": 0.6
         }
       ]
     },
@@ -1156,50 +1158,50 @@
           "slot_id": "slot_1",
           "position": "아랫줄 왼쪽",
           "dish_type": "rice",
-          "menu_name": "잡곡밥",
+          "menu_name": "미호현미밥",
           "served_g": 210,
-          "energy_kcal": 320,
-          "protein_g": 6
+          "energy_kcal": 270,
+          "protein_g": 5
         },
         {
           "slot_id": "slot_2",
           "position": "아랫줄 오른쪽",
           "dish_type": "soup",
-          "menu_name": "배추된장국",
+          "menu_name": "사골곰국",
           "served_g": 250,
-          "energy_kcal": 40,
-          "protein_g": 2.5
+          "energy_kcal": 62,
+          "protein_g": 1.7
         },
         {
           "slot_id": "slot_3",
-          "position": "윗줄 1",
+          "position": "윗줄 1 (왼쪽 끝)",
           "dish_type": "main",
-          "menu_name": "소고기채소볶음",
+          "menu_name": "꼬막무침",
           "served_g": 90,
-          "energy_kcal": 250,
-          "protein_g": 25
+          "energy_kcal": 235,
+          "protein_g": 11.1
         },
         {
           "slot_id": "slot_4",
           "position": "윗줄 2",
           "dish_type": "side",
-          "menu_name": "청경채볶음",
+          "menu_name": "마늘쫑볶음",
           "served_g": 60,
-          "energy_kcal": 90,
-          "protein_g": 2
+          "energy_kcal": 39,
+          "protein_g": 0.8
         },
         {
           "slot_id": "slot_5",
           "position": "윗줄 3",
           "dish_type": "side",
-          "menu_name": "메추리알조림",
+          "menu_name": "부추겉절이",
           "served_g": 50,
-          "energy_kcal": 70,
-          "protein_g": 5.5
+          "energy_kcal": 39,
+          "protein_g": 0.8
         },
         {
           "slot_id": "slot_6",
-          "position": "윗줄 4",
+          "position": "윗줄 4 (오른쪽 끝)",
           "dish_type": "kimchi",
           "menu_name": "배추김치",
           "served_g": 40,
@@ -1219,52 +1221,52 @@
           "slot_id": "slot_1",
           "position": "아랫줄 왼쪽",
           "dish_type": "rice",
-          "menu_name": "쌀밥",
+          "menu_name": "칼슘쏙쏙강황찹쌀밥",
           "served_g": 210,
-          "energy_kcal": 300,
+          "energy_kcal": 270,
           "protein_g": 5
         },
         {
           "slot_id": "slot_2",
           "position": "아랫줄 오른쪽",
           "dish_type": "soup",
-          "menu_name": "계란국",
+          "menu_name": "콩나물국",
           "served_g": 250,
-          "energy_kcal": 50,
-          "protein_g": 4.0
+          "energy_kcal": 34,
+          "protein_g": 1.7
         },
         {
           "slot_id": "slot_3",
-          "position": "윗줄 1",
+          "position": "윗줄 1 (왼쪽 끝)",
           "dish_type": "main",
-          "menu_name": "두부구이",
+          "menu_name": "소고기배추볶음",
           "served_g": 90,
-          "energy_kcal": 210,
-          "protein_g": 17
+          "energy_kcal": 129,
+          "protein_g": 11.1
         },
         {
           "slot_id": "slot_4",
           "position": "윗줄 2",
           "dish_type": "side",
-          "menu_name": "단호박찜",
+          "menu_name": "두부양념조림",
           "served_g": 60,
-          "energy_kcal": 90,
-          "protein_g": 2
+          "energy_kcal": 43,
+          "protein_g": 2.8
         },
         {
           "slot_id": "slot_5",
           "position": "윗줄 3",
           "dish_type": "side",
-          "menu_name": "버섯볶음",
+          "menu_name": "무말랭이무침",
           "served_g": 50,
-          "energy_kcal": 30,
-          "protein_g": 1.5
+          "energy_kcal": 21,
+          "protein_g": 0.8
         },
         {
           "slot_id": "slot_6",
-          "position": "윗줄 4",
+          "position": "윗줄 4 (오른쪽 끝)",
           "dish_type": "kimchi",
-          "menu_name": "배추김치",
+          "menu_name": "단호박백나박김치",
           "served_g": 40,
           "energy_kcal": 8,
           "protein_g": 0.6
@@ -1282,55 +1284,55 @@
           "slot_id": "slot_1",
           "position": "아랫줄 왼쪽",
           "dish_type": "rice",
-          "menu_name": "쌀밥",
+          "menu_name": "혼합잡곡밥",
           "served_g": 210,
-          "energy_kcal": 300,
+          "energy_kcal": 270,
           "protein_g": 5
         },
         {
           "slot_id": "slot_2",
           "position": "아랫줄 오른쪽",
           "dish_type": "soup",
-          "menu_name": "어묵국",
+          "menu_name": "냉이된장국",
           "served_g": 250,
-          "energy_kcal": 60,
-          "protein_g": 4.0
+          "energy_kcal": 30,
+          "protein_g": 2.2
         },
         {
           "slot_id": "slot_3",
-          "position": "윗줄 1",
+          "position": "윗줄 1 (왼쪽 끝)",
           "dish_type": "main",
-          "menu_name": "연두부달걀찜",
+          "menu_name": "방어시래기조림",
           "served_g": 90,
-          "energy_kcal": 200,
-          "protein_g": 17
+          "energy_kcal": 113,
+          "protein_g": 14.5
         },
         {
           "slot_id": "slot_4",
           "position": "윗줄 2",
           "dish_type": "side",
-          "menu_name": "시금치나물",
+          "menu_name": "계란찜",
           "served_g": 60,
-          "energy_kcal": 90,
-          "protein_g": 3
+          "energy_kcal": 38,
+          "protein_g": 3.6
         },
         {
           "slot_id": "slot_5",
           "position": "윗줄 3",
           "dish_type": "side",
-          "menu_name": "무생채",
+          "menu_name": "참나물무침",
           "served_g": 50,
-          "energy_kcal": 25,
-          "protein_g": 0.5
+          "energy_kcal": 19,
+          "protein_g": 1.1
         },
         {
           "slot_id": "slot_6",
-          "position": "윗줄 4",
+          "position": "윗줄 4 (오른쪽 끝)",
           "dish_type": "kimchi",
-          "menu_name": "열무김치",
+          "menu_name": "배추김치",
           "served_g": 40,
           "energy_kcal": 8,
-          "protein_g": 0.7
+          "protein_g": 0.6
         }
       ]
     },
@@ -1345,50 +1347,50 @@
           "slot_id": "slot_1",
           "position": "아랫줄 왼쪽",
           "dish_type": "rice",
-          "menu_name": "현미밥",
+          "menu_name": "칼슘쏙쏙단호박찹쌀밥",
           "served_g": 210,
-          "energy_kcal": 320,
-          "protein_g": 6
+          "energy_kcal": 270,
+          "protein_g": 5
         },
         {
           "slot_id": "slot_2",
           "position": "아랫줄 오른쪽",
           "dish_type": "soup",
-          "menu_name": "근대된장국",
+          "menu_name": "북어채국",
           "served_g": 250,
-          "energy_kcal": 40,
-          "protein_g": 2.5
+          "energy_kcal": 83,
+          "protein_g": 5.4
         },
         {
           "slot_id": "slot_3",
-          "position": "윗줄 1",
+          "position": "윗줄 1 (왼쪽 끝)",
           "dish_type": "main",
-          "menu_name": "닭고기채소찜",
+          "menu_name": "돈안심수육채소무침",
           "served_g": 90,
-          "energy_kcal": 240,
-          "protein_g": 26
+          "energy_kcal": 205,
+          "protein_g": 15.3
         },
         {
           "slot_id": "slot_4",
           "position": "윗줄 2",
           "dish_type": "side",
-          "menu_name": "연근조림",
+          "menu_name": "감자채볶음",
           "served_g": 60,
-          "energy_kcal": 100,
-          "protein_g": 2
+          "energy_kcal": 63,
+          "protein_g": 1.5
         },
         {
           "slot_id": "slot_5",
           "position": "윗줄 3",
           "dish_type": "side",
-          "menu_name": "마늘종볶음",
+          "menu_name": "쪽파김무침",
           "served_g": 50,
-          "energy_kcal": 40,
-          "protein_g": 1.0
+          "energy_kcal": 34,
+          "protein_g": 1.2
         },
         {
           "slot_id": "slot_6",
-          "position": "윗줄 4",
+          "position": "윗줄 4 (오른쪽 끝)",
           "dish_type": "kimchi",
           "menu_name": "배추김치",
           "served_g": 40,
@@ -1408,50 +1410,50 @@
           "slot_id": "slot_1",
           "position": "아랫줄 왼쪽",
           "dish_type": "rice",
-          "menu_name": "쌀밥",
+          "menu_name": "혼합잡곡밥",
           "served_g": 210,
-          "energy_kcal": 300,
+          "energy_kcal": 270,
           "protein_g": 5
         },
         {
           "slot_id": "slot_2",
           "position": "아랫줄 오른쪽",
           "dish_type": "soup",
-          "menu_name": "맑은두부국",
+          "menu_name": "해물누룽지탕",
           "served_g": 250,
-          "energy_kcal": 50,
-          "protein_g": 4.0
+          "energy_kcal": 78,
+          "protein_g": 2.5
         },
         {
           "slot_id": "slot_3",
-          "position": "윗줄 1",
+          "position": "윗줄 1 (왼쪽 끝)",
           "dish_type": "main",
-          "menu_name": "고등어구이",
+          "menu_name": "메추리알피망조림",
           "served_g": 90,
-          "energy_kcal": 230,
-          "protein_g": 24
+          "energy_kcal": 102,
+          "protein_g": 10.9
         },
         {
           "slot_id": "slot_4",
           "position": "윗줄 2",
           "dish_type": "side",
-          "menu_name": "무나물",
+          "menu_name": "연근채볶음",
           "served_g": 60,
-          "energy_kcal": 80,
-          "protein_g": 2
+          "energy_kcal": 38,
+          "protein_g": 1.7
         },
         {
           "slot_id": "slot_5",
           "position": "윗줄 3",
           "dish_type": "side",
-          "menu_name": "어묵볶음",
+          "menu_name": "치커리무침",
           "served_g": 50,
-          "energy_kcal": 75,
-          "protein_g": 4.0
+          "energy_kcal": 20,
+          "protein_g": 1.3
         },
         {
           "slot_id": "slot_6",
-          "position": "윗줄 4",
+          "position": "윗줄 4 (오른쪽 끝)",
           "dish_type": "kimchi",
           "menu_name": "배추김치",
           "served_g": 40,
@@ -1471,50 +1473,50 @@
           "slot_id": "slot_1",
           "position": "아랫줄 왼쪽",
           "dish_type": "rice",
-          "menu_name": "쌀밥",
+          "menu_name": "미호현미밥",
           "served_g": 210,
-          "energy_kcal": 300,
+          "energy_kcal": 270,
           "protein_g": 5
         },
         {
           "slot_id": "slot_2",
           "position": "아랫줄 오른쪽",
           "dish_type": "soup",
-          "menu_name": "아욱된장국",
+          "menu_name": "순두부찌개",
           "served_g": 250,
-          "energy_kcal": 40,
-          "protein_g": 2.5
+          "energy_kcal": 49,
+          "protein_g": 2.2
         },
         {
           "slot_id": "slot_3",
-          "position": "윗줄 1",
+          "position": "윗줄 1 (왼쪽 끝)",
           "dish_type": "main",
-          "menu_name": "달걀장조림",
+          "menu_name": "소이로운장조림",
           "served_g": 90,
-          "energy_kcal": 210,
-          "protein_g": 19
+          "energy_kcal": 122,
+          "protein_g": 6.2
         },
         {
           "slot_id": "slot_4",
           "position": "윗줄 2",
           "dish_type": "side",
-          "menu_name": "애호박볶음",
+          "menu_name": "늙은호박나물",
           "served_g": 60,
-          "energy_kcal": 80,
-          "protein_g": 2
+          "energy_kcal": 20,
+          "protein_g": 0.5
         },
         {
           "slot_id": "slot_5",
           "position": "윗줄 3",
           "dish_type": "side",
-          "menu_name": "콩자반",
+          "menu_name": "콩나물무침",
           "served_g": 50,
-          "energy_kcal": 70,
-          "protein_g": 4.5
+          "energy_kcal": 20,
+          "protein_g": 0.5
         },
         {
           "slot_id": "slot_6",
-          "position": "윗줄 4",
+          "position": "윗줄 4 (오른쪽 끝)",
           "dish_type": "kimchi",
           "menu_name": "배추김치",
           "served_g": 40,
@@ -1534,50 +1536,50 @@
           "slot_id": "slot_1",
           "position": "아랫줄 왼쪽",
           "dish_type": "rice",
-          "menu_name": "잡곡밥",
+          "menu_name": "미호현미밥",
           "served_g": 210,
-          "energy_kcal": 320,
-          "protein_g": 6
+          "energy_kcal": 270,
+          "protein_g": 5
         },
         {
           "slot_id": "slot_2",
           "position": "아랫줄 오른쪽",
           "dish_type": "soup",
-          "menu_name": "미역국",
+          "menu_name": "모듬어묵국",
           "served_g": 250,
-          "energy_kcal": 45,
-          "protein_g": 3.0
+          "energy_kcal": 84,
+          "protein_g": 7.4
         },
         {
           "slot_id": "slot_3",
-          "position": "윗줄 1",
+          "position": "윗줄 1 (왼쪽 끝)",
           "dish_type": "main",
-          "menu_name": "소고기완자",
+          "menu_name": "치킨마크니커리크림소스",
           "served_g": 90,
-          "energy_kcal": 250,
-          "protein_g": 25
+          "energy_kcal": 209,
+          "protein_g": 21.1
         },
         {
           "slot_id": "slot_4",
           "position": "윗줄 2",
           "dish_type": "side",
-          "menu_name": "브로콜리볶음",
+          "menu_name": "켄터키프라이드두부",
           "served_g": 60,
-          "energy_kcal": 90,
-          "protein_g": 3
+          "energy_kcal": 70,
+          "protein_g": 5.3
         },
         {
           "slot_id": "slot_5",
           "position": "윗줄 3",
           "dish_type": "side",
-          "menu_name": "멸치볶음",
+          "menu_name": "시래기나물",
           "served_g": 50,
-          "energy_kcal": 60,
-          "protein_g": 5.0
+          "energy_kcal": 35,
+          "protein_g": 1.6
         },
         {
           "slot_id": "slot_6",
-          "position": "윗줄 4",
+          "position": "윗줄 4 (오른쪽 끝)",
           "dish_type": "kimchi",
           "menu_name": "배추김치",
           "served_g": 40,
@@ -1597,50 +1599,50 @@
           "slot_id": "slot_1",
           "position": "아랫줄 왼쪽",
           "dish_type": "rice",
-          "menu_name": "쌀밥",
+          "menu_name": "칼슘쏙쏙클로렐라찹쌀밥",
           "served_g": 210,
-          "energy_kcal": 300,
+          "energy_kcal": 270,
           "protein_g": 5
         },
         {
           "slot_id": "slot_2",
           "position": "아랫줄 오른쪽",
           "dish_type": "soup",
-          "menu_name": "소고기무국",
+          "menu_name": "아욱된장국",
           "served_g": 250,
-          "energy_kcal": 60,
-          "protein_g": 5.0
+          "energy_kcal": 35,
+          "protein_g": 1.3
         },
         {
           "slot_id": "slot_3",
-          "position": "윗줄 1",
+          "position": "윗줄 1 (왼쪽 끝)",
           "dish_type": "main",
-          "menu_name": "두부채소조림",
+          "menu_name": "해물동그랑땡",
           "served_g": 90,
-          "energy_kcal": 210,
-          "protein_g": 17
+          "energy_kcal": 136,
+          "protein_g": 8.8
         },
         {
           "slot_id": "slot_4",
           "position": "윗줄 2",
           "dish_type": "side",
-          "menu_name": "감자볶음",
+          "menu_name": "새송이버섯조림",
           "served_g": 60,
-          "energy_kcal": 100,
-          "protein_g": 2
+          "energy_kcal": 23,
+          "protein_g": 0.7
         },
         {
           "slot_id": "slot_5",
           "position": "윗줄 3",
           "dish_type": "side",
-          "menu_name": "도라지무침",
+          "menu_name": "시금치나물",
           "served_g": 50,
-          "energy_kcal": 35,
-          "protein_g": 1.0
+          "energy_kcal": 23,
+          "protein_g": 0.6
         },
         {
           "slot_id": "slot_6",
-          "position": "윗줄 4",
+          "position": "윗줄 4 (오른쪽 끝)",
           "dish_type": "kimchi",
           "menu_name": "배추김치",
           "served_g": 40,
@@ -1660,54 +1662,54 @@
           "slot_id": "slot_1",
           "position": "아랫줄 왼쪽",
           "dish_type": "rice",
-          "menu_name": "쌀밥",
+          "menu_name": "혼합잡곡밥",
           "served_g": 210,
-          "energy_kcal": 300,
+          "energy_kcal": 270,
           "protein_g": 5
         },
         {
           "slot_id": "slot_2",
           "position": "아랫줄 오른쪽",
           "dish_type": "soup",
-          "menu_name": "콩나물국",
+          "menu_name": "바지락미역국",
           "served_g": 250,
           "energy_kcal": 30,
-          "protein_g": 2.5
+          "protein_g": 1.8
         },
         {
           "slot_id": "slot_3",
-          "position": "윗줄 1",
+          "position": "윗줄 1 (왼쪽 끝)",
           "dish_type": "main",
-          "menu_name": "부추달걀찜",
+          "menu_name": "불고기오믈렛",
           "served_g": 90,
-          "energy_kcal": 200,
-          "protein_g": 18
+          "energy_kcal": 114,
+          "protein_g": 11.8
         },
         {
           "slot_id": "slot_4",
           "position": "윗줄 2",
           "dish_type": "side",
-          "menu_name": "당근볶음",
+          "menu_name": "고사리들깨찜",
           "served_g": 60,
-          "energy_kcal": 90,
-          "protein_g": 2
+          "energy_kcal": 19,
+          "protein_g": 0.9
         },
         {
           "slot_id": "slot_5",
           "position": "윗줄 3",
           "dish_type": "side",
-          "menu_name": "오이무침",
+          "menu_name": "양념깻잎지무침",
           "served_g": 50,
-          "energy_kcal": 20,
-          "protein_g": 0.5
+          "energy_kcal": 19,
+          "protein_g": 0.9
         },
         {
           "slot_id": "slot_6",
-          "position": "윗줄 4",
+          "position": "윗줄 4 (오른쪽 끝)",
           "dish_type": "kimchi",
-          "menu_name": "깍두기",
+          "menu_name": "배추김치",
           "served_g": 40,
-          "energy_kcal": 12,
+          "energy_kcal": 8,
           "protein_g": 0.6
         }
       ]
@@ -1723,50 +1725,50 @@
           "slot_id": "slot_1",
           "position": "아랫줄 왼쪽",
           "dish_type": "rice",
-          "menu_name": "보리밥",
+          "menu_name": "훈제오리쌈장볶음밥",
           "served_g": 210,
-          "energy_kcal": 320,
-          "protein_g": 6
+          "energy_kcal": 305,
+          "protein_g": 6.5
         },
         {
           "slot_id": "slot_2",
           "position": "아랫줄 오른쪽",
           "dish_type": "soup",
-          "menu_name": "감자국",
+          "menu_name": "애호박새우젓국",
           "served_g": 250,
-          "energy_kcal": 55,
-          "protein_g": 1.5
+          "energy_kcal": 63,
+          "protein_g": 3.1
         },
         {
           "slot_id": "slot_3",
-          "position": "윗줄 1",
+          "position": "윗줄 1 (왼쪽 끝)",
           "dish_type": "main",
-          "menu_name": "돼지고기장조림",
+          "menu_name": "옛날소시지전",
           "served_g": 90,
-          "energy_kcal": 240,
-          "protein_g": 26
+          "energy_kcal": 242,
+          "protein_g": 20.3
         },
         {
           "slot_id": "slot_4",
           "position": "윗줄 2",
           "dish_type": "side",
-          "menu_name": "콩나물무침",
+          "menu_name": "건새우마늘쫑볶음",
           "served_g": 60,
-          "energy_kcal": 80,
-          "protein_g": 3
+          "energy_kcal": 40,
+          "protein_g": 1.5
         },
         {
           "slot_id": "slot_5",
           "position": "윗줄 3",
           "dish_type": "side",
-          "menu_name": "미역줄기볶음",
-          "served_g": 50,
-          "energy_kcal": 35,
-          "protein_g": 1.0
+          "menu_name": null,
+          "served_g": 0,
+          "energy_kcal": 0,
+          "protein_g": 0
         },
         {
           "slot_id": "slot_6",
-          "position": "윗줄 4",
+          "position": "윗줄 4 (오른쪽 끝)",
           "dish_type": "kimchi",
           "menu_name": "배추김치",
           "served_g": 40,
@@ -1786,54 +1788,54 @@
           "slot_id": "slot_1",
           "position": "아랫줄 왼쪽",
           "dish_type": "rice",
-          "menu_name": "쌀밥",
+          "menu_name": "혼합잡곡밥",
           "served_g": 210,
-          "energy_kcal": 300,
+          "energy_kcal": 270,
           "protein_g": 5
         },
         {
           "slot_id": "slot_2",
           "position": "아랫줄 오른쪽",
           "dish_type": "soup",
-          "menu_name": "시금치된장국",
+          "menu_name": "닭개장",
           "served_g": 250,
-          "energy_kcal": 40,
+          "energy_kcal": 54,
           "protein_g": 2.5
         },
         {
           "slot_id": "slot_3",
-          "position": "윗줄 1",
+          "position": "윗줄 1 (왼쪽 끝)",
           "dish_type": "main",
-          "menu_name": "삼치구이",
+          "menu_name": "한입떡갈비구이",
           "served_g": 90,
-          "energy_kcal": 230,
-          "protein_g": 24
+          "energy_kcal": 208,
+          "protein_g": 16.5
         },
         {
           "slot_id": "slot_4",
           "position": "윗줄 2",
           "dish_type": "side",
-          "menu_name": "단호박찜",
+          "menu_name": "우엉조림",
           "served_g": 60,
-          "energy_kcal": 90,
-          "protein_g": 2
+          "energy_kcal": 35,
+          "protein_g": 1.2
         },
         {
           "slot_id": "slot_5",
           "position": "윗줄 3",
           "dish_type": "side",
-          "menu_name": "숙주나물",
+          "menu_name": "봄동나물",
           "served_g": 50,
-          "energy_kcal": 20,
-          "protein_g": 1.5
+          "energy_kcal": 35,
+          "protein_g": 1.2
         },
         {
           "slot_id": "slot_6",
-          "position": "윗줄 4",
+          "position": "윗줄 4 (오른쪽 끝)",
           "dish_type": "kimchi",
-          "menu_name": "배추김치",
+          "menu_name": "깍두기",
           "served_g": 40,
-          "energy_kcal": 8,
+          "energy_kcal": 12,
           "protein_g": 0.6
         }
       ]
@@ -1849,55 +1851,55 @@
           "slot_id": "slot_1",
           "position": "아랫줄 왼쪽",
           "dish_type": "rice",
-          "menu_name": "쌀밥",
+          "menu_name": "미호현미밥",
           "served_g": 210,
-          "energy_kcal": 300,
+          "energy_kcal": 270,
           "protein_g": 5
         },
         {
           "slot_id": "slot_2",
           "position": "아랫줄 오른쪽",
           "dish_type": "soup",
-          "menu_name": "북어국",
+          "menu_name": "우거지된장국",
           "served_g": 250,
-          "energy_kcal": 55,
-          "protein_g": 6.0
+          "energy_kcal": 32,
+          "protein_g": 0.5
         },
         {
           "slot_id": "slot_3",
-          "position": "윗줄 1",
+          "position": "윗줄 1 (왼쪽 끝)",
           "dish_type": "main",
-          "menu_name": "두부부침",
+          "menu_name": "순살삼치무조림",
           "served_g": 90,
-          "energy_kcal": 210,
-          "protein_g": 17
+          "energy_kcal": 123,
+          "protein_g": 3.4
         },
         {
           "slot_id": "slot_4",
           "position": "윗줄 2",
           "dish_type": "side",
-          "menu_name": "청경채볶음",
+          "menu_name": "죽순채볶음",
           "served_g": 60,
-          "energy_kcal": 90,
-          "protein_g": 2
+          "energy_kcal": 21,
+          "protein_g": 0.3
         },
         {
           "slot_id": "slot_5",
           "position": "윗줄 3",
           "dish_type": "side",
-          "menu_name": "메추리알조림",
+          "menu_name": "돌나물무침",
           "served_g": 50,
-          "energy_kcal": 70,
-          "protein_g": 5.5
+          "energy_kcal": 21,
+          "protein_g": 0.2
         },
         {
           "slot_id": "slot_6",
-          "position": "윗줄 4",
+          "position": "윗줄 4 (오른쪽 끝)",
           "dish_type": "kimchi",
-          "menu_name": "백김치",
+          "menu_name": "배추김치",
           "served_g": 40,
           "energy_kcal": 8,
-          "protein_g": 0.5
+          "protein_g": 0.6
         }
       ]
     },
@@ -1912,50 +1914,50 @@
           "slot_id": "slot_1",
           "position": "아랫줄 왼쪽",
           "dish_type": "rice",
-          "menu_name": "잡곡밥",
-          "served_g": 210,
-          "energy_kcal": 320,
-          "protein_g": 6
+          "menu_name": "미호현미밥2/3",
+          "served_g": 140,
+          "energy_kcal": 205,
+          "protein_g": 3.5
         },
         {
           "slot_id": "slot_2",
           "position": "아랫줄 오른쪽",
           "dish_type": "soup",
-          "menu_name": "배추된장국",
+          "menu_name": "고추장찌개",
           "served_g": 250,
-          "energy_kcal": 40,
-          "protein_g": 2.5
+          "energy_kcal": 79,
+          "protein_g": 4
         },
         {
           "slot_id": "slot_3",
-          "position": "윗줄 1",
+          "position": "윗줄 1 (왼쪽 끝)",
           "dish_type": "main",
-          "menu_name": "닭고기감자조림",
+          "menu_name": "궁중떡볶음",
           "served_g": 90,
-          "energy_kcal": 250,
-          "protein_g": 26
+          "energy_kcal": 194,
+          "protein_g": 11.3
         },
         {
           "slot_id": "slot_4",
           "position": "윗줄 2",
           "dish_type": "side",
-          "menu_name": "가지나물",
+          "menu_name": "뱅어포무침",
           "served_g": 60,
-          "energy_kcal": 90,
-          "protein_g": 2
+          "energy_kcal": 65,
+          "protein_g": 2.8
         },
         {
           "slot_id": "slot_5",
           "position": "윗줄 3",
           "dish_type": "side",
-          "menu_name": "버섯볶음",
+          "menu_name": "청경채나물",
           "served_g": 50,
-          "energy_kcal": 30,
-          "protein_g": 1.5
+          "energy_kcal": 32,
+          "protein_g": 0.8
         },
         {
           "slot_id": "slot_6",
-          "position": "윗줄 4",
+          "position": "윗줄 4 (오른쪽 끝)",
           "dish_type": "kimchi",
           "menu_name": "배추김치",
           "served_g": 40,
@@ -1975,50 +1977,50 @@
           "slot_id": "slot_1",
           "position": "아랫줄 왼쪽",
           "dish_type": "rice",
-          "menu_name": "쌀밥",
+          "menu_name": "칼슘쏙쏙토마토찹쌀밥",
           "served_g": 210,
-          "energy_kcal": 300,
+          "energy_kcal": 270,
           "protein_g": 5
         },
         {
           "slot_id": "slot_2",
           "position": "아랫줄 오른쪽",
           "dish_type": "soup",
-          "menu_name": "계란국",
+          "menu_name": "소고기감자국",
           "served_g": 250,
-          "energy_kcal": 50,
-          "protein_g": 4.0
+          "energy_kcal": 48,
+          "protein_g": 1.7
         },
         {
           "slot_id": "slot_3",
-          "position": "윗줄 1",
+          "position": "윗줄 1 (왼쪽 끝)",
           "dish_type": "main",
-          "menu_name": "버섯달걀찜",
+          "menu_name": "그린빈스스크램블에그",
           "served_g": 90,
-          "energy_kcal": 210,
-          "protein_g": 18
+          "energy_kcal": 155,
+          "protein_g": 7.1
         },
         {
           "slot_id": "slot_4",
           "position": "윗줄 2",
           "dish_type": "side",
-          "menu_name": "무나물",
+          "menu_name": "숙주나물",
           "served_g": 60,
-          "energy_kcal": 80,
-          "protein_g": 2
+          "energy_kcal": 31,
+          "protein_g": 0.8
         },
         {
           "slot_id": "slot_5",
           "position": "윗줄 3",
           "dish_type": "side",
-          "menu_name": "무생채",
+          "menu_name": "방풍나물장아찌",
           "served_g": 50,
-          "energy_kcal": 25,
-          "protein_g": 0.5
+          "energy_kcal": 31,
+          "protein_g": 0.8
         },
         {
           "slot_id": "slot_6",
-          "position": "윗줄 4",
+          "position": "윗줄 4 (오른쪽 끝)",
           "dish_type": "kimchi",
           "menu_name": "배추김치",
           "served_g": 40,
@@ -2054,7 +2056,7 @@
         },
         {
           "slot_id": "slot_3",
-          "position": "윗줄 1",
+          "position": "윗줄 1 (왼쪽 끝)",
           "dish_type": "main",
           "menu_name": "달걀야채찜",
           "served_g": 90,
@@ -2081,7 +2083,7 @@
         },
         {
           "slot_id": "slot_6",
-          "position": "윗줄 4",
+          "position": "윗줄 4 (오른쪽 끝)",
           "dish_type": "kimchi",
           "menu_name": "열무김치",
           "served_g": 40,
@@ -2117,7 +2119,7 @@
         },
         {
           "slot_id": "slot_3",
-          "position": "윗줄 1",
+          "position": "윗줄 1 (왼쪽 끝)",
           "dish_type": "main",
           "menu_name": "소불고기",
           "served_g": 90,
@@ -2144,7 +2146,7 @@
         },
         {
           "slot_id": "slot_6",
-          "position": "윗줄 4",
+          "position": "윗줄 4 (오른쪽 끝)",
           "dish_type": "kimchi",
           "menu_name": "배추김치",
           "served_g": 40,
@@ -2180,7 +2182,7 @@
         },
         {
           "slot_id": "slot_3",
-          "position": "윗줄 1",
+          "position": "윗줄 1 (왼쪽 끝)",
           "dish_type": "main",
           "menu_name": "동태조림",
           "served_g": 90,
@@ -2207,7 +2209,7 @@
         },
         {
           "slot_id": "slot_6",
-          "position": "윗줄 4",
+          "position": "윗줄 4 (오른쪽 끝)",
           "dish_type": "kimchi",
           "menu_name": "배추김치",
           "served_g": 40,
@@ -2274,8 +2276,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 703.0,
-      "protein_g_est": 32.1,
+      "energy_kcal_est": 468.0,
+      "protein_g_est": 23.0,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -2336,8 +2338,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 745.7,
-      "protein_g_est": 40.6,
+      "energy_kcal_est": 500.7,
+      "protein_g_est": 13.1,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -2398,8 +2400,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 718.0,
-      "protein_g_est": 33.6,
+      "energy_kcal_est": 698.0,
+      "protein_g_est": 19.0,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -2460,8 +2462,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 629.3,
-      "protein_g_est": 30.2,
+      "energy_kcal_est": 400.1,
+      "protein_g_est": 23.1,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -2522,8 +2524,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 743.0,
-      "protein_g_est": 36.6,
+      "energy_kcal_est": 674.0,
+      "protein_g_est": 27.0,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -2584,8 +2586,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 644.7,
-      "protein_g_est": 33.0,
+      "energy_kcal_est": 559.2,
+      "protein_g_est": 25.9,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -2646,8 +2648,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 683.0,
-      "protein_g_est": 34.0,
+      "energy_kcal_est": 464.0,
+      "protein_g_est": 28.0,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -2708,8 +2710,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 778.0,
-      "protein_g_est": 41.6,
+      "energy_kcal_est": 653.0,
+      "protein_g_est": 20.0,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -2770,8 +2772,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 658.2,
-      "protein_g_est": 27.8,
+      "energy_kcal_est": 485.8,
+      "protein_g_est": 20.6,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -2832,8 +2834,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 683.0,
-      "protein_g_est": 30.2,
+      "energy_kcal_est": 478.0,
+      "protein_g_est": 27.0,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -2894,8 +2896,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 707.2,
-      "protein_g_est": 37.1,
+      "energy_kcal_est": 623.5,
+      "protein_g_est": 27.8,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -2956,8 +2958,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 743.0,
-      "protein_g_est": 39.6,
+      "energy_kcal_est": 516.0,
+      "protein_g_est": 22.0,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -3018,8 +3020,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 675.2,
-      "protein_g_est": 30.9,
+      "energy_kcal_est": 469.1,
+      "protein_g_est": 14.1,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -3099,8 +3101,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 713.0,
-      "protein_g_est": 30.6,
+      "energy_kcal_est": 495.0,
+      "protein_g_est": 17.0,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -3161,8 +3163,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 652.0,
-      "protein_g_est": 28.6,
+      "energy_kcal_est": 460.0,
+      "protein_g_est": 21.0,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -3209,13 +3211,6 @@
           "estimate_basis": "mock"
         },
         {
-          "slot_id": "slot_5",
-          "intake_fraction_est": 1.0,
-          "status": "estimated",
-          "quality_issues": [],
-          "estimate_basis": "mock"
-        },
-        {
           "slot_id": "slot_6",
           "intake_fraction_est": 1.0,
           "status": "estimated",
@@ -3223,8 +3218,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 738.0,
-      "protein_g_est": 38.1,
+      "energy_kcal_est": 658.0,
+      "protein_g_est": 32.0,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -3285,8 +3280,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 651.2,
-      "protein_g_est": 34.6,
+      "energy_kcal_est": 576.9,
+      "protein_g_est": 26.1,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -3347,8 +3342,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 733.0,
-      "protein_g_est": 36.0,
+      "energy_kcal_est": 475.0,
+      "protein_g_est": 10.0,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -3409,8 +3404,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 738.0,
-      "protein_g_est": 38.6,
+      "energy_kcal_est": 583.0,
+      "protein_g_est": 23.0,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -3471,8 +3466,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 673.0,
-      "protein_g_est": 30.1,
+      "energy_kcal_est": 543.0,
+      "protein_g_est": 16.0,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -3590,8 +3585,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 444.6,
-      "protein_g_est": 12.0,
+      "energy_kcal_est": 325.6,
+      "protein_g_est": 9.4,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -3652,8 +3647,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 447.3,
-      "protein_g_est": 12.5,
+      "energy_kcal_est": 290.3,
+      "protein_g_est": 6.1,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -3714,8 +3709,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 481.4,
-      "protein_g_est": 15.0,
+      "energy_kcal_est": 454.4,
+      "protein_g_est": 10.8,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -3776,8 +3771,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 466.1,
-      "protein_g_est": 14.9,
+      "energy_kcal_est": 329.8,
+      "protein_g_est": 11.5,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -3838,8 +3833,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 476.6,
-      "protein_g_est": 13.7,
+      "energy_kcal_est": 406.0,
+      "protein_g_est": 12.0,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -3900,8 +3895,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 458.6,
-      "protein_g_est": 12.4,
+      "energy_kcal_est": 363.0,
+      "protein_g_est": 10.4,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -3962,8 +3957,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 448.6,
-      "protein_g_est": 12.4,
+      "energy_kcal_est": 336.8,
+      "protein_g_est": 12.6,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -4024,8 +4019,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 520.4,
-      "protein_g_est": 18.1,
+      "energy_kcal_est": 412.2,
+      "protein_g_est": 10.1,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -4086,8 +4081,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 419.8,
-      "protein_g_est": 9.3,
+      "energy_kcal_est": 332.2,
+      "protein_g_est": 9.2,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -4148,8 +4143,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 507.2,
-      "protein_g_est": 16.9,
+      "energy_kcal_est": 376.0,
+      "protein_g_est": 16.0,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -4210,8 +4205,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 485.6,
-      "protein_g_est": 14.0,
+      "energy_kcal_est": 399.0,
+      "protein_g_est": 11.0,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -4272,8 +4267,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 452.6,
-      "protein_g_est": 13.5,
+      "energy_kcal_est": 349.6,
+      "protein_g_est": 9.8,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -4334,8 +4329,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 445.6,
-      "protein_g_est": 12.3,
+      "energy_kcal_est": 329.8,
+      "protein_g_est": 7.4,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -4396,8 +4391,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 446.3,
-      "protein_g_est": 12.4,
+      "energy_kcal_est": 373.6,
+      "protein_g_est": 13.4,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -4458,8 +4453,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 493.9,
-      "protein_g_est": 14.1,
+      "energy_kcal_est": 353.6,
+      "protein_g_est": 9.1,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -4520,8 +4515,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 416.2,
-      "protein_g_est": 9.2,
+      "energy_kcal_est": 306.1,
+      "protein_g_est": 7.4,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -4568,13 +4563,6 @@
           "estimate_basis": "mock"
         },
         {
-          "slot_id": "slot_5",
-          "intake_fraction_est": 0.3,
-          "status": "estimated",
-          "quality_issues": [],
-          "estimate_basis": "mock"
-        },
-        {
           "slot_id": "slot_6",
           "intake_fraction_est": 0.3,
           "status": "estimated",
@@ -4582,8 +4570,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 501.4,
-      "protein_g_est": 17.7,
+      "energy_kcal_est": 438.9,
+      "protein_g_est": 15.2,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -4644,8 +4632,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 449.6,
-      "protein_g_est": 12.7,
+      "energy_kcal_est": 366.8,
+      "protein_g_est": 10.4,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -4706,8 +4694,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 458.6,
-      "protein_g_est": 12.8,
+      "energy_kcal_est": 327.8,
+      "protein_g_est": 6.2,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -4768,8 +4756,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 475.6,
-      "protein_g_est": 14.1,
+      "energy_kcal_est": 332.6,
+      "protein_g_est": 9.6,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -4830,8 +4818,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 497.2,
-      "protein_g_est": 16.2,
+      "energy_kcal_est": 397.8,
+      "protein_g_est": 9.9,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -4949,8 +4937,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 418.0,
-      "protein_g_est": 19.1,
+      "energy_kcal_est": 296.2,
+      "protein_g_est": 14.8,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -5011,8 +4999,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 396.0,
-      "protein_g_est": 21.6,
+      "energy_kcal_est": 265.2,
+      "protein_g_est": 7.1,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -5073,8 +5061,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 392.0,
-      "protein_g_est": 14.5,
+      "energy_kcal_est": 387.8,
+      "protein_g_est": 10.6,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -5135,8 +5123,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 333.0,
-      "protein_g_est": 14.3,
+      "energy_kcal_est": 220.1,
+      "protein_g_est": 10.7,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -5197,8 +5185,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 339.0,
-      "protein_g_est": 17.2,
+      "energy_kcal_est": 279.4,
+      "protein_g_est": 10.8,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -5259,8 +5247,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 345.0,
-      "protein_g_est": 15.7,
+      "energy_kcal_est": 282.9,
+      "protein_g_est": 12.0,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -5321,8 +5309,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 309.0,
-      "protein_g_est": 13.2,
+      "energy_kcal_est": 208.5,
+      "protein_g_est": 12.4,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -5383,8 +5371,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 305.0,
-      "protein_g_est": 14.0,
+      "energy_kcal_est": 248.5,
+      "protein_g_est": 7.3,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -5445,8 +5433,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 279.0,
-      "protein_g_est": 10.3,
+      "energy_kcal_est": 208.1,
+      "protein_g_est": 8.3,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -5507,8 +5495,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 275.0,
-      "protein_g_est": 10.8,
+      "energy_kcal_est": 199.2,
+      "protein_g_est": 10.1,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -5569,8 +5557,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 254.0,
-      "protein_g_est": 13.4,
+      "energy_kcal_est": 208.9,
+      "protein_g_est": 8.6,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -5631,8 +5619,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 274.0,
-      "protein_g_est": 12.9,
+      "energy_kcal_est": 191.0,
+      "protein_g_est": 7.5,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -5693,8 +5681,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 156.0,
-      "protein_g_est": 5.9,
+      "energy_kcal_est": 111.4,
+      "protein_g_est": 2.9,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -5755,8 +5743,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 164.0,
-      "protein_g_est": 7.4,
+      "energy_kcal_est": 136.8,
+      "protein_g_est": 6.8,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -5817,8 +5805,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 162.0,
-      "protein_g_est": 5.5,
+      "energy_kcal_est": 115.1,
+      "protein_g_est": 3.5,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -5879,8 +5867,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 187.0,
-      "protein_g_est": 6.2,
+      "energy_kcal_est": 136.5,
+      "protein_g_est": 4.6,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -5927,13 +5915,6 @@
           "estimate_basis": "mock"
         },
         {
-          "slot_id": "slot_5",
-          "intake_fraction_est": 0.0,
-          "status": "estimated",
-          "quality_issues": [],
-          "estimate_basis": "mock"
-        },
-        {
           "slot_id": "slot_6",
           "intake_fraction_est": 0.0,
           "status": "estimated",
@@ -5941,8 +5922,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 168.0,
-      "protein_g_est": 7.9,
+      "energy_kcal_est": 151.9,
+      "protein_g_est": 6.5,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -6065,8 +6046,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 180.0,
-      "protein_g_est": 7.2,
+      "energy_kcal_est": 124.2,
+      "protein_g_est": 2.6,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -6127,8 +6108,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 173.0,
-      "protein_g_est": 7.6,
+      "energy_kcal_est": 119.8,
+      "protein_g_est": 4.2,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -6189,8 +6170,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 156.0,
-      "protein_g_est": 5.7,
+      "energy_kcal_est": 121.3,
+      "protein_g_est": 3.2,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -6308,8 +6289,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 360.6,
-      "protein_g_est": 10.4,
+      "energy_kcal_est": 265.6,
+      "protein_g_est": 8.1,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -6370,8 +6351,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 384.6,
-      "protein_g_est": 13.6,
+      "energy_kcal_est": 252.0,
+      "protein_g_est": 5.6,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -6432,8 +6413,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 389.4,
-      "protein_g_est": 13.2,
+      "energy_kcal_est": 368.4,
+      "protein_g_est": 8.9,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -6494,8 +6475,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 382.1,
-      "protein_g_est": 13.0,
+      "energy_kcal_est": 271.0,
+      "protein_g_est": 10.1,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -6556,8 +6537,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 408.6,
-      "protein_g_est": 12.3,
+      "energy_kcal_est": 351.4,
+      "protein_g_est": 10.2,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -6618,8 +6599,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 387.9,
-      "protein_g_est": 13.3,
+      "energy_kcal_est": 324.9,
+      "protein_g_est": 11.0,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -6680,8 +6661,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 352.6,
-      "protein_g_est": 10.6,
+      "energy_kcal_est": 268.8,
+      "protein_g_est": 10.1,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -6742,8 +6723,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 420.4,
-      "protein_g_est": 16.1,
+      "energy_kcal_est": 342.6,
+      "protein_g_est": 8.7,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -6804,8 +6785,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 362.6,
-      "protein_g_est": 10.0,
+      "energy_kcal_est": 284.5,
+      "protein_g_est": 8.8,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -6866,8 +6847,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 381.9,
-      "protein_g_est": 12.5,
+      "energy_kcal_est": 289.8,
+      "protein_g_est": 11.7,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -6928,8 +6909,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 391.6,
-      "protein_g_est": 12.2,
+      "energy_kcal_est": 326.1,
+      "protein_g_est": 9.6,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -6990,8 +6971,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 396.9,
-      "protein_g_est": 15.0,
+      "energy_kcal_est": 301.2,
+      "protein_g_est": 9.6,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -7052,8 +7033,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 361.6,
-      "protein_g_est": 10.7,
+      "energy_kcal_est": 269.8,
+      "protein_g_est": 6.2,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -7114,8 +7095,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 418.9,
-      "protein_g_est": 16.7,
+      "energy_kcal_est": 358.8,
+      "protein_g_est": 16.4,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -7176,8 +7157,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 392.6,
-      "protein_g_est": 10.4,
+      "energy_kcal_est": 297.2,
+      "protein_g_est": 7.2,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -7238,8 +7219,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 372.6,
-      "protein_g_est": 11.7,
+      "energy_kcal_est": 278.7,
+      "protein_g_est": 9.1,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -7286,13 +7267,6 @@
           "estimate_basis": "mock"
         },
         {
-          "slot_id": "slot_5",
-          "intake_fraction_est": 0.3,
-          "status": "estimated",
-          "quality_issues": [],
-          "estimate_basis": "mock"
-        },
-        {
           "slot_id": "slot_6",
           "intake_fraction_est": 0.3,
           "status": "estimated",
@@ -7300,8 +7274,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 413.4,
-      "protein_g_est": 15.6,
+      "energy_kcal_est": 365.9,
+      "protein_g_est": 13.4,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -7362,8 +7336,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 353.6,
-      "protein_g_est": 10.9,
+      "energy_kcal_est": 298.8,
+      "protein_g_est": 8.9,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -7424,8 +7398,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 401.6,
-      "protein_g_est": 11.7,
+      "energy_kcal_est": 294.5,
+      "protein_g_est": 5.7,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -7486,8 +7460,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 408.4,
-      "protein_g_est": 15.2,
+      "energy_kcal_est": 296.9,
+      "protein_g_est": 9.5,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -7548,8 +7522,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 375.9,
-      "protein_g_est": 12.1,
+      "energy_kcal_est": 307.2,
+      "protein_g_est": 7.5,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -7667,8 +7641,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 600.4,
-      "protein_g_est": 26.4,
+      "energy_kcal_est": 403.4,
+      "protein_g_est": 19.0,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -7729,8 +7703,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 651.4,
-      "protein_g_est": 38.0,
+      "energy_kcal_est": 439.4,
+      "protein_g_est": 11.9,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -7791,8 +7765,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 612.4,
-      "protein_g_est": 27.6,
+      "energy_kcal_est": 593.4,
+      "protein_g_est": 15.9,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -7853,8 +7827,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 605.6,
-      "protein_g_est": 29.2,
+      "energy_kcal_est": 392.0,
+      "protein_g_est": 22.5,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -7915,8 +7889,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 603.4,
-      "protein_g_est": 29.5,
+      "energy_kcal_est": 546.1,
+      "protein_g_est": 21.9,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -7977,8 +7951,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 594.4,
-      "protein_g_est": 28.0,
+      "energy_kcal_est": 509.6,
+      "protein_g_est": 22.2,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -8039,8 +8013,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 585.4,
-      "protein_g_est": 27.9,
+      "energy_kcal_est": 401.7,
+      "protein_g_est": 23.3,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -8101,8 +8075,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 647.4,
-      "protein_g_est": 35.8,
+      "energy_kcal_est": 545.9,
+      "protein_g_est": 17.1,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -8163,8 +8137,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 589.4,
-      "protein_g_est": 24.8,
+      "energy_kcal_est": 435.3,
+      "protein_g_est": 18.4,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -8225,8 +8199,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 585.4,
-      "protein_g_est": 25.0,
+      "energy_kcal_est": 413.2,
+      "protein_g_est": 22.5,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -8287,8 +8261,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 144.0,
-      "protein_g_est": 7.0,
+      "energy_kcal_est": 122.0,
+      "protein_g_est": 4.6,
       "incomplete": false,
       "data_source": "mock",
       "source_note": "식사 중 사레가 발생했고, 중단 시점까지 먹은 양을 직원이 기록함."
@@ -8349,8 +8323,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 453.8,
-      "protein_g_est": 24.0,
+      "energy_kcal_est": 313.4,
+      "protein_g_est": 13.4,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -8411,8 +8385,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 533.6,
-      "protein_g_est": 24.2,
+      "energy_kcal_est": 371.3,
+      "protein_g_est": 11.1,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -8473,8 +8447,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 591.1,
-      "protein_g_est": 31.0,
+      "energy_kcal_est": 514.2,
+      "protein_g_est": 30.3,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -8535,8 +8509,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 580.4,
-      "protein_g_est": 24.7,
+      "energy_kcal_est": 398.3,
+      "protein_g_est": 13.7,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -8597,8 +8571,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 560.6,
-      "protein_g_est": 23.6,
+      "energy_kcal_est": 396.9,
+      "protein_g_est": 17.4,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -8645,13 +8619,6 @@
           "estimate_basis": "mock"
         },
         {
-          "slot_id": "slot_5",
-          "intake_fraction_est": 0.8,
-          "status": "estimated",
-          "quality_issues": [],
-          "estimate_basis": "mock"
-        },
-        {
           "slot_id": "slot_6",
           "intake_fraction_est": 0.8,
           "status": "estimated",
@@ -8659,8 +8626,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 598.4,
-      "protein_g_est": 30.8,
+      "energy_kcal_est": 530.4,
+      "protein_g_est": 25.8,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -8721,8 +8688,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 580.4,
-      "protein_g_est": 29.0,
+      "energy_kcal_est": 518.2,
+      "protein_g_est": 22.1,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -8783,8 +8750,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 625.4,
-      "protein_g_est": 29.5,
+      "energy_kcal_est": 409.1,
+      "protein_g_est": 8.5,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -8845,8 +8812,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 672.4,
-      "protein_g_est": 36.7,
+      "energy_kcal_est": 525.7,
+      "protein_g_est": 21.0,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -8907,8 +8874,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 576.4,
-      "protein_g_est": 24.8,
+      "energy_kcal_est": 464.5,
+      "protein_g_est": 13.4,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -9026,8 +8993,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 530.1,
-      "protein_g_est": 23.2,
+      "energy_kcal_est": 356.6,
+      "protein_g_est": 16.7,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -9088,8 +9055,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 591.1,
-      "protein_g_est": 34.2,
+      "energy_kcal_est": 398.5,
+      "protein_g_est": 10.8,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -9150,8 +9117,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 582.4,
-      "protein_g_est": 27.1,
+      "energy_kcal_est": 566.4,
+      "protein_g_est": 15.4,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -9212,8 +9179,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 504.9,
-      "protein_g_est": 22.6,
+      "energy_kcal_est": 331.0,
+      "protein_g_est": 17.4,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -9336,8 +9303,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 495.1,
-      "protein_g_est": 24.1,
+      "energy_kcal_est": 422.7,
+      "protein_g_est": 19.0,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -9398,8 +9365,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 555.4,
-      "protein_g_est": 27.4,
+      "energy_kcal_est": 374.7,
+      "protein_g_est": 22.8,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -9460,8 +9427,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 585.6,
-      "protein_g_est": 29.9,
+      "energy_kcal_est": 488.0,
+      "protein_g_est": 14.6,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -9522,8 +9489,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 559.4,
-      "protein_g_est": 24.3,
+      "energy_kcal_est": 408.3,
+      "protein_g_est": 17.9,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -9584,8 +9551,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 555.4,
-      "protein_g_est": 24.5,
+      "energy_kcal_est": 386.2,
+      "protein_g_est": 22.0,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -9646,8 +9613,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 608.4,
-      "protein_g_est": 30.7,
+      "energy_kcal_est": 536.7,
+      "protein_g_est": 23.4,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -9708,8 +9675,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 558.1,
-      "protein_g_est": 28.4,
+      "energy_kcal_est": 392.0,
+      "protein_g_est": 16.1,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -9770,8 +9737,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 495.6,
-      "protein_g_est": 23.5,
+      "energy_kcal_est": 342.3,
+      "protein_g_est": 10.5,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -9894,8 +9861,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 509.1,
-      "protein_g_est": 21.6,
+      "energy_kcal_est": 348.8,
+      "protein_g_est": 12.0,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -9956,8 +9923,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 495.4,
-      "protein_g_est": 20.7,
+      "energy_kcal_est": 350.9,
+      "protein_g_est": 15.3,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -10004,13 +9971,6 @@
           "estimate_basis": "mock"
         },
         {
-          "slot_id": "slot_5",
-          "intake_fraction_est": 0.8,
-          "status": "estimated",
-          "quality_issues": [],
-          "estimate_basis": "mock"
-        },
-        {
           "slot_id": "slot_6",
           "intake_fraction_est": 0.8,
           "status": "estimated",
@@ -10018,8 +9978,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 598.4,
-      "protein_g_est": 30.8,
+      "energy_kcal_est": 530.4,
+      "protein_g_est": 25.8,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -10080,8 +10040,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 559.4,
-      "protein_g_est": 28.7,
+      "energy_kcal_est": 494.7,
+      "protein_g_est": 21.7,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -10142,8 +10102,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 595.4,
-      "protein_g_est": 29.0,
+      "energy_kcal_est": 382.1,
+      "protein_g_est": 8.0,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -10204,8 +10164,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 599.4,
-      "protein_g_est": 31.1,
+      "energy_kcal_est": 472.9,
+      "protein_g_est": 18.7,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -10266,8 +10226,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 576.4,
-      "protein_g_est": 24.8,
+      "energy_kcal_est": 464.5,
+      "protein_g_est": 13.4,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -10385,11 +10345,11 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 410.0,
-      "protein_g_est": 21.5,
+      "energy_kcal_est": 308.0,
+      "protein_g_est": 16.9,
       "incomplete": false,
       "data_source": "mock",
-      "source_note": "달걀찜을 다 먹고 애호박볶음은 그대로 남김."
+      "source_note": "소고기숙주볶음을 다 먹고 방풍나물은 그대로 남김."
     },
     {
       "meal_order_id": "NS07_D-7_lunch",
@@ -10447,11 +10407,11 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 317.0,
-      "protein_g_est": 17.1,
+      "energy_kcal_est": 212.0,
+      "protein_g_est": 5.5,
       "incomplete": false,
       "data_source": "mock",
-      "source_note": "잡곡밥과 주찬은 일부 먹고 시금치나물은 그대로 남김."
+      "source_note": "현미밥과 주찬은 일부 먹고 브로컬리맛살무침은 그대로 남김."
     },
     {
       "meal_order_id": "NS07_D-7_dinner",
@@ -10509,11 +10469,11 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 450.0,
-      "protein_g_est": 20.0,
+      "energy_kcal_est": 454.0,
+      "protein_g_est": 13.1,
       "incomplete": false,
       "data_source": "mock",
-      "source_note": "두부조림을 다 먹고 무나물은 그대로 남김."
+      "source_note": "마약계란장을 다 먹고 잔멸치볶음은 그대로 남김."
     },
     {
       "meal_order_id": "NS07_D-6_breakfast",
@@ -10571,8 +10531,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 472.2,
-      "protein_g_est": 23.0,
+      "energy_kcal_est": 305.6,
+      "protein_g_est": 17.7,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -10633,8 +10593,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 495.8,
-      "protein_g_est": 23.0,
+      "energy_kcal_est": 445.2,
+      "protein_g_est": 17.3,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -10695,8 +10655,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 564.4,
-      "protein_g_est": 27.5,
+      "energy_kcal_est": 482.6,
+      "protein_g_est": 21.7,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -10757,8 +10717,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 520.1,
-      "protein_g_est": 27.6,
+      "energy_kcal_est": 345.8,
+      "protein_g_est": 22.6,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -10819,8 +10779,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 523.8,
-      "protein_g_est": 28.1,
+      "energy_kcal_est": 442.3,
+      "protein_g_est": 13.6,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -10881,8 +10841,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 559.4,
-      "protein_g_est": 24.3,
+      "energy_kcal_est": 408.3,
+      "protein_g_est": 17.9,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -10943,8 +10903,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 498.1,
-      "protein_g_est": 22.8,
+      "energy_kcal_est": 345.9,
+      "protein_g_est": 20.4,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -11005,8 +10965,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 542.8,
-      "protein_g_est": 24.7,
+      "energy_kcal_est": 470.7,
+      "protein_g_est": 18.9,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -11067,8 +11027,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 551.8,
-      "protein_g_est": 29.6,
+      "energy_kcal_est": 384.0,
+      "protein_g_est": 16.4,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -11129,8 +11089,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 516.6,
-      "protein_g_est": 25.4,
+      "energy_kcal_est": 354.5,
+      "protein_g_est": 11.1,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -11191,8 +11151,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 477.5,
-      "protein_g_est": 23.4,
+      "energy_kcal_est": 413.0,
+      "protein_g_est": 23.1,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -11253,8 +11213,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 551.1,
-      "protein_g_est": 25.0,
+      "energy_kcal_est": 376.0,
+      "protein_g_est": 13.7,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -11315,8 +11275,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 530.6,
-      "protein_g_est": 23.1,
+      "energy_kcal_est": 369.9,
+      "protein_g_est": 16.9,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -11363,13 +11323,6 @@
           "estimate_basis": "mock"
         },
         {
-          "slot_id": "slot_5",
-          "intake_fraction_est": 0.6,
-          "status": "estimated",
-          "quality_issues": [],
-          "estimate_basis": "mock"
-        },
-        {
           "slot_id": "slot_6",
           "intake_fraction_est": 0.6,
           "status": "estimated",
@@ -11377,8 +11330,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 522.8,
-      "protein_g_est": 24.7,
+      "energy_kcal_est": 463.8,
+      "protein_g_est": 20.8,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -11439,8 +11392,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 504.6,
-      "protein_g_est": 27.3,
+      "energy_kcal_est": 450.6,
+      "protein_g_est": 20.6,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -11501,8 +11454,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 513.1,
-      "protein_g_est": 25.2,
+      "energy_kcal_est": 332.5,
+      "protein_g_est": 7.0,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -11563,8 +11516,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 573.6,
-      "protein_g_est": 30.2,
+      "energy_kcal_est": 448.0,
+      "protein_g_est": 17.6,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -11625,8 +11578,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 543.1,
-      "protein_g_est": 25.2,
+      "energy_kcal_est": 438.1,
+      "protein_g_est": 13.1,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -11744,8 +11697,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 600.4,
-      "protein_g_est": 26.4,
+      "energy_kcal_est": 403.4,
+      "protein_g_est": 19.0,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -11806,8 +11759,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 729.7,
-      "protein_g_est": 42.4,
+      "energy_kcal_est": 492.1,
+      "protein_g_est": 13.3,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -11868,8 +11821,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 625.4,
-      "protein_g_est": 29.0,
+      "energy_kcal_est": 609.2,
+      "protein_g_est": 16.6,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -11930,8 +11883,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 584.6,
-      "protein_g_est": 27.3,
+      "energy_kcal_est": 382.3,
+      "protein_g_est": 21.1,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -11992,8 +11945,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 635.4,
-      "protein_g_est": 30.1,
+      "energy_kcal_est": 573.1,
+      "protein_g_est": 22.4,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -12054,8 +12007,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 594.4,
-      "protein_g_est": 28.0,
+      "energy_kcal_est": 509.6,
+      "protein_g_est": 22.2,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -12116,8 +12069,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 585.4,
-      "protein_g_est": 27.9,
+      "energy_kcal_est": 401.7,
+      "protein_g_est": 23.3,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -12178,8 +12131,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 679.4,
-      "protein_g_est": 36.4,
+      "energy_kcal_est": 572.9,
+      "protein_g_est": 17.6,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -12259,8 +12212,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 634.7,
-      "protein_g_est": 28.9,
+      "energy_kcal_est": 441.5,
+      "protein_g_est": 25.8,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -12321,8 +12274,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 654.4,
-      "protein_g_est": 33.7,
+      "energy_kcal_est": 577.9,
+      "protein_g_est": 25.2,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -12383,8 +12336,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 632.4,
-      "protein_g_est": 32.4,
+      "energy_kcal_est": 443.6,
+      "protein_g_est": 18.3,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -12445,8 +12398,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 604.4,
-      "protein_g_est": 27.6,
+      "energy_kcal_est": 420.2,
+      "protein_g_est": 12.6,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -12507,8 +12460,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 659.4,
-      "protein_g_est": 35.0,
+      "energy_kcal_est": 574.8,
+      "protein_g_est": 33.8,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -12569,8 +12522,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 621.4,
-      "protein_g_est": 26.7,
+      "energy_kcal_est": 436.6,
+      "protein_g_est": 15.0,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -12631,8 +12584,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 571.6,
-      "protein_g_est": 25.2,
+      "energy_kcal_est": 406.4,
+      "protein_g_est": 18.5,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -12679,13 +12632,6 @@
           "estimate_basis": "mock"
         },
         {
-          "slot_id": "slot_5",
-          "intake_fraction_est": 0.8,
-          "status": "estimated",
-          "quality_issues": [],
-          "estimate_basis": "mock"
-        },
-        {
           "slot_id": "slot_6",
           "intake_fraction_est": 0.8,
           "status": "estimated",
@@ -12693,8 +12639,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 630.4,
-      "protein_g_est": 31.4,
+      "energy_kcal_est": 560.9,
+      "protein_g_est": 26.4,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -12755,8 +12701,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 559.4,
-      "protein_g_est": 28.7,
+      "energy_kcal_est": 494.7,
+      "protein_g_est": 21.7,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -12817,8 +12763,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 625.4,
-      "protein_g_est": 29.5,
+      "energy_kcal_est": 409.1,
+      "protein_g_est": 8.5,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -12879,8 +12825,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 647.4,
-      "protein_g_est": 34.1,
+      "energy_kcal_est": 506.3,
+      "protein_g_est": 19.9,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -12941,8 +12887,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 626.7,
-      "protein_g_est": 28.9,
+      "energy_kcal_est": 504.2,
+      "protein_g_est": 15.1,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -13060,8 +13006,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 210.9,
-      "protein_g_est": 9.6,
+      "energy_kcal_est": 140.4,
+      "protein_g_est": 6.9,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -13122,8 +13068,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 229.6,
-      "protein_g_est": 10.3,
+      "energy_kcal_est": 152.3,
+      "protein_g_est": 3.7,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -13184,8 +13130,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 181.6,
-      "protein_g_est": 7.4,
+      "energy_kcal_est": 174.6,
+      "protein_g_est": 4.5,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -13246,8 +13192,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 201.4,
-      "protein_g_est": 7.5,
+      "energy_kcal_est": 142.0,
+      "protein_g_est": 5.9,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -13308,8 +13254,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 254.9,
-      "protein_g_est": 11.6,
+      "energy_kcal_est": 229.2,
+      "protein_g_est": 8.6,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -13370,8 +13316,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 208.6,
-      "protein_g_est": 8.0,
+      "energy_kcal_est": 177.2,
+      "protein_g_est": 6.5,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -13432,8 +13378,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 234.9,
-      "protein_g_est": 10.7,
+      "energy_kcal_est": 166.2,
+      "protein_g_est": 8.9,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -13494,8 +13440,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 237.6,
-      "protein_g_est": 9.9,
+      "energy_kcal_est": 192.4,
+      "protein_g_est": 5.2,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -13556,8 +13502,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 236.4,
-      "protein_g_est": 9.5,
+      "energy_kcal_est": 178.5,
+      "protein_g_est": 7.1,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -13618,8 +13564,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 243.9,
-      "protein_g_est": 9.9,
+      "energy_kcal_est": 174.2,
+      "protein_g_est": 9.0,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -13680,8 +13626,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 223.6,
-      "protein_g_est": 9.0,
+      "energy_kcal_est": 192.9,
+      "protein_g_est": 7.0,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -13742,8 +13688,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 252.9,
-      "protein_g_est": 12.4,
+      "energy_kcal_est": 181.8,
+      "protein_g_est": 7.1,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -13804,8 +13750,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 242.4,
-      "protein_g_est": 10.6,
+      "energy_kcal_est": 173.7,
+      "protein_g_est": 5.0,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -13866,7 +13812,7 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 236.6,
+      "energy_kcal_est": 203.2,
       "protein_g_est": 10.3,
       "incomplete": false,
       "data_source": "mock",
@@ -13928,8 +13874,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 243.9,
-      "protein_g_est": 9.7,
+      "energy_kcal_est": 175.5,
+      "protein_g_est": 5.6,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -13990,8 +13936,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 461.2,
-      "protein_g_est": 21.3,
+      "energy_kcal_est": 325.8,
+      "protein_g_est": 15.5,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -14038,13 +13984,6 @@
           "estimate_basis": "mock"
         },
         {
-          "slot_id": "slot_5",
-          "intake_fraction_est": 0.6,
-          "status": "estimated",
-          "quality_issues": [],
-          "estimate_basis": "mock"
-        },
-        {
           "slot_id": "slot_6",
           "intake_fraction_est": 0.6,
           "status": "estimated",
@@ -14052,8 +13991,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 466.8,
-      "protein_g_est": 25.5,
+      "energy_kcal_est": 419.0,
+      "protein_g_est": 21.2,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -14114,8 +14053,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 451.8,
-      "protein_g_est": 22.1,
+      "energy_kcal_est": 398.9,
+      "protein_g_est": 16.8,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -14176,8 +14115,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 490.8,
-      "protein_g_est": 23.8,
+      "energy_kcal_est": 324.3,
+      "protein_g_est": 6.8,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -14238,8 +14177,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 483.8,
-      "protein_g_est": 24.0,
+      "energy_kcal_est": 376.8,
+      "protein_g_est": 14.4,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -14376,8 +14315,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 600.4,
-      "protein_g_est": 26.4,
+      "energy_kcal_est": 403.4,
+      "protein_g_est": 19.0,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -14438,8 +14377,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 683.4,
-      "protein_g_est": 38.6,
+      "energy_kcal_est": 459.9,
+      "protein_g_est": 12.2,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -14500,8 +14439,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 612.4,
-      "protein_g_est": 27.6,
+      "energy_kcal_est": 593.4,
+      "protein_g_est": 15.9,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -14562,8 +14501,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 667.0,
-      "protein_g_est": 31.1,
+      "energy_kcal_est": 432.0,
+      "protein_g_est": 24.0,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -14624,8 +14563,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 635.4,
-      "protein_g_est": 30.1,
+      "energy_kcal_est": 573.1,
+      "protein_g_est": 22.4,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -14686,8 +14625,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 605.4,
-      "protein_g_est": 30.1,
+      "energy_kcal_est": 526.3,
+      "protein_g_est": 23.8,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -14748,8 +14687,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 597.4,
-      "protein_g_est": 29.6,
+      "energy_kcal_est": 408.7,
+      "protein_g_est": 24.4,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -14810,8 +14749,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 663.4,
-      "protein_g_est": 34.1,
+      "energy_kcal_est": 553.3,
+      "protein_g_est": 16.6,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -14872,8 +14811,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 601.4,
-      "protein_g_est": 26.3,
+      "energy_kcal_est": 443.9,
+      "protein_g_est": 19.2,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -14934,8 +14873,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 585.4,
-      "protein_g_est": 25.0,
+      "energy_kcal_est": 413.2,
+      "protein_g_est": 22.5,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -15015,8 +14954,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 632.4,
-      "protein_g_est": 32.4,
+      "energy_kcal_est": 443.6,
+      "protein_g_est": 18.3,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -15077,8 +15016,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 617.4,
-      "protein_g_est": 29.3,
+      "energy_kcal_est": 430.4,
+      "protein_g_est": 13.1,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -15139,8 +15078,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 659.4,
-      "protein_g_est": 35.0,
+      "energy_kcal_est": 574.8,
+      "protein_g_est": 33.8,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -15201,8 +15140,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 621.4,
-      "protein_g_est": 26.7,
+      "energy_kcal_est": 436.6,
+      "protein_g_est": 15.0,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -15263,8 +15202,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 560.6,
-      "protein_g_est": 23.6,
+      "energy_kcal_est": 396.9,
+      "protein_g_est": 17.4,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -15311,13 +15250,6 @@
           "estimate_basis": "mock"
         },
         {
-          "slot_id": "slot_5",
-          "intake_fraction_est": 0.8,
-          "status": "estimated",
-          "quality_issues": [],
-          "estimate_basis": "mock"
-        },
-        {
           "slot_id": "slot_6",
           "intake_fraction_est": 0.8,
           "status": "estimated",
@@ -15325,8 +15257,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 646.4,
-      "protein_g_est": 33.7,
+      "energy_kcal_est": 581.1,
+      "protein_g_est": 28.3,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -15387,8 +15319,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 589.4,
-      "protein_g_est": 29.2,
+      "energy_kcal_est": 521.7,
+      "protein_g_est": 22.2,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -15449,8 +15381,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 625.4,
-      "protein_g_est": 29.5,
+      "energy_kcal_est": 409.1,
+      "protein_g_est": 8.5,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -15511,8 +15443,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 738.0,
-      "protein_g_est": 38.6,
+      "energy_kcal_est": 583.0,
+      "protein_g_est": 23.0,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -15573,8 +15505,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 576.4,
-      "protein_g_est": 24.8,
+      "energy_kcal_est": 464.5,
+      "protein_g_est": 13.4,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
