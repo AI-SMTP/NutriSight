@@ -55,9 +55,10 @@ from app.storage.seed import (
     load_seed_file,
 )
 from app.storage.seed_models import DemoSeed
+from tests.storage.demo import DEMO
+from tests.storage.dump import table_dump
 from tests.storage.rows import insert_alert
 
-DEMO = date(2026, 12, 5)
 D_MINUS_7 = DEMO - timedelta(days=7)
 D_MINUS_1 = DEMO - timedelta(days=1)
 D_MINUS_2 = DEMO - timedelta(days=2)
@@ -426,30 +427,12 @@ def test_build_database_cleanup_pending_flag(tmp_path: Path, seed: DemoSeed) -> 
 # 결정성·조회 순서 ----------------------------------------------------------
 
 
-def _table_dump(path: Path) -> dict[str, list[tuple[object, ...]]]:
-    """15개 테이블의 모든 행을 PK 순으로. `seed_meta.seeded_at` 행은 뺀다."""
-    with connect(path) as c:
-        tables = [
-            r["name"]
-            for r in _raw(c, "SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name")
-        ]
-        dump: dict[str, list[tuple[object, ...]]] = {}
-        for table in tables:
-            info = _raw(c, f"PRAGMA table_info({table})")
-            pk = [r["name"] for r in sorted(info, key=lambda r: r["pk"]) if r["pk"] > 0]
-            rows = _raw(c, f"SELECT * FROM {table} ORDER BY {', '.join(pk)}")
-            dump[table] = [
-                tuple(r) for r in rows if not (table == "seed_meta" and r["key"] == "seeded_at")
-            ]
-    return dump
-
-
 def test_build_database_is_deterministic(tmp_path: Path, seed: DemoSeed) -> None:
     first, second = tmp_path / "a.db", tmp_path / "b.db"
     build_database(first, seed, DEMO, FakeNutritionEngine(), clock=lambda: datetime(2026, 1, 1))
     build_database(second, seed, DEMO, FakeNutritionEngine(), clock=lambda: datetime(2026, 2, 2))
 
-    a, b = _table_dump(first), _table_dump(second)
+    a, b = table_dump(first), table_dump(second)
 
     assert len(a) == TABLE_COUNT
     assert a == b

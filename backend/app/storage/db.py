@@ -21,7 +21,9 @@ _SCHEMA_RESOURCE = "schema.sql"
 
 
 @contextmanager
-def connect(db_path: Path, *, journal_mode: str = "WAL") -> Iterator[sqlite3.Connection]:
+def connect(
+    db_path: Path, *, journal_mode: str = "WAL", checkpoint_on_close: bool = True
+) -> Iterator[sqlite3.Connection]:
     """`db_path`에 연결해 PRAGMA를 맞춘 연결을 내준다.
 
     트랜잭션을 열기 전에 `journal_mode`·`foreign_keys=ON`·`busy_timeout=5000`을 설정하고
@@ -29,6 +31,9 @@ def connect(db_path: Path, *, journal_mode: str = "WAL") -> Iterator[sqlite3.Con
     위반도 예외로 넘긴다), 예외가 나면 롤백한 뒤 예외를 다시 던진다. 연결은 항상 닫는다.
 
     `journal_mode`는 `WAL`(기본) 또는 `DELETE`(파일 하나로 완결해야 하는 임시 DB)만 받는다.
+    `checkpoint_on_close=False`이면 어떤 PRAGMA보다 먼저 `SQLITE_DBCONFIG_NO_CKPT_ON_CLOSE`를
+    켜서, 마지막 연결을 닫을 때 SQLite가 WAL을 본체에 반영하고 보조 파일을 지우지 않게 한다.
+    PRAGMA가 실패해 연결을 닫아도 파일이 바뀌지 않는다(리셋 2단계).
     """
     mode = journal_mode.upper()
     if mode not in JOURNAL_MODES:
@@ -36,6 +41,8 @@ def connect(db_path: Path, *, journal_mode: str = "WAL") -> Iterator[sqlite3.Con
 
     conn = sqlite3.connect(db_path)
     try:
+        if not checkpoint_on_close:
+            conn.setconfig(sqlite3.SQLITE_DBCONFIG_NO_CKPT_ON_CLOSE, True)
         conn.row_factory = sqlite3.Row
         # SQLite는 모드를 바꾸지 못해도 오류 없이 현재 모드를 돌려주므로 결과를 확인한다.
         actual = conn.execute(f"PRAGMA journal_mode = {mode}").fetchone()[0]

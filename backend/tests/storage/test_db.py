@@ -89,6 +89,50 @@ def test_connect_rejects_unknown_journal_mode(tmp_path: Path) -> None:
         pass
 
 
+def _wal_files_after_write(path: Path, **kwargs: bool) -> list[str]:
+    """WAL 모드로 한 행을 쓰고 연결을 닫은 뒤 남은 보조 파일 이름."""
+    with connect(path, **kwargs) as conn:
+        conn.execute("CREATE TABLE t (x INTEGER)")
+        conn.execute("INSERT INTO t VALUES (1)")
+    return sorted(p.name for p in path.parent.iterdir() if p.name != path.name)
+
+
+def test_connect_checkpoints_on_close_by_default(tmp_path: Path) -> None:
+    assert _wal_files_after_write(tmp_path / "a.db") == []
+
+
+def test_connect_can_keep_wal_on_close(tmp_path: Path) -> None:
+    path = tmp_path / "a.db"
+
+    assert _wal_files_after_write(path, checkpoint_on_close=False) == ["a.db-shm", "a.db-wal"]
+    with connect(path) as conn:
+        assert [tuple(r) for r in conn.execute("SELECT x FROM t")] == [(1,)]
+
+
+def test_connect_disables_close_checkpoint_before_pragmas(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    calls: list[str] = []
+    real_connect = sqlite3.connect
+
+    class Recording(sqlite3.Connection):
+        def setconfig(self, op: int, enable: bool = True, /) -> bool:
+            calls.append(f"setconfig:{op}:{enable}")
+            return super().setconfig(op, enable)
+
+        def execute(self, sql: str, *args: object) -> sqlite3.Cursor:  # type: ignore[override]
+            calls.append(sql.split("=")[0].strip())
+            return super().execute(sql, *args)
+
+    monkeypatch.setattr(sqlite3, "connect", lambda path: real_connect(path, factory=Recording))
+
+    with connect(tmp_path / "a.db", checkpoint_on_close=False):
+        pass
+
+    assert calls[0] == f"setconfig:{sqlite3.SQLITE_DBCONFIG_NO_CKPT_ON_CLOSE}:True"
+    assert calls[1] == "PRAGMA journal_mode"
+
+
 def test_connect_rows_are_readable_by_column_name(db_path: Path) -> None:
     with connect(db_path) as conn:
         insert_patient(conn)
