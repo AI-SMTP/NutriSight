@@ -50,14 +50,14 @@
       "doc_id": "glim_2025",
       "document_title": "GLIM 5년 업데이트(2025) — JPEN 동시 게재본 원문 XML",
       "publisher": "GLIM Working Group / JPEN (Journal of Parenteral and Enteral Nutrition)",
-      "published_year_or_edition": "2025 (JPEN XML)",
+      "published_year_or_edition": "2025 (JPEN 49(4):414-427, doi:10.1002/jpen.2756)",
       "relative_path": "glim-2025/glim-5-year-update-2025-jpen.xml",
       "format": "xml",
-      "source_url": "https://aspenjournals.onlinelibrary.wiley.com/journal/19412444",
+      "source_url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC12053077/",
       "language": "en",
-      "expected_sha256": null,
-      "review_status": "pending",
-      "reviewed_at": null
+      "expected_sha256": "d80cc184b117efd011cbd3936cceae1773f5e517c11bc30fdabe562f87610340",
+      "review_status": "approved",
+      "reviewed_at": "2026-11-27"
     },
     {
       "artifact_id": "khna_pressure_injury_pdf",
