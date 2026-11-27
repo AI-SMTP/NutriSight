@@ -5,7 +5,7 @@
 -- - 열거값은 CHECK로 막는다. NULL을 허용하는 열은 `x IN (...)`이 NULL이면 통과한다.
 -- - 사진과 끼니는 서로 참조하므로 그 외래 키는 DEFERRABLE INITIALLY DEFERRED로 건다.
 -- - BEGIN·COMMIT은 넣지 않는다. 트랜잭션은 `create_schema(begin=True)`가 연다.
--- - 칸별 섭취의 칸 무결성 트리거는 별도 Story에서 추가한다.
+-- - 칸별 섭취가 발주한 배식 계획의 배식 칸만 가리키도록 트리거로 막는다(맨 끝 7절).
 
 -- 1. 환자 --------------------------------------------------------------------
 
@@ -216,3 +216,104 @@ CREATE TABLE seed_meta (
     key   TEXT NOT NULL PRIMARY KEY,
     value TEXT
 );
+
+-- 7. 칸별 섭취의 칸 무결성 트리거 ---------------------------------------------
+--
+-- slot_intakes에는 meal_plan_id 열이 없어 meal_plan_slots(meal_plan_id, slot_id) 복합 외래
+-- 키를 걸 수 없다. 자식 쓰기와 부모 변경을 모두 트리거로 막아 같은 보장을 만든다.
+-- 배식 계획과 발주는 시드로만 넣으므로 키를 바꾸지 못하게 해도 잃는 기능이 없다.
+-- RAISE(ABORT)는 sqlite3.IntegrityError로 올라오고 그 문장만 되돌린다.
+-- INSERT OR REPLACE는 기존 행 삭제 + 삽입이고, recursive_triggers가 꺼져 있으면 삭제 쪽
+-- DELETE 트리거가 돌지 않는다. 그래서 부모 테이블에는 같은 검사를 BEFORE INSERT로도 건다.
+
+-- (1) 칸별 섭취는 발주한 계획의 배식 칸(served_g > 0)만 가리킨다. 발주가 없거나 칸이 NULL이어도
+--     거절한다. SQLite에는 INSERT·UPDATE 겸용 트리거가 없어 두 트리거가 같은 본문을 반복한다.
+CREATE TRIGGER trg_slot_intakes_slot_insert
+BEFORE INSERT ON slot_intakes
+WHEN NOT EXISTS (
+    SELECT 1
+    FROM meal_orders AS o
+    JOIN meal_plan_slots AS s ON s.meal_plan_id = o.meal_plan_id
+    WHERE o.meal_order_id = NEW.meal_order_id AND s.slot_id = NEW.slot_id AND s.served_g > 0
+)
+BEGIN
+    SELECT RAISE(ABORT, '칸별 섭취의 발주·칸이 배식 계획의 배식 칸과 맞지 않는다');
+END;
+
+CREATE TRIGGER trg_slot_intakes_slot_update
+BEFORE UPDATE OF meal_order_id, slot_id ON slot_intakes
+WHEN NOT EXISTS (
+    SELECT 1
+    FROM meal_orders AS o
+    JOIN meal_plan_slots AS s ON s.meal_plan_id = o.meal_plan_id
+    WHERE o.meal_order_id = NEW.meal_order_id AND s.slot_id = NEW.slot_id AND s.served_g > 0
+)
+BEGIN
+    SELECT RAISE(ABORT, '칸별 섭취의 발주·칸이 배식 계획의 배식 칸과 맞지 않는다');
+END;
+
+-- (2) 발주의 끼니(배식 계획)는 바꾸지 않는다. 같은 값으로 쓰는 것은 허용한다.
+CREATE TRIGGER trg_meal_orders_plan_update
+BEFORE UPDATE OF meal_plan_id ON meal_orders
+WHEN NEW.meal_plan_id IS NOT OLD.meal_plan_id
+BEGIN
+    SELECT RAISE(ABORT, '발주의 배식 계획은 바꿀 수 없다');
+END;
+
+-- INSERT OR REPLACE로 같은 발주 ID의 배식 계획을 바꾸는 것도 막는다.
+CREATE TRIGGER trg_meal_orders_plan_replace
+BEFORE INSERT ON meal_orders
+WHEN EXISTS (
+    SELECT 1
+    FROM meal_orders AS o
+    WHERE o.meal_order_id = NEW.meal_order_id AND o.meal_plan_id IS NOT NEW.meal_plan_id
+)
+BEGIN
+    SELECT RAISE(ABORT, '발주의 배식 계획은 바꿀 수 없다');
+END;
+
+-- (3) 칸 키는 바꾸지 않고, 섭취 기록이 있는 칸은 미배식(served_g = 0)으로 바꾸지 않는다.
+CREATE TRIGGER trg_meal_plan_slots_key_update
+BEFORE UPDATE OF meal_plan_id, slot_id ON meal_plan_slots
+WHEN NEW.meal_plan_id IS NOT OLD.meal_plan_id OR NEW.slot_id IS NOT OLD.slot_id
+BEGIN
+    SELECT RAISE(ABORT, '배식 칸의 키는 바꿀 수 없다');
+END;
+
+CREATE TRIGGER trg_meal_plan_slots_unserve
+BEFORE UPDATE OF served_g ON meal_plan_slots
+WHEN NEW.served_g = 0 AND EXISTS (
+    SELECT 1
+    FROM slot_intakes AS si
+    JOIN meal_orders AS o ON o.meal_order_id = si.meal_order_id
+    WHERE o.meal_plan_id = OLD.meal_plan_id AND si.slot_id = OLD.slot_id
+)
+BEGIN
+    SELECT RAISE(ABORT, '섭취 기록이 있는 칸은 미배식으로 바꿀 수 없다');
+END;
+
+-- INSERT OR REPLACE로 섭취 기록이 있는 칸을 미배식으로 다시 쓰는 것도 막는다.
+CREATE TRIGGER trg_meal_plan_slots_unserve_replace
+BEFORE INSERT ON meal_plan_slots
+WHEN NEW.served_g = 0 AND EXISTS (
+    SELECT 1
+    FROM slot_intakes AS si
+    JOIN meal_orders AS o ON o.meal_order_id = si.meal_order_id
+    WHERE o.meal_plan_id = NEW.meal_plan_id AND si.slot_id = NEW.slot_id
+)
+BEGIN
+    SELECT RAISE(ABORT, '섭취 기록이 있는 칸은 미배식으로 바꿀 수 없다');
+END;
+
+-- (4) 섭취 기록이 있는 칸은 삭제하지 않는다.
+CREATE TRIGGER trg_meal_plan_slots_delete
+BEFORE DELETE ON meal_plan_slots
+WHEN EXISTS (
+    SELECT 1
+    FROM slot_intakes AS si
+    JOIN meal_orders AS o ON o.meal_order_id = si.meal_order_id
+    WHERE o.meal_plan_id = OLD.meal_plan_id AND si.slot_id = OLD.slot_id
+)
+BEGIN
+    SELECT RAISE(ABORT, '섭취 기록이 있는 칸은 삭제할 수 없다');
+END;

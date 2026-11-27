@@ -639,7 +639,8 @@ def test_intake_fraction_accepts_null_and_bounds(db_path: Path, fraction: float 
 
 
 def test_slot_intake_for_unknown_meal_order_is_rejected(db_path: Path) -> None:
-    with connect(db_path) as conn, pytest.raises(sqlite3.IntegrityError):
+    # 외래 키보다 먼저 BEFORE INSERT 트리거가 발주·칸 불일치로 거절한다.
+    with connect(db_path) as conn, pytest.raises(sqlite3.IntegrityError, match=SLOT_INTAKE_MESSAGE):
         insert_slot_intake(conn, meal_order_id="NOBODY_order")
 
 
@@ -699,3 +700,334 @@ def test_unserved_slot_with_zero_values_is_allowed(db_path: Path) -> None:
         row = conn.execute("SELECT menu_name, served_g FROM meal_plan_slots").fetchone()
     assert row["menu_name"] is None
     assert row["served_g"] == pytest.approx(0.0)
+
+
+# ---------------------------------------------------------------------------
+# 칸별 섭취의 칸 무결성 트리거
+# ---------------------------------------------------------------------------
+
+OTHER_MEAL_PLAN_ID = "2026-11-23_dinner_general"
+OTHER_MEAL_ORDER_ID = "NS07_2026-11-23_dinner"
+UNSERVED_SLOT_ID = "slot_5"
+INTAKE_SLOT_IDS = ("slot_1", "slot_2", "slot_3", "slot_4", "slot_6")
+SLOT_COLUMNS = (
+    "slot_id",
+    "position",
+    "dish_type",
+    "menu_name",
+    "served_g",
+    "energy_kcal",
+    "protein_g",
+)
+PLAN_SLOTS = (
+    ("slot_1", "아랫줄 왼쪽", "rice", "쌀밥", 210.0, 300.0, 5.0),
+    ("slot_2", "아랫줄 오른쪽", "soup", "근대국", 250.0, 40.0, 2.0),
+    ("slot_3", "윗줄 1 (왼쪽 끝)", "main", "두부조림", 60.0, 90.0, 10.0),
+    ("slot_4", "윗줄 2", "side", "시금치나물", 50.0, 30.0, 2.0),
+    ("slot_5", "윗줄 3", "side", None, 0.0, 0.0, 0.0),
+    ("slot_6", "윗줄 4 (오른쪽 끝)", "kimchi", "배추김치", 40.0, 10.0, 0.5),
+)
+SLOT_INTAKE_MESSAGE = "칸별 섭취의 발주·칸이 배식 계획의 배식 칸과 맞지 않는다"
+ORDER_PLAN_MESSAGE = "발주의 배식 계획은 바꿀 수 없다"
+SLOT_KEY_MESSAGE = "배식 칸의 키는 바꿀 수 없다"
+SLOT_UNSERVE_MESSAGE = "섭취 기록이 있는 칸은 미배식으로 바꿀 수 없다"
+SLOT_DELETE_MESSAGE = "섭취 기록이 있는 칸은 삭제할 수 없다"
+
+
+SlotValues = tuple[str, str, str, str | None, float, float, float]
+
+
+def _insert_plan_slots(
+    conn: sqlite3.Connection, meal_plan_id: str, slots: tuple[SlotValues, ...]
+) -> None:
+    for values in slots:
+        row = dict(zip(SLOT_COLUMNS, values, strict=True))
+        insert_slot(conn, meal_plan_id=meal_plan_id, **row)
+
+
+@pytest.fixture
+def slot_db(db_path: Path) -> Path:
+    """환자 1명, 계획 1끼(6칸, slot_5 미배식), 다른 계획 1끼, 발주 1건, 칸별 섭취 5건.
+
+    다른 계획은 slot_1~slot_3만 배식 칸으로 둔다(slot_4·slot_6은 없다).
+    """
+    with connect(db_path) as conn:
+        insert_patient(conn)
+        insert_meal_plan(conn)
+        _insert_plan_slots(conn, MEAL_PLAN_ID, PLAN_SLOTS)
+        insert_meal_plan(conn, meal_plan_id=OTHER_MEAL_PLAN_ID, meal="dinner")
+        _insert_plan_slots(conn, OTHER_MEAL_PLAN_ID, PLAN_SLOTS[:3])
+        insert_meal_order(conn)
+        for slot_id in INTAKE_SLOT_IDS:
+            insert_slot_intake(conn, slot_id=slot_id)
+    return db_path
+
+
+def _replace_row(
+    conn: sqlite3.Connection, table: str, where: str, params: tuple[object, ...], **changes: object
+) -> None:
+    """기존 행을 읽어 `changes`를 덮어쓴 뒤 `INSERT OR REPLACE`로 다시 쓴다."""
+    current = conn.execute(f"SELECT * FROM {table} WHERE {where}", params).fetchone()
+    row = {**dict(current), **changes}
+    columns = ", ".join(row)
+    placeholders = ", ".join("?" for _ in row)
+    conn.execute(
+        f"INSERT OR REPLACE INTO {table} ({columns}) VALUES ({placeholders})", tuple(row.values())
+    )
+
+
+def _snapshot(conn: sqlite3.Connection) -> tuple[list[tuple[object, ...]], ...]:
+    """칸·칸별 섭취·발주 행 전체를 키 순으로 읽는다."""
+    queries = (
+        "SELECT * FROM meal_plan_slots ORDER BY meal_plan_id, slot_id",
+        "SELECT * FROM slot_intakes ORDER BY meal_order_id, slot_id",
+        "SELECT * FROM meal_orders ORDER BY meal_order_id",
+    )
+    return tuple([tuple(row) for row in conn.execute(query)] for query in queries)
+
+
+def test_slot_fixture_has_intakes_for_served_slots(slot_db: Path) -> None:
+    with connect(slot_db) as conn:
+        slot_ids = [r["slot_id"] for r in conn.execute("SELECT slot_id FROM slot_intakes")]
+    assert sorted(slot_ids) == list(INTAKE_SLOT_IDS)
+
+
+# (1) slot_intakes 쓰기
+
+
+@pytest.mark.parametrize("slot_id", ["slot_7", UNSERVED_SLOT_ID])
+def test_slot_intake_insert_outside_served_slots_is_rejected(slot_db: Path, slot_id: str) -> None:
+    with connect(slot_db) as conn:
+        before = _snapshot(conn)
+        with pytest.raises(sqlite3.IntegrityError, match=SLOT_INTAKE_MESSAGE):
+            insert_slot_intake(conn, slot_id=slot_id)
+        assert _snapshot(conn) == before
+
+
+@pytest.mark.parametrize("slot_id", ["slot_7", UNSERVED_SLOT_ID])
+def test_slot_intake_update_slot_outside_served_slots_is_rejected(
+    slot_db: Path, slot_id: str
+) -> None:
+    with connect(slot_db) as conn:
+        before = _snapshot(conn)
+        with pytest.raises(sqlite3.IntegrityError, match=SLOT_INTAKE_MESSAGE):
+            conn.execute("UPDATE slot_intakes SET slot_id = ? WHERE slot_id = 'slot_4'", (slot_id,))
+        assert _snapshot(conn) == before
+
+
+def test_slot_intake_move_to_order_without_that_slot_is_rejected(slot_db: Path) -> None:
+    with connect(slot_db) as conn:
+        insert_meal_order(conn, meal_order_id=OTHER_MEAL_ORDER_ID, meal_plan_id=OTHER_MEAL_PLAN_ID)
+        before = _snapshot(conn)
+        with pytest.raises(sqlite3.IntegrityError, match=SLOT_INTAKE_MESSAGE):
+            conn.execute(
+                "UPDATE slot_intakes SET meal_order_id = ? WHERE slot_id = 'slot_4'",
+                (OTHER_MEAL_ORDER_ID,),
+            )
+        assert _snapshot(conn) == before
+
+
+def test_slot_intake_move_to_order_with_that_slot_is_allowed(slot_db: Path) -> None:
+    with connect(slot_db) as conn:
+        insert_meal_order(conn, meal_order_id=OTHER_MEAL_ORDER_ID, meal_plan_id=OTHER_MEAL_PLAN_ID)
+        conn.execute(
+            "UPDATE slot_intakes SET meal_order_id = ? WHERE slot_id = 'slot_1'",
+            (OTHER_MEAL_ORDER_ID,),
+        )
+    with connect(slot_db) as conn:
+        row = conn.execute("SELECT meal_order_id FROM slot_intakes WHERE slot_id = 'slot_1'")
+        assert row.fetchone()["meal_order_id"] == OTHER_MEAL_ORDER_ID
+
+
+def test_slot_intake_update_of_other_columns_is_allowed(slot_db: Path) -> None:
+    with connect(slot_db) as conn:
+        conn.execute("UPDATE slot_intakes SET intake_fraction_est = 0.9 WHERE slot_id = 'slot_4'")
+    with connect(slot_db) as conn:
+        row = conn.execute(
+            "SELECT intake_fraction_est FROM slot_intakes WHERE slot_id = 'slot_4'"
+        ).fetchone()
+    assert row["intake_fraction_est"] == pytest.approx(0.9)
+
+
+def test_slot_intake_update_slot_to_same_value_is_allowed(slot_db: Path) -> None:
+    with connect(slot_db) as conn:
+        before = _snapshot(conn)
+        cursor = conn.execute("UPDATE slot_intakes SET slot_id = slot_id WHERE slot_id = 'slot_3'")
+        assert cursor.rowcount == 1
+        assert _snapshot(conn) == before
+
+
+# (2) meal_orders.meal_plan_id
+
+
+def test_meal_order_plan_change_is_rejected(slot_db: Path) -> None:
+    with connect(slot_db) as conn:
+        before = _snapshot(conn)
+        with pytest.raises(sqlite3.IntegrityError, match=ORDER_PLAN_MESSAGE):
+            conn.execute(
+                "UPDATE meal_orders SET meal_plan_id = ? WHERE meal_order_id = ?",
+                (OTHER_MEAL_PLAN_ID, MEAL_ORDER_ID),
+            )
+        assert _snapshot(conn) == before
+
+
+def test_meal_order_plan_update_to_same_value_is_allowed(slot_db: Path) -> None:
+    with connect(slot_db) as conn:
+        conn.execute(
+            "UPDATE meal_orders SET meal_plan_id = ?, record_status = 'pending' "
+            "WHERE meal_order_id = ?",
+            (MEAL_PLAN_ID, MEAL_ORDER_ID),
+        )
+    with connect(slot_db) as conn:
+        row = conn.execute("SELECT meal_plan_id, record_status FROM meal_orders").fetchone()
+    assert (row["meal_plan_id"], row["record_status"]) == (MEAL_PLAN_ID, "pending")
+
+
+# (3) meal_plan_slots 변경
+
+
+@pytest.mark.parametrize(
+    ("column", "value"),
+    [("meal_plan_id", OTHER_MEAL_PLAN_ID), ("slot_id", "slot_9")],
+)
+@pytest.mark.parametrize("slot_id", ["slot_4", UNSERVED_SLOT_ID])
+def test_slot_key_change_is_rejected(slot_db: Path, column: str, value: str, slot_id: str) -> None:
+    with connect(slot_db) as conn:
+        before = _snapshot(conn)
+        with pytest.raises(sqlite3.IntegrityError, match=SLOT_KEY_MESSAGE):
+            conn.execute(
+                f"UPDATE meal_plan_slots SET {column} = ? WHERE meal_plan_id = ? AND slot_id = ?",
+                (value, MEAL_PLAN_ID, slot_id),
+            )
+        assert _snapshot(conn) == before
+
+
+def test_unserving_slot_with_intakes_is_rejected_and_rows_unchanged(slot_db: Path) -> None:
+    with connect(slot_db) as conn:
+        before = _snapshot(conn)
+        with pytest.raises(sqlite3.IntegrityError, match=SLOT_UNSERVE_MESSAGE):
+            conn.execute(
+                "UPDATE meal_plan_slots SET menu_name = NULL, served_g = 0, energy_kcal = 0, "
+                "protein_g = 0 WHERE meal_plan_id = ? AND slot_id = 'slot_4'",
+                (MEAL_PLAN_ID,),
+            )
+        assert _snapshot(conn) == before
+
+
+def test_served_g_change_on_slot_with_intakes_to_nonzero_is_allowed(slot_db: Path) -> None:
+    with connect(slot_db) as conn:
+        conn.execute(
+            "UPDATE meal_plan_slots SET served_g = 70 "
+            "WHERE meal_plan_id = ? AND slot_id = 'slot_4'",
+            (MEAL_PLAN_ID,),
+        )
+    with connect(slot_db) as conn:
+        row = conn.execute(
+            "SELECT served_g FROM meal_plan_slots WHERE meal_plan_id = ? AND slot_id = 'slot_4'",
+            (MEAL_PLAN_ID,),
+        ).fetchone()
+    assert row["served_g"] == pytest.approx(70.0)
+
+
+def test_served_g_change_on_slot_without_intakes_is_allowed(slot_db: Path) -> None:
+    with connect(slot_db) as conn:
+        conn.execute(
+            "UPDATE meal_plan_slots SET menu_name = NULL, served_g = 0, energy_kcal = 0, "
+            "protein_g = 0 WHERE meal_plan_id = ? AND slot_id = 'slot_3'",
+            (OTHER_MEAL_PLAN_ID,),
+        )
+        conn.execute(
+            "UPDATE meal_plan_slots SET menu_name = '계란찜', served_g = 50, energy_kcal = 70 "
+            "WHERE meal_plan_id = ? AND slot_id = ?",
+            (MEAL_PLAN_ID, UNSERVED_SLOT_ID),
+        )
+    with connect(slot_db) as conn:
+        rows = conn.execute(
+            "SELECT meal_plan_id, served_g FROM meal_plan_slots "
+            "WHERE (meal_plan_id = ? AND slot_id = 'slot_3') OR (meal_plan_id = ? AND slot_id = ?)",
+            (OTHER_MEAL_PLAN_ID, MEAL_PLAN_ID, UNSERVED_SLOT_ID),
+        )
+        served = {row["meal_plan_id"]: row["served_g"] for row in rows}
+    assert served[OTHER_MEAL_PLAN_ID] == pytest.approx(0.0)
+    assert served[MEAL_PLAN_ID] == pytest.approx(50.0)
+
+
+# (4) meal_plan_slots 삭제
+
+
+def test_deleting_slot_with_intakes_is_rejected_and_row_stays(slot_db: Path) -> None:
+    with connect(slot_db) as conn:
+        before = _snapshot(conn)
+        with pytest.raises(sqlite3.IntegrityError, match=SLOT_DELETE_MESSAGE):
+            conn.execute(
+                "DELETE FROM meal_plan_slots WHERE meal_plan_id = ? AND slot_id = 'slot_4'",
+                (MEAL_PLAN_ID,),
+            )
+        assert _snapshot(conn) == before
+
+
+def test_deleting_slot_without_intakes_is_allowed(slot_db: Path) -> None:
+    with connect(slot_db) as conn:
+        conn.execute(
+            "DELETE FROM meal_plan_slots WHERE meal_plan_id = ? AND slot_id = ?",
+            (MEAL_PLAN_ID, UNSERVED_SLOT_ID),
+        )
+        count = conn.execute(
+            "SELECT COUNT(*) FROM meal_plan_slots WHERE meal_plan_id = ?", (MEAL_PLAN_ID,)
+        ).fetchone()[0]
+    assert count == 5
+
+
+# INSERT OR REPLACE: 기존 행 삭제 + 삽입이라 UPDATE·DELETE 트리거를 우회하지 못하게 막는다.
+
+_ORDER_WHERE = "meal_order_id = ?"
+_SLOT_WHERE = "meal_plan_id = ? AND slot_id = ?"
+
+
+def test_replace_moving_meal_order_to_other_plan_is_rejected(slot_db: Path) -> None:
+    with connect(slot_db) as conn:
+        before = _snapshot(conn)
+        with pytest.raises(sqlite3.IntegrityError, match=ORDER_PLAN_MESSAGE):
+            _replace_row(
+                conn, "meal_orders", _ORDER_WHERE, (MEAL_ORDER_ID,), meal_plan_id=OTHER_MEAL_PLAN_ID
+            )
+        assert _snapshot(conn) == before
+
+
+def test_replace_meal_order_with_same_plan_is_allowed(slot_db: Path) -> None:
+    with connect(slot_db) as conn:
+        _replace_row(conn, "meal_orders", _ORDER_WHERE, (MEAL_ORDER_ID,), record_status="pending")
+    with connect(slot_db) as conn:
+        row = conn.execute("SELECT meal_plan_id, record_status FROM meal_orders").fetchone()
+        intakes = conn.execute("SELECT COUNT(*) FROM slot_intakes").fetchone()[0]
+    assert (row["meal_plan_id"], row["record_status"]) == (MEAL_PLAN_ID, "pending")
+    assert intakes == len(INTAKE_SLOT_IDS)
+
+
+def test_replace_unserving_slot_with_intakes_is_rejected(slot_db: Path) -> None:
+    with connect(slot_db) as conn:
+        before = _snapshot(conn)
+        with pytest.raises(sqlite3.IntegrityError, match=SLOT_UNSERVE_MESSAGE):
+            _replace_row(
+                conn,
+                "meal_plan_slots",
+                _SLOT_WHERE,
+                (MEAL_PLAN_ID, "slot_4"),
+                menu_name=None,
+                served_g=0.0,
+                energy_kcal=0.0,
+                protein_g=0.0,
+            )
+        assert _snapshot(conn) == before
+
+
+def test_replace_served_slot_with_intakes_is_allowed(slot_db: Path) -> None:
+    with connect(slot_db) as conn:
+        before_intakes = _snapshot(conn)[1]
+        _replace_row(conn, "meal_plan_slots", _SLOT_WHERE, (MEAL_PLAN_ID, "slot_4"), served_g=70.0)
+    with connect(slot_db) as conn:
+        row = conn.execute(
+            f"SELECT served_g FROM meal_plan_slots WHERE {_SLOT_WHERE}", (MEAL_PLAN_ID, "slot_4")
+        ).fetchone()
+        assert _snapshot(conn)[1] == before_intakes
+    assert row["served_g"] == pytest.approx(70.0)
