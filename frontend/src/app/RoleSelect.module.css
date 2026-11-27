@@ -1,0 +1,61 @@
+.screen {
+  display: grid;
+  gap: 24px;
+}
+
+.list {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.roleLink {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: var(--touch-min);
+  min-width: var(--touch-min);
+  padding: 14px 16px;
+  border: 1px solid var(--color-line-strong);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.roleLink:disabled {
+  border-color: var(--color-line);
+  background: var(--color-bg);
+  color: var(--color-text-muted);
+  cursor: not-allowed;
+}
+
+.name {
+  font-weight: 700;
+}
+
+.detail {
+  color: var(--color-text-muted);
+  font-size: 14px;
+}
+
+.cameraLink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  justify-self: center;
+  min-height: var(--touch-min);
+  min-width: var(--touch-min);
+  padding: 0 12px;
+  color: var(--color-primary-strong);
+  font-family: var(--font-sans);
+  font-weight: 600;
+}
