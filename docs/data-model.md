@@ -234,7 +234,7 @@ erDiagram
 | --- | --- | --- |
 | `patient_id` | TEXT FK | |
 | `assessed_on` | DATE | |
-| `kind` | TEXT | `mna_sf` / `swallowing` / `chewing` / `appetite_assist` / `pressure_injury` / `refeeding_risk` |
+| `kind` | TEXT | `mna_sf` / `nutrition_screening`(도구를 밝히지 않은 영양위험 선별) / `swallowing` / `chewing` / `appetite_assist` / `pressure_injury` / `refeeding_risk` |
 | `result` | TEXT | 요약 결과. 예: `at_risk`, `no_cough_observed` |
 | `score` | REAL | 점수가 있는 평가만. 예: MNA-SF 10 |
 | `note` | TEXT | 관찰 내용 |
