@@ -1,0 +1,36 @@
+/* 디자인 토큰 (스펙 3.7절, 샘플 캔버스 "화면 초안" 값). 디자인 후보가 정해지면 이 파일만 바꾼다. */
+:root {
+  /* 주색 */
+  --color-primary: #0f766e;
+  --color-primary-strong: #115e59;
+  --color-primary-soft: #e6f4f1;
+  /* 배경·표면 */
+  --color-bg: #f6f7f9;
+  --color-surface: #ffffff;
+  /* 선 */
+  --color-line: #e3e6eb;
+  --color-line-strong: #cdd3db;
+  /* 글자 */
+  --color-text: #1b2430;
+  --color-text-muted: #4a5565;
+  --color-text-subtle: #5b6575;
+  /* 위험 */
+  --color-danger: #991b1b;
+  --color-danger-soft: #fdecec;
+  /* 보조 */
+  --color-accent: #3730a3;
+  --color-accent-soft: #eef2ff;
+
+  /* 모서리 */
+  --radius-sm: 8px;
+  --radius-md: 10px;
+  --radius-lg: 12px;
+  --radius-xl: 14px;
+
+  /* 글꼴 */
+  --font-sans: "Noto Sans KR", system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  /* 레이아웃·터치 */
+  --touch-min: 44px;
+  --layout-max-width: 480px;
+}
