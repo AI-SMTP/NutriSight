@@ -48,6 +48,11 @@ class FakeEstimator:
         }
         self._delay_s = delay_s
 
+    @property
+    def delay_s(self) -> float:
+        """매 호출 전에 기다리는 시간(초)."""
+        return self._delay_s
+
     async def estimate(self, request: EstimationRequest) -> EstimationResult:
         """요청의 `meal_order_id`에 지정된 시나리오대로 결과를 만든다."""
         if self._delay_s > 0:
