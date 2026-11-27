@@ -19,7 +19,23 @@ from pathlib import Path
 from pydantic import ValidationError
 
 from app.storage.errors import DemoDateRangeError, SeedError, StoragePrepareError
+from app.storage.seed_load import (
+    CLEANUP_PENDING_KEY,
+    SeedCounts,
+    build_database,
+    build_engine,
+)
 from app.storage.seed_models import DemoSeed, SeedMealOrder, SeedMealPlan
+
+# 적재(`build_database`)는 `seed_load.py`에 두고, 시드 관련 진입점은 이 모듈에서 함께 내보낸다.
+__all__ = [
+    "CLEANUP_PENDING_KEY",
+    "SeedCounts",
+    "build_database",
+    "build_engine",
+    "check_demo_date_range",
+    "load_seed_file",
+]
 
 # 시연일 기준 출생 연도(`demo_date.year - age_at_d0`)의 최솟값.
 MIN_BIRTH_YEAR = MINYEAR
