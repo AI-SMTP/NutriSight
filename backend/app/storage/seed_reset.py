@@ -21,7 +21,7 @@ from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
 
-from app.config import Settings, StoragePaths, storage_paths
+from app.config import Settings, StoragePaths, resolve_demo_date, storage_paths
 from app.nutrition.types import NutritionEngine
 from app.storage.app_lock import AppLock
 from app.storage.db import connect
@@ -33,6 +33,7 @@ from app.storage.errors import (
     StorageReplaceError,
 )
 from app.storage.photos import clear_photos
+from app.storage.queries import get_demo_date
 from app.storage.seed_file import check_demo_date_range, load_seed_file
 from app.storage.seed_load import CLEANUP_PENDING_KEY, SeedCounts, build_database, build_engine
 
@@ -293,3 +294,43 @@ def finish_cleanup(paths: StoragePaths) -> None:
         failures.append(CLEANUP_PENDING_ITEM)
     if failures:
         raise ResetCleanupError(tuple(failures))
+
+
+# --- 앱 시작: 자동 시드와 정리 이어 가기 -------------------------------------------
+
+
+def ensure_storage(settings: Settings, *, today: date | None = None) -> None:
+    """앱 시작 때 저장소를 쓸 수 있는 상태로 맞춘다(스펙 3.8 자동 시드·복구 경로).
+
+    lifespan이 앱 잠금을 잡은 뒤에 부른다. 시연일은 `resolve_demo_date(None, settings, today)`다.
+    - `app.db`가 없으면 `rebuild_storage`로 시드 상태를 만든다. 남은 사진·대화 DB·보조 파일·
+      임시 파일도 이 절차가 지운다.
+    - `app.db`가 있으면 업무 데이터와 남은 `app.db.tmp`를 건드리지 않는다. 정리 대기 표시가 있을
+      때만 `finish_cleanup`을 다시 실행한다(실패하면 `ResetCleanupError`).
+    - `DEMO_DATE`가 없고 `seed_meta.demo_date`가 오늘과 다르면 WARNING 로그를 남긴다.
+    """
+    current = today or date.today()
+    demo_date = resolve_demo_date(None, settings, current)
+    paths = storage_paths(settings)
+    if not paths.app_db.exists():
+        rebuild_storage(paths, settings.seed_path, demo_date, build_engine(settings))
+        return
+    pending, seeded_date = _read_seed_state(paths.app_db, read_date=settings.demo_date is None)
+    if seeded_date is not None and seeded_date != current:
+        logger.warning(
+            "시드 기준일 %s, 오늘 %s. 앱을 끄고 리셋하면 오늘 기준으로 다시 맞춘다",
+            seeded_date.isoformat(),
+            current.isoformat(),
+        )
+    if pending:
+        finish_cleanup(paths)
+
+
+def _read_seed_state(app_db: Path, *, read_date: bool) -> tuple[bool, date | None]:
+    """`seed_meta`에서 정리 대기 표시 여부와(`read_date`이면) 시연일을 읽는다."""
+    with connect(app_db) as conn:
+        row = conn.execute(
+            "SELECT 1 FROM seed_meta WHERE key = ?", (CLEANUP_PENDING_KEY,)
+        ).fetchone()
+        seeded_date = get_demo_date(conn) if read_date else None
+    return row is not None, seeded_date
