@@ -1,3 +1,5 @@
+> **이력 보존 공지 (2026-11-28):** 아래 본문은 `74f061e`까지의 **과거 3종·1,077청크·192 passed** 실험 기록입니다. 당시 GLIM 미확보 상태를 최신 사실로 인용하지 마세요. `b7801cf`에서 GLIM 2025 **JPEN XML**이 승인되었고, Work 4종·1,142청크·38질의·195 passed 결과는 [마스터 진행 보고서](RAG_PROGRESS_MASTER.md) 및 [독립 성능평가 2026-11-28](RAG_EVALUATION_2026-11-28.md)에 별도로 정리했습니다. **기존 실험 원문은 재현성을 위해 보존합니다.**
+
 # 가이드라인 검색(RAG) 트랙 구현 및 실험 기록 (v0.2 안정화)
 
 **브랜치:** `feature/recommender-chroma-rag` (기준: `origin/develop` `5cbf0da`, Fork merge `e955445`)  

@@ -1,3 +1,5 @@
+> **2026-11-28 최신 인계 메모:** [마스터 진행 보고서](RAG_PROGRESS_MASTER.md) · [독립 성능평가](RAG_EVALUATION_2026-11-28.md) 참조. 실제 제품 Agent와 추천 생성은 아직 미구현입니다. 검색 결과가 반환돼도 **의료적 적합성이 자동으로 보장되지 않습니다**(특히 NS09-B CKD 질문). 기존 Fake 카드의 `R20`·`R23`은 Work의 BM25 역조회에서 0/2로 확인되었으므로 실제 시연에는 유효한 `EvidenceRef`를 다시 검증해야 합니다. Small은 잠정 후보이며 현재 코드 기본 모델 상수는 Large입니다. 제품에 Small을 적용하려면 모델에 맞는 별도 Chroma 색인을 구축·활성화하세요.
+
 # T5 처방 추천 에이전트 연동용 RAG 인터페이스 인계서
 
 **대상 독자:** T5 (`agent-chat-dummy` / 처방 추천 에이전트) 담당자  
@@ -73,7 +75,7 @@ GUIDELINE_SEARCH=chroma          # 메인: OpenAI 임베딩 + 버전 분리 Chro
 # GUIDELINE_SEARCH=bm25          # 오프라인 무키 대안: 로컬 BM25
 
 OPENAI_API_KEY=your_key_here
-RAG_EMBEDDING_MODEL=text-embedding-3-large
+RAG_EMBEDDING_MODEL=text-embedding-3-small  # 발표용 잠정 후보, Small 전용 색인 필요
 RAG_MIN_RELEVANCE_SCORE=0.50
 ```
 
@@ -86,12 +88,13 @@ uv run python scripts/index_guidelines.py                # 버전 분리 안전 
 
 ---
 
-## 6. 에이전트 통합 시 필수 검증 시나리오 (NS07 · NS09)
+## 6. 에이전트 통합 시 필수 검증 시나리오 (NS07 · NS09-B)
 
 1. **NS07 정상 사례 (틀니 씹기 불편 + MNA-SF 10점 + 체중 감소 + 7일 섭취 저하):**
    - 질의 예: `"고령자 씹기 불편 체중 감소 식사 강화 경구영양보충"`
    - 기대 동작: `espen_geriatrics`·`kjg_elderly_nutrition_2019`에서 근거 `2`–`3`건 반환 → `food_fortification` / `texture_modification` / `dietitian_referral` 초안 항목의 `evidence`가 모두 검색 결과의 `(doc_id, section)`과 일치하며, `resolve_evidence`로 원문 역추적 성공.
-2. **NS09 예외 사례 (만성콩팥병 CKD + 단백질 목표 미등록 + 미기록 끼니 존재):**
+2. **NS09-B 별도 안전 평가 사례 (CKD G3b + 목표 누락 가정 + 미기록 끼니):**
+   - **팀 실제 NS09 시드와 구분:** SMTP `data/seed/demo_seed.json`의 NS09는 단백질 목표 **50g (`team_set`)**이 있습니다. 목표가 미등록된 상태는 Work 벤치마킹의 **NS09-B 변형 시나리오**에서만 가정합니다.
    - 질의 예: `"고령자 만성콩팥병 영양 평가 개별 목표 주의사항"`
    - 기대 동작:
      - 일반 노인 고단백 ONS 근거가 검색되더라도, 환자 요약의 CKD·미기록 상태를 이유로 **자동 ONS/고단백 처방을 보류**하고 `monitoring_review`·`dietitian_referral` 및 `cautions`("기저질환·미기록 끼니 의료진 확인 필요")로 안전하게 보류.
