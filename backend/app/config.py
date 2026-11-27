@@ -7,11 +7,12 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from pydantic import Field
+from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # 실행 위치와 무관하게 `backend/.env`를 읽는다.
 BACKEND_ENV_FILE = Path(__file__).resolve().parents[1] / ".env"
+REPOSITORY_ROOT = BACKEND_ENV_FILE.parents[1]
 DEFAULT_IMPLEMENTATION = "fake"
 DEFAULT_FAKE_INTAKE_DELAY_S = 2.0
 
@@ -26,6 +27,8 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=BACKEND_ENV_FILE, extra="ignore")
 
     intake_adapter: str = DEFAULT_IMPLEMENTATION
+    anthropic_api_key: SecretStr | None = None
+    intake_photo_root: Path = REPOSITORY_ROOT / "var" / "photos"
     nutrition_engine: str = DEFAULT_IMPLEMENTATION
     guideline_search: str = DEFAULT_IMPLEMENTATION
     patient_data: str = DEFAULT_IMPLEMENTATION
