@@ -2,46 +2,37 @@
  * 화면 ① 기준 식전 사진(/baseline, 스펙 3.5절 화면 ①).
  * 영양사가 날짜·끼니를 고르고 배식 계획 6칸과 등록 상태를 보며 기준 식전 사진을 올린다.
  * 상태와 업로드 규칙은 `useBaselineScreen`에 있고, 이 파일은 그리기만 한다.
+ * 조회 상태별 본문·안내 조각은 화면 ②와 함께 `features/shared`에서 가져온다.
  */
-import { useEffect, useRef } from "react";
-
-import type { Meal } from "../../api/provisional";
 import { Button } from "../../components/Button";
 import { ConfirmSheet } from "../../components/ConfirmSheet";
 import { PhotoPicker } from "../../components/PhotoPicker";
-import { SegmentedControl, type SegmentOption } from "../../components/SegmentedControl";
+import { SegmentedControl } from "../../components/SegmentedControl";
 import { formatClock } from "../../lib/format";
+import shared from "../shared/MealScreen.module.css";
+import {
+  ErrorAlert,
+  MealQueryBody,
+  RefreshErrorMessage,
+  SubmitNotice,
+  UploadPanelFrame,
+} from "../shared/MealScreenParts";
+import { mealOptions } from "../shared/meals";
 import styles from "./BaselinePage.module.css";
-import { RESUBMIT_SHEET, SHOOTING_GUIDE, VIEW_MESSAGES, uploadErrorMessage } from "./messages";
+import { RESUBMIT_SHEET, SHOOTING_GUIDE, uploadErrorMessage } from "./messages";
 import { TrayLayout } from "./TrayLayout";
 import { useBaselineScreen, type BaselineScreen } from "./useBaselineScreen";
 
-const MEAL_OPTIONS: readonly SegmentOption<Meal>[] = [
-  { value: "breakfast", label: "아침" },
-  { value: "lunch", label: "점심" },
-  { value: "dinner", label: "저녁" },
-];
-
-/** 안내 문구와 "다시 시도" 버튼 한 줄 */
-function RetryMessage({ message, onRetry }: { message: string; onRetry: () => void }) {
-  return (
-    <div className={styles.message}>
-      <p className={styles.messageText}>{message}</p>
-      <Button variant="secondary" onClick={onRetry}>
-        {VIEW_MESSAGES.retry}
-      </Button>
-    </div>
-  );
-}
+const MEAL_OPTIONS = mealOptions();
 
 /** 끼니 데이터가 있을 때: 새로 고침 오류 안내, 6칸, 등록 상태 */
 function PlanView({ screen }: { screen: BaselineScreen }) {
-  const { data, refreshError, refetch } = screen.query;
+  const { data } = screen.query;
   if (data === null) return null;
   const baseline = data.baseline_photo;
   return (
     <>
-      {refreshError && <RetryMessage message={VIEW_MESSAGES.refreshFailed} onRetry={refetch} />}
+      <RefreshErrorMessage query={screen.query} />
       <TrayLayout slots={data.slots} />
       <p className={styles.status}>
         기준 사진{" "}
@@ -51,22 +42,6 @@ function PlanView({ screen }: { screen: BaselineScreen }) {
       </p>
     </>
   );
-}
-
-/** 본문: 시연일·끼니 조회 상태에 따라 하나를 보인다(스펙 3.5절 공통 규칙) */
-function MealBody({ screen }: { screen: BaselineScreen }) {
-  const { demo, query } = screen;
-  if (demo.status === "error") {
-    return <RetryMessage message={VIEW_MESSAGES.demoDateFailed} onRetry={demo.retry} />;
-  }
-  if (demo.status === "loading" || query.view === "loading") {
-    return <p className={styles.messageText}>{VIEW_MESSAGES.loading}</p>;
-  }
-  if (query.view === "no_plan") return <p className={styles.messageText}>{VIEW_MESSAGES.noPlan}</p>;
-  if (query.view === "unreachable") {
-    return <RetryMessage message={VIEW_MESSAGES.unreachable} onRetry={query.refetch} />;
-  }
-  return <PlanView screen={screen} />;
 }
 
 /** 날짜·끼니 선택 */
@@ -95,24 +70,10 @@ function SelectionControls({ screen }: { screen: BaselineScreen }) {
   );
 }
 
-/** 업로드가 시작되면 패널 제목으로 포커스를 옮긴다(버튼이 막히고 시트가 닫혀도 body로 빠지지 않게) */
-function useFocusWhileBusy(busy: boolean) {
-  const titleRef = useRef<HTMLHeadingElement>(null);
-  // 확인 시트가 닫히며 여는 버튼으로 포커스를 돌려주는 정리 함수보다 이 이펙트가 나중에 돈다
-  useEffect(() => {
-    if (busy) titleRef.current?.focus();
-  }, [busy]);
-  return titleRef;
-}
-
 /** 촬영 안내, 사진 입력, 업로드 오류, 업로드 버튼 */
 function UploadPanel({ screen }: { screen: BaselineScreen }) {
-  const titleRef = useFocusWhileBusy(screen.busy);
   return (
-    <div className={styles.upload}>
-      <h2 ref={titleRef} className={styles.panelTitle} tabIndex={-1}>
-        사진 올리기
-      </h2>
+    <UploadPanelFrame busy={screen.busy}>
       <ul className={styles.guide}>
         {SHOOTING_GUIDE.map((line) => (
           <li key={line}>{line}</li>
@@ -123,11 +84,9 @@ function UploadPanel({ screen }: { screen: BaselineScreen }) {
         onSelect={screen.selectFile}
         disabled={screen.pickerDisabled}
       />
-      {screen.uploadError !== null && (
-        <p className={styles.error} role="alert">
-          {uploadErrorMessage(screen.uploadError)}
-        </p>
-      )}
+      <ErrorAlert
+        message={screen.uploadError === null ? null : uploadErrorMessage(screen.uploadError)}
+      />
       <Button
         onClick={screen.requestUpload}
         disabled={screen.submitDisabled}
@@ -135,20 +94,19 @@ function UploadPanel({ screen }: { screen: BaselineScreen }) {
       >
         기준 사진 업로드
       </Button>
-    </div>
+    </UploadPanelFrame>
   );
 }
 
 export function BaselinePage() {
   const screen = useBaselineScreen();
   return (
-    <section className={styles.screen}>
+    <section className={shared.screen}>
       <SelectionControls screen={screen} />
-      {/* 안내 영역은 늘 두고 글자만 바꾼다(보조 기술이 바뀐 내용을 읽도록) */}
-      <p className={screen.notice === null ? undefined : styles.notice} role="status">
-        {screen.notice}
-      </p>
-      <MealBody screen={screen} />
+      <SubmitNotice notice={screen.notice} />
+      <MealQueryBody demo={screen.demo} query={screen.query}>
+        <PlanView screen={screen} />
+      </MealQueryBody>
       <UploadPanel screen={screen} />
       <ConfirmSheet
         open={screen.confirming}

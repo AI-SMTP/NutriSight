@@ -1,0 +1,54 @@
+.guide {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.ordersHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.summary {
+  margin: 0;
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* 공용 Button 위에 얹는 배치. 같은 특이도의 Button 규칙보다 앞서도록 목록 안으로 한정한다 */
+.list .patientButton {
+  justify-content: space-between;
+  width: 100%;
+  min-height: var(--touch-min);
+  min-width: var(--touch-min);
+  text-align: left;
+}
+
+.list .patientButton[aria-pressed="true"] {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px var(--color-primary);
+}
+
+.patientName {
+  overflow-wrap: anywhere;
+}
+
+.hint {
+  margin: 0;
+  color: var(--color-text-muted);
+}

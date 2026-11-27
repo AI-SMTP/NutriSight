@@ -36,10 +36,12 @@ describe("AppRoutes", () => {
     }
   });
 
-  it("/post-meal은 이 단계에서 자리표시 화면이다", () => {
+  it("/post-meal은 식후 사진 화면이다", async () => {
     renderRoute("/post-meal");
 
-    expect(screen.getByText("화면을 준비하고 있습니다")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /식후 사진 업로드$/ })).toBeInTheDocument();
+    expect(await screen.findByRole("list", { name: "업로드 현황" })).toBeInTheDocument();
+    expect(screen.queryByText("화면을 준비하고 있습니다")).not.toBeInTheDocument();
   });
 
   it("/baseline은 기준 식전 사진 화면이다", async () => {

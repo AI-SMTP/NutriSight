@@ -6,27 +6,37 @@
  * - 업로드: `prepareUpload()` → `uploadBaseline`을 `useSubmission`으로 보낸다. 대상(날짜·끼니)과 사진은
  *   요청 객체에 고정하고, 요청 중에는 선택·사진 입력·제출을 막는다. 성공하면 `markSubmitted`(대상 키는
  *   `meal_plan_id`) 뒤에 `refetch`를 부른다. 404면 그 끼니를 다시 읽는다.
- * - 요청이 없을 때 날짜·끼니를 바꾸면 고른 사진과 오류 메시지를 지운다.
- * - 성공 안내(`submitNotice`)는 지우지 않고, 안내를 남긴 끼니(`noticeKey`)를 보고 있을 때만 보인다.
- *   스펙은 안내를 조회 실패(가·나)에도 유지하라고 하는데, (가)는 끼니를 바꿨다가 돌아온 뒤에만 생긴다.
- *   그래서 끼니를 바꿔도 안내를 지우지 않되, 다른 끼니에서 "등록됨"으로 오해하지 않도록 숨긴다.
- *   새 업로드를 시작하면 이전 안내를 지운다.
+ * - 사진 보관, 선택 변경 때 사진·오류 지우기, 성공 처리, 안내 필터는 공용 `useUploadFlow`가 맡는다.
  */
 import { useState } from "react";
 
-import { ApiError, mealPlanId, uploadBaseline, type Meal } from "../../api/provisional";
+import { mealPlanId, uploadBaseline, type ApiErrorKind, type Meal } from "../../api/provisional";
 import { prepareUpload } from "../../lib/image";
 import { defaultMeal } from "../shared/defaultMeal";
 import { useDemoDate, type DemoDate } from "../shared/useDemoDate";
 import { useMealQuery, type MealQuery } from "../shared/useMealQuery";
 import { useSubmission, type Submission } from "../shared/useSubmission";
+import {
+  useUploadFlow,
+  type UploadFlow,
+  type UploadOptions,
+  type UploadTarget,
+} from "../shared/useUploadFlow";
 import { BASELINE_REGISTERED } from "./messages";
 
-/** 업로드 요청 객체(요청 시점에 고정한다) */
-interface BaselineRequest {
-  date: string;
-  meal: Meal;
-  file: File;
+/** 업로드 요청 객체(요청 시점에 고정한다). 공용 업로드 대상(날짜·끼니·사진) 그대로다 */
+type BaselineRequest = UploadTarget;
+
+/** 성공하면 그 끼니(`meal_plan_id`)를 잠그고, 404면 다시 읽는다 */
+const BASELINE_UPLOAD: UploadOptions<BaselineRequest> = {
+  lockKey: (request) => mealPlanId(request.date, request.meal),
+  notice: () => BASELINE_REGISTERED,
+  refetchOn: new Set<ApiErrorKind>(["not_found"]),
+};
+
+async function sendBaseline(request: Readonly<BaselineRequest>) {
+  const prepared = await prepareUpload(request.file);
+  return uploadBaseline(request.date, request.meal, prepared.blob);
 }
 
 /** 날짜·끼니 선택. 사용자가 날짜를 고르기 전에는 시연일을 쓴다 */
@@ -36,39 +46,6 @@ function useSelection() {
   const [meal, setMeal] = useState<Meal>(() => defaultMeal(new Date()));
   const date = demo.status === "ready" ? (pickedDate ?? demo.date) : null;
   return { demo, date, meal, setPickedDate, setMeal };
-}
-
-/** 사진 업로드와 확인 시트 */
-function useUpload(query: MealQuery, submission: Submission) {
-  const [file, setFile] = useState<File | null>(null);
-  const [noticeKey, setNoticeKey] = useState<string | null>(null);
-  const [confirming, setConfirming] = useState(false);
-
-  const upload = (target: BaselineRequest) => {
-    setConfirming(false);
-    query.clearSubmitNotice();
-    submission.submit(
-      target,
-      async (request) => {
-        const prepared = await prepareUpload(request.file);
-        return uploadBaseline(request.date, request.meal, prepared.blob);
-      },
-      {
-        onSuccess: (_photo, request) => {
-          const key = mealPlanId(request.date, request.meal);
-          setNoticeKey(key);
-          query.markSubmitted(key, BASELINE_REGISTERED);
-          query.refetch();
-          setFile(null);
-        },
-        onError: (error) => {
-          if (error instanceof ApiError && error.kind === "not_found") query.refetch();
-        },
-      },
-    );
-  };
-
-  return { file, setFile, noticeKey, confirming, setConfirming, upload };
 }
 
 export interface BaselineScreen {
@@ -97,55 +74,83 @@ export interface BaselineScreen {
   cancelUpload: () => void;
 }
 
+type BaselineActions = Pick<
+  BaselineScreen,
+  "selectDate" | "selectMeal" | "requestUpload" | "confirmUpload" | "cancelUpload"
+>;
+
+interface ActionContext {
+  flow: UploadFlow;
+  query: MealQuery;
+  target: BaselineRequest | null;
+  submitDisabled: boolean;
+  setConfirming: (open: boolean) => void;
+  setPickedDate: (date: string) => void;
+  setMeal: (meal: Meal) => void;
+}
+
+/** 버튼·선택 핸들러 */
+function baselineActions(ctx: ActionContext): BaselineActions {
+  const { flow, target, setConfirming } = ctx;
+  const upload = (request: BaselineRequest) => {
+    setConfirming(false);
+    flow.start(request, sendBaseline, BASELINE_UPLOAD);
+  };
+  return {
+    selectDate: (next) => {
+      if (next !== "") flow.changeSelection(() => ctx.setPickedDate(next));
+    },
+    selectMeal: (next) => flow.changeSelection(() => ctx.setMeal(next)),
+    requestUpload: () => {
+      if (target === null) return;
+      if (ctx.query.data?.baseline_photo) setConfirming(true);
+      else upload(target);
+    },
+    // 시트가 열린 동안 조회 결과가 바뀌어(배식 계획 없음 등) 제출할 수 없게 됐으면 요청하지 않고 닫는다
+    confirmUpload: () => {
+      if (target !== null && !ctx.submitDisabled) upload(target);
+      else setConfirming(false);
+    },
+    cancelUpload: () => setConfirming(false),
+  };
+}
+
 export function useBaselineScreen(): BaselineScreen {
   const { demo, date, meal, setPickedDate, setMeal } = useSelection();
   const query = useMealQuery({ date, meal, enabled: demo.status === "ready" });
   const submission = useSubmission();
-  const upload = useUpload(query, submission);
-  const currentKey = date === null ? null : mealPlanId(date, meal);
+  const flow = useUploadFlow({ query, submission, date, meal });
+  const [confirming, setConfirming] = useState(false);
 
   const selectionDisabled = demo.status !== "ready" || submission.busy;
   const pickerDisabled = selectionDisabled || query.view !== "ready";
-  const locked = currentKey !== null && query.isLocked(currentKey);
-  const target = date !== null && upload.file !== null ? { date, meal, file: upload.file } : null;
+  const locked = date !== null && query.isLocked(mealPlanId(date, meal));
+  const target = date !== null && flow.file !== null ? { date, meal, file: flow.file } : null;
   const submitDisabled = pickerDisabled || target === null || locked;
-
-  // 요청이 없을 때만 선택을 바꾸고, 고른 사진과 오류 메시지를 지운다
-  const changeSelection = (apply: () => void) => {
-    if (submission.busy) return;
-    upload.setFile(null);
-    submission.clearError();
-    apply();
-  };
+  const actions = baselineActions({
+    flow,
+    query,
+    target,
+    submitDisabled,
+    setConfirming,
+    setPickedDate,
+    setMeal,
+  });
 
   return {
     demo,
     date,
     meal,
     query,
-    file: upload.file,
-    notice: upload.noticeKey === currentKey ? query.submitNotice : null,
+    file: flow.file,
+    notice: flow.notice,
     uploadError: submission.error,
     busy: submission.busy,
-    confirming: upload.confirming,
+    confirming,
     selectionDisabled,
     pickerDisabled,
     submitDisabled,
-    selectDate: (next) => {
-      if (next !== "") changeSelection(() => setPickedDate(next));
-    },
-    selectMeal: (next) => changeSelection(() => setMeal(next)),
-    selectFile: upload.setFile,
-    requestUpload: () => {
-      if (target === null) return;
-      if (query.data?.baseline_photo) upload.setConfirming(true);
-      else upload.upload(target);
-    },
-    // 시트가 열린 동안 조회 결과가 바뀌어(배식 계획 없음 등) 제출할 수 없게 됐으면 요청하지 않고 닫는다
-    confirmUpload: () => {
-      if (target !== null && !submitDisabled) upload.upload(target);
-      else upload.setConfirming(false);
-    },
-    cancelUpload: () => upload.setConfirming(false),
+    selectFile: flow.selectFile,
+    ...actions,
   };
 }

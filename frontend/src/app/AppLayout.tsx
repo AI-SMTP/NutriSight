@@ -43,8 +43,3 @@ export function MealScreensLayout({ connectEvents }: MealScreensLayoutProps) {
     </SystemEventsProvider>
   );
 }
-
-/** 아직 만들지 않은 화면의 자리표시 */
-export function PlaceholderScreen() {
-  return <p className={styles.placeholder}>화면을 준비하고 있습니다</p>;
-}
