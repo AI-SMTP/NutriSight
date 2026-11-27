@@ -52,3 +52,23 @@
   margin: 0;
   color: var(--color-text-muted);
 }
+
+/* "사진 없이 기록" 영역: 업로드 버튼 아래 구분선 뒤에 두 버튼을 나란히 둔다 */
+.staffZero {
+  display: grid;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-line);
+}
+
+.staffZeroTitle {
+  margin: 0;
+  color: var(--color-text);
+  font-size: 16px;
+}
+
+.staffZeroActions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}

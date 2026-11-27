@@ -2,7 +2,7 @@
  * 화면 ①② 공통 조각: "다시 시도" 안내, 조회 상태별 본문, 성공 안내 영역, 업로드 영역 틀, 요청 실패 안내.
  * 본문 규칙은 스펙 3.5절 공통 규칙(시연일 실패 → 로딩 → 404 → (가) → 데이터)을 따른다.
  */
-import type { ReactNode } from "react";
+import type { ReactNode, RefObject } from "react";
 
 import { Button } from "../../components/Button";
 import styles from "./MealScreen.module.css";
@@ -61,9 +61,16 @@ export function SubmitNotice({ notice }: { notice: string | null }) {
   );
 }
 
+export interface UploadPanelFrameProps {
+  busy: boolean;
+  children: ReactNode;
+  /** 제목 ref. 확인 시트가 요청 없이 닫힐 때 대신 포커스를 줄 곳으로 화면이 함께 쓴다 */
+  titleRef: RefObject<HTMLHeadingElement | null>;
+}
+
 /** 업로드 영역 틀: 요청이 시작되면 포커스를 받는 "사진 올리기" 제목 아래에 화면별 내용을 둔다 */
-export function UploadPanelFrame({ busy, children }: { busy: boolean; children: ReactNode }) {
-  const titleRef = useFocusWhileBusy(busy);
+export function UploadPanelFrame({ busy, children, titleRef }: UploadPanelFrameProps) {
+  useFocusWhileBusy(busy, titleRef);
   return (
     <div className={styles.panel}>
       <h2 ref={titleRef} className={styles.panelTitle} tabIndex={-1}>

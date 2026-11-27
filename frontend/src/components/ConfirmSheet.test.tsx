@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import { ConfirmSheet } from "./ConfirmSheet";
 
@@ -167,4 +167,52 @@ describe("ConfirmSheet 포커스", () => {
     await userEvent.tab({ shift: true });
     expect(dialog).toHaveFocus();
   });
+
+  it("닫힐 때 시트를 연 버튼이 막혀 있으면 대신 받을 요소(fallbackFocusRef)로 포커스를 옮긴다", async () => {
+    render(<BlockingHarness />);
+    await userEvent.click(screen.getByRole("button", { name: "전량 거부" }));
+
+    await userEvent.click(screen.getByRole("button", { name: "기록" }));
+
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "사진 올리기" })).toHaveFocus();
+  });
+
+  it("대신 받을 요소가 없으면 시트를 연 버튼이 막혀 있어도 예외 없이 닫힌다", async () => {
+    render(<BlockingHarness withFallback={false} />);
+    await userEvent.click(screen.getByRole("button", { name: "전량 거부" }));
+
+    await userEvent.click(screen.getByRole("button", { name: "기록" }));
+
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
 });
+
+// 확인하면 시트를 연 버튼이 막히는 형태(요청 없이 닫히거나 요청이 시작된 경우)
+function BlockingHarness({ withFallback = true }: { withFallback?: boolean }) {
+  const [open, setOpen] = useState(false);
+  const [blocked, setBlocked] = useState(false);
+  const titleRef = useRef<HTMLHeadingElement>(null);
+  return (
+    <>
+      <h2 ref={titleRef} tabIndex={-1}>
+        사진 올리기
+      </h2>
+      <button type="button" disabled={blocked} onClick={() => setOpen(true)}>
+        전량 거부
+      </button>
+      <ConfirmSheet
+        open={open}
+        title="전량 거부 기록"
+        message="NS03 점심을 전량 거부로 기록합니다"
+        confirmLabel="기록"
+        onConfirm={() => {
+          setBlocked(true);
+          setOpen(false);
+        }}
+        onCancel={() => setOpen(false)}
+        fallbackFocusRef={withFallback ? titleRef : undefined}
+      />
+    </>
+  );
+}

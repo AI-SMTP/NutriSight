@@ -205,7 +205,7 @@ describe("화면 ① 업로드", () => {
     await waitFor(() => expect(baselineControls().meal("lunch")).toBeEnabled());
   });
 
-  it("확인 시트가 열린 동안 그 끼니가 '배식 계획 없음'으로 바뀌면 확인해도 요청하지 않는다", async () => {
+  it("확인 시트가 열린 동안 그 끼니가 '배식 계획 없음'으로 바뀌면 확인해도 요청하지 않고, 포커스는 업로드 영역 제목으로 간다", async () => {
     const user = userEvent.setup();
     const mock = createMockConnect();
     renderRoute("/baseline", mock.connect);
@@ -226,5 +226,7 @@ describe("화면 ① 업로드", () => {
 
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(postRequests(requests)).toEqual([]);
+    // 시트를 연 업로드 버튼이 막혔으므로 포커스는 body가 아니라 업로드 영역 제목으로 간다
+    expect(screen.getByRole("heading", { name: "사진 올리기" })).toHaveFocus();
   });
 });

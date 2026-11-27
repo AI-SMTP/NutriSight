@@ -10,6 +10,7 @@ import { http, HttpResponse, type JsonBodyType } from "msw";
 import type { ApiErrorKind } from "../api/provisional";
 import { errorResponse } from "../mocks/errorHandlers";
 import { server } from "../mocks/server";
+import { deferred, type Deferred } from "./deferred";
 
 /** 붙잡힌 요청이 끝날 방식 */
 type Release =
@@ -64,4 +65,24 @@ export function recordApiRequests(): { requests: readonly string[] } {
     }),
   );
   return { requests };
+}
+
+/**
+ * 이후 `path`로 오는 POST를 붙잡는다. `arrived`는 요청이 도착했을 때 풀리고, `gate`를 풀면 `respond`의
+ * 응답으로 끝낸다(`respond`가 없거나 `undefined`를 주면 기본 핸들러로 넘긴다).
+ */
+export function holdPost(
+  path: string,
+  respond: () => Response | undefined = () => undefined,
+): { gate: Deferred<void>; arrived: Deferred<void> } {
+  const gate = deferred<void>();
+  const arrived = deferred<void>();
+  server.use(
+    http.post(path, async () => {
+      arrived.resolve();
+      await gate.promise;
+      return respond();
+    }),
+  );
+  return { gate, arrived };
 }

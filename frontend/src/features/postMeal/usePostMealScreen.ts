@@ -11,7 +11,10 @@
  *   성공하면 `markSubmitted` 뒤에 `refetch`를 부른다. 404·409면 그 끼니를 다시 읽는다(스펙 3.3절).
  * - 사진 보관, 선택 변경 때 사진·오류 지우기, 성공 처리, 안내 필터(안내를 남긴 끼니를 볼 때만)는
  *   화면 ①과 같은 공용 `useUploadFlow`가 맡는다.
- * - `submission`은 화면에 하나다. Story 17의 전량 기록도 같은 것을 써서 두 요청이 함께 막히게 한다.
+ * - `submission`은 화면에 하나다. 전량 기록(`useStaffZero`)도 같은 것을 써서 두 요청이 함께 막힌다.
+ *   실패 분류도 하나뿐이므로 마지막으로 보낸 요청의 종류(`lastRequest`)를 기억해 업로드 실패
+ *   (`uploadError`)와 전량 기록 실패(`staffZeroError`)로 나눠 내보낸다. 두 실패의 안내 문구가 다르다.
+ * - 전량 기록 버튼은 사진 입력과 같은 조건(시연일·끼니 조회 준비, 요청 없음, 기록할 수 있는 발주)에서 열린다.
  */
 import { useState } from "react";
 
@@ -30,6 +33,10 @@ import { useMealQuery, type MealQuery } from "../shared/useMealQuery";
 import { useSubmission, type Submission } from "../shared/useSubmission";
 import { useUploadFlow, type UploadFlow, type UploadOptions } from "../shared/useUploadFlow";
 import { uploadedNotice } from "./messages";
+import { useStaffZero, type StaffZeroControls } from "./useStaffZero";
+
+/** 화면 ②가 보내는 요청 종류. 공용 `submission`의 실패가 어느 요청의 것인지 가른다 */
+type PostMealRequestKind = "upload" | "staff_zero";
 
 /** 업로드 요청 객체(요청 시점에 고정한다) */
 interface PostPhotoRequest {
@@ -111,7 +118,10 @@ export interface PostMealScreen {
   file: File | null;
   /** 지금 보고 있는 끼니의 성공 안내 */
   notice: string | null;
+  /** 마지막 업로드의 실패 분류(마지막 요청이 전량 기록이면 `null`) */
   uploadError: ApiErrorKind | null;
+  /** 마지막 전량 기록의 실패 분류(마지막 요청이 업로드면 `null`) */
+  staffZeroError: ApiErrorKind | null;
   busy: boolean;
   /** 끼니 입력을 막는지 */
   mealDisabled: boolean;
@@ -121,6 +131,10 @@ export interface PostMealScreen {
   pickerDisabled: boolean;
   /** 업로드 버튼을 막는지 */
   submitDisabled: boolean;
+  /** 전량 기록 버튼을 막는지 */
+  staffZeroDisabled: boolean;
+  /** 전량 기록 확인 시트와 요청 */
+  staffZero: StaffZeroControls;
   selectMeal: (meal: Meal) => void;
   selectPatient: (patientId: string) => void;
   selectFile: (file: File) => void;
@@ -136,6 +150,7 @@ interface ActionContext {
   submitDisabled: boolean;
   setMeal: (meal: Meal) => void;
   setPatientId: (patientId: string | null) => void;
+  setLastRequest: (kind: PostMealRequestKind) => void;
 }
 
 /** 끼니·환자 선택과 업로드 핸들러. 끼니를 바꾸면 환자 선택도 지운다 */
@@ -152,9 +167,31 @@ function postMealActions(ctx: ActionContext): PostMealActions {
     },
     requestUpload: () => {
       if (request !== null && !ctx.submitDisabled) {
+        ctx.setLastRequest("upload");
         flow.start(request, sendPostPhoto, POST_PHOTO_UPLOAD);
       }
     },
+  };
+}
+
+/** 화면 상태에서 입력별 차단 여부를 계산한다 */
+function disabledFlags(
+  demo: DemoDate,
+  query: MealQuery,
+  submission: Submission,
+  recordable: boolean,
+) {
+  const mealDisabled = demo.status !== "ready" || submission.busy;
+  const patientDisabled = mealDisabled || query.view !== "ready";
+  const pickerDisabled = patientDisabled || !recordable;
+  return { mealDisabled, patientDisabled, pickerDisabled };
+}
+
+/** 공용 실패 분류를 마지막 요청 종류에 따라 업로드·전량 기록 실패로 나눈다 */
+function splitErrors(error: ApiErrorKind | null, lastRequest: PostMealRequestKind) {
+  return {
+    uploadError: lastRequest === "upload" ? error : null,
+    staffZeroError: lastRequest === "staff_zero" ? error : null,
   };
 }
 
@@ -163,14 +200,21 @@ export function usePostMealScreen(): PostMealScreen {
   const query = useMealQuery({ date, meal, enabled: demo.status === "ready" });
   const submission = useSubmission();
   const flow = useUploadFlow({ query, submission, date, meal });
+  const [lastRequest, setLastRequest] = useState<PostMealRequestKind>("upload");
 
   const selectedOrder = findSelectedOrder(query.data, patientId);
   const recordable = isRecordable(selectedOrder, query);
-  const mealDisabled = demo.status !== "ready" || submission.busy;
-  const patientDisabled = mealDisabled || query.view !== "ready";
-  const pickerDisabled = patientDisabled || !recordable;
+  const flags = disabledFlags(demo, query, submission, recordable);
   const request = buildRequest(date, meal, selectedOrder, flow.file);
-  const submitDisabled = pickerDisabled || request === null;
+  const submitDisabled = flags.pickerDisabled || request === null;
+  const staffZero = useStaffZero({
+    flow,
+    date,
+    meal,
+    order: selectedOrder,
+    disabled: flags.pickerDisabled,
+    onStart: () => setLastRequest("staff_zero"),
+  });
   const actions = postMealActions({
     flow,
     patientId,
@@ -178,6 +222,7 @@ export function usePostMealScreen(): PostMealScreen {
     submitDisabled,
     setMeal,
     setPatientId,
+    setLastRequest,
   });
 
   return {
@@ -190,12 +235,12 @@ export function usePostMealScreen(): PostMealScreen {
     recordable,
     file: flow.file,
     notice: flow.notice,
-    uploadError: submission.error,
+    ...splitErrors(submission.error, lastRequest),
     busy: submission.busy,
-    mealDisabled,
-    patientDisabled,
-    pickerDisabled,
+    ...flags,
     submitDisabled,
+    staffZeroDisabled: flags.pickerDisabled,
+    staffZero,
     selectFile: flow.selectFile,
     ...actions,
   };

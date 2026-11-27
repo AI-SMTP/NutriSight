@@ -5,7 +5,7 @@
 //   그런데 화면의 `FormData.append`(jsdom)는 jsdom `Blob`만 받으므로, 사진 자체는 바꾸기 전의 jsdom `File`로
 //   만들어야 한다. 그래서 이 모듈을 불러올 때(각 테스트의 beforeEach보다 먼저) jsdom `File`을 잡아 둔다.
 //   이 조합이면 `<input type="file">`·user-event `upload`(jsdom `File`)와 multipart 전송이 함께 동작한다.
-import { act, screen } from "@testing-library/react";
+import { act, within } from "@testing-library/react";
 import type { UserEvent } from "@testing-library/user-event";
 
 import type { Meal } from "../api/provisional";
@@ -49,10 +49,17 @@ export function useMealScreenEnv(at: () => Date = () => localTime(17, 20)): void
   });
 }
 
-/** "앨범에서 선택"으로 jsdom `File` 사진 하나를 고른다(전역 `File`이 Node 것으로 바뀐 묶음에서도) */
-export async function pickPhoto(user: UserEvent, name = "tray.jpg"): Promise<File> {
+/**
+ * "앨범에서 선택"으로 jsdom `File` 사진 하나를 고른다(전역 `File`이 Node 것으로 바뀐 묶음에서도).
+ * 화면 두 개를 함께 그린 테스트는 `root`로 어느 화면의 입력인지 정한다.
+ */
+export async function pickPhoto(
+  user: UserEvent,
+  name = "tray.jpg",
+  root: HTMLElement = document.body,
+): Promise<File> {
   const photo = new JsdomFile([new Uint8Array(2048)], name, { type: "image/jpeg" });
-  await user.upload(screen.getByLabelText("앨범에서 선택"), photo);
+  await user.upload(within(root).getByLabelText("앨범에서 선택"), photo);
   return photo;
 }
 

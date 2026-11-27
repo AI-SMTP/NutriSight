@@ -2,9 +2,9 @@
  * 화면 ② 식후 사진(/post-meal, 스펙 3.5절 화면 ②).
  * 요양보호사가 오늘 세 끼 중 하나와 환자를 고르고 식후 사진을 올리며, 그 끼니의 업로드 현황을 본다.
  * 상태와 업로드 규칙은 `usePostMealScreen`에 있고, 이 파일은 그리기만 한다.
- * 전량 기록(전량 거부·전량 미섭취)은 `StaffZeroSlot` 자리에 Story 17이 붙인다.
+ * 전량 기록(전량 거부·전량 미섭취) 버튼과 확인 시트는 `StaffZeroSlot`이 그린다.
  */
-import { useId } from "react";
+import { useId, useRef } from "react";
 
 import { Button } from "../../components/Button";
 import { PhotoPicker } from "../../components/PhotoPicker";
@@ -85,11 +85,14 @@ function SelectionHint({ screen, blockedId }: { screen: PostMealScreen; blockedI
   );
 }
 
-/** 사진 입력, 업로드 오류, 업로드 버튼, 전량 기록 자리 */
+/** 사진 입력, 업로드 오류, 업로드 버튼, 전량 기록 */
 function UploadPanel({ screen }: { screen: PostMealScreen }) {
   const blockedId = useId();
+  const describedBy = isBlocked(screen) ? blockedId : undefined;
+  // 전량 기록 시트가 요청 없이 닫혀 버튼이 막혀 있으면 포커스를 이 제목으로 옮긴다(바로 아래가 막힌 이유 안내)
+  const titleRef = useRef<HTMLHeadingElement>(null);
   return (
-    <UploadPanelFrame busy={screen.busy}>
+    <UploadPanelFrame busy={screen.busy} titleRef={titleRef}>
       <SelectionHint screen={screen} blockedId={blockedId} />
       <PhotoPicker
         value={screen.file}
@@ -103,11 +106,11 @@ function UploadPanel({ screen }: { screen: PostMealScreen }) {
         onClick={screen.requestUpload}
         disabled={screen.submitDisabled}
         aria-busy={screen.busy}
-        aria-describedby={isBlocked(screen) ? blockedId : undefined}
+        aria-describedby={describedBy}
       >
         {uploadLabel(screen.selectedOrder?.display_name ?? null)}
       </Button>
-      <StaffZeroSlot screen={screen} />
+      <StaffZeroSlot screen={screen} blockedId={describedBy} fallbackFocusRef={titleRef} />
     </UploadPanelFrame>
   );
 }

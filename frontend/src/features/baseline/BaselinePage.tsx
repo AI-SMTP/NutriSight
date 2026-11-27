@@ -4,6 +4,8 @@
  * 상태와 업로드 규칙은 `useBaselineScreen`에 있고, 이 파일은 그리기만 한다.
  * 조회 상태별 본문·안내 조각은 화면 ②와 함께 `features/shared`에서 가져온다.
  */
+import { useRef, type RefObject } from "react";
+
 import { Button } from "../../components/Button";
 import { ConfirmSheet } from "../../components/ConfirmSheet";
 import { PhotoPicker } from "../../components/PhotoPicker";
@@ -70,10 +72,15 @@ function SelectionControls({ screen }: { screen: BaselineScreen }) {
   );
 }
 
+interface UploadPanelProps {
+  screen: BaselineScreen;
+  titleRef: RefObject<HTMLHeadingElement | null>;
+}
+
 /** 촬영 안내, 사진 입력, 업로드 오류, 업로드 버튼 */
-function UploadPanel({ screen }: { screen: BaselineScreen }) {
+function UploadPanel({ screen, titleRef }: UploadPanelProps) {
   return (
-    <UploadPanelFrame busy={screen.busy}>
+    <UploadPanelFrame busy={screen.busy} titleRef={titleRef}>
       <ul className={styles.guide}>
         {SHOOTING_GUIDE.map((line) => (
           <li key={line}>{line}</li>
@@ -100,6 +107,8 @@ function UploadPanel({ screen }: { screen: BaselineScreen }) {
 
 export function BaselinePage() {
   const screen = useBaselineScreen();
+  // 시트가 요청 없이 닫혀 업로드 버튼이 막혀 있으면(배식 계획 없음 등) 포커스를 업로드 영역 제목으로 옮긴다
+  const panelTitleRef = useRef<HTMLHeadingElement>(null);
   return (
     <section className={shared.screen}>
       <SelectionControls screen={screen} />
@@ -107,7 +116,7 @@ export function BaselinePage() {
       <MealQueryBody demo={screen.demo} query={screen.query}>
         <PlanView screen={screen} />
       </MealQueryBody>
-      <UploadPanel screen={screen} />
+      <UploadPanel screen={screen} titleRef={panelTitleRef} />
       <ConfirmSheet
         open={screen.confirming}
         title={RESUBMIT_SHEET.title}
@@ -115,6 +124,7 @@ export function BaselinePage() {
         confirmLabel={RESUBMIT_SHEET.confirmLabel}
         onConfirm={screen.confirmUpload}
         onCancel={screen.cancelUpload}
+        fallbackFocusRef={panelTitleRef}
       />
     </section>
   );
