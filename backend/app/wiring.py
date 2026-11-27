@@ -138,11 +138,16 @@ def _build[T](
     return factory(settings)
 
 
+def build_nutrition_engine(settings: Settings) -> NutritionEngine:
+    """`NUTRITION_ENGINE` 설정의 판단 알고리즘을 만든다. 시드 적재도 같은 규칙을 쓴다."""
+    return _build(NUTRITION_ENGINES, "nutrition_engine", settings)
+
+
 def build_components(settings: Settings) -> Components:
     """설정값으로 네 구현을 만든다. 등록되지 않은 이름이면 `ConfigError`를 던진다."""
     return Components(
         intake_estimator=_build(INTAKE_ESTIMATORS, "intake_adapter", settings),
-        nutrition_engine=_build(NUTRITION_ENGINES, "nutrition_engine", settings),
+        nutrition_engine=build_nutrition_engine(settings),
         guideline_search=_build(GUIDELINE_SEARCHES, "guideline_search", settings),
         patient_data=_build(PATIENT_DATA_PORTS, "patient_data", settings),
     )
