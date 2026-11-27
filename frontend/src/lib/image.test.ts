@@ -1,46 +1,9 @@
-// prepareUpload() 테스트. jsdom에는 createImageBitmap과 캔버스 인코딩이 없으므로
-// vi.stubGlobal로 비트맵 크기와 인코딩 결과를 주입한다.
+// prepareUpload() 테스트. 대역(비트맵 크기·인코딩 결과 주입)은 test/imageStubs.ts에 있다.
+import { jpegBlob, makeBitmap, stubDecode, stubOffscreenCanvas } from "../test/imageStubs";
 import { JPEG_QUALITY, MAX_EDGE_PX, prepareUpload } from "./image";
-
-type FakeBitmap = { width: number; height: number; close: ReturnType<typeof vi.fn> };
 
 function makeFile(bytes = 5000, type = "image/heic"): File {
   return new File([new Uint8Array(bytes)], "tray.heic", { type });
-}
-
-function makeBitmap(width: number, height: number): FakeBitmap {
-  return { width, height, close: vi.fn() };
-}
-
-function jpegBlob(bytes = 1234): Blob {
-  return new Blob([new Uint8Array(bytes)], { type: "image/jpeg" });
-}
-
-// OffscreenCanvas 대역: 생성 크기, convertToBlob 인자와 호출 시점의 캔버스 크기를 기록한다.
-function stubOffscreenCanvas(options: { convertToBlob?: () => Promise<Blob>; context?: unknown }) {
-  const drawImage = vi.fn();
-  const instances: FakeOffscreenCanvas[] = [];
-  const context = options.context === undefined ? { drawImage } : options.context;
-  const encode = options.convertToBlob ?? (() => Promise.resolve(jpegBlob()));
-  class FakeOffscreenCanvas {
-    width: number;
-    height: number;
-    sizeAtEncode?: { width: number; height: number };
-    convertToBlob = vi.fn(() => {
-      this.sizeAtEncode = { width: this.width, height: this.height };
-      return encode();
-    });
-    constructor(width: number, height: number) {
-      this.width = width;
-      this.height = height;
-      instances.push(this);
-    }
-    getContext() {
-      return context;
-    }
-  }
-  vi.stubGlobal("OffscreenCanvas", FakeOffscreenCanvas);
-  return { drawImage, instances };
 }
 
 // canvas 요소 대역: getContext·toBlob을 가로채고 toBlob 호출 시점의 캔버스 크기를 기록한다.
@@ -64,12 +27,6 @@ function stubCanvasElement(toBlobResult: Blob | null, options: { context?: unkno
       .map((r) => r.value as unknown)
       .filter((v): v is HTMLCanvasElement => v instanceof HTMLCanvasElement);
   return { drawImage, toBlob, sizesAtEncode, createdCanvases };
-}
-
-function stubDecode(bitmap: FakeBitmap) {
-  const createImageBitmap = vi.fn(() => Promise.resolve(bitmap));
-  vi.stubGlobal("createImageBitmap", createImageBitmap);
-  return createImageBitmap;
 }
 
 afterEach(() => {
