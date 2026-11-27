@@ -18,6 +18,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 BACKEND_ENV_FILE = Path(__file__).resolve().parents[1] / ".env"
 DEFAULT_VAR_DIR = REPO_ROOT / "var"
 DEFAULT_SEED_PATH = REPO_ROOT / "data" / "seed" / "demo_seed.json"
+DEFAULT_FRONTEND_DIST = REPO_ROOT / "frontend" / "dist"
 DEFAULT_IMPLEMENTATION = "fake"
 DEFAULT_FAKE_INTAKE_DELAY_S = 2.0
 
@@ -30,7 +31,7 @@ class ConfigError(Exception):
 
 
 class Settings(BaseSettings):
-    """네 계약의 구현 이름, Fake 섭취 추정 지연 시간, 저장소 경로와 시연일."""
+    """네 계약의 구현 이름, Fake 섭취 추정 지연 시간, 저장소 경로, 시연일, 프론트엔드 빌드 경로."""
 
     model_config = SettingsConfigDict(env_file=BACKEND_ENV_FILE, extra="ignore")
 
@@ -41,10 +42,12 @@ class Settings(BaseSettings):
     fake_intake_delay_s: float = Field(DEFAULT_FAKE_INTAKE_DELAY_S, ge=0)
     var_dir: Path = DEFAULT_VAR_DIR
     seed_path: Path = DEFAULT_SEED_PATH
+    # `pnpm build` 결과 디렉토리. `index.html`이 있을 때만 정적 제공을 켠다(스펙 3.8).
+    frontend_dist: Path = DEFAULT_FRONTEND_DIST
     # 원문 그대로 둔다. 형식 검사는 `resolve_demo_date`가 한다(모듈 수준 앱 생성이 실패하지 않게).
     demo_date: str | None = None
 
-    @field_validator("var_dir", "seed_path")
+    @field_validator("var_dir", "seed_path", "frontend_dist")
     @classmethod
     def _anchor_to_repo_root(cls, value: Path) -> Path:
         """`~`를 펼치고, 상대 경로는 실행 위치가 아니라 저장소 루트 기준으로 해석한다."""

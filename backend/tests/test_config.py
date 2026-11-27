@@ -13,6 +13,7 @@ from pydantic import ValidationError
 
 import app.main
 from app.config import (
+    DEFAULT_FRONTEND_DIST,
     DEFAULT_SEED_PATH,
     DEFAULT_VAR_DIR,
     REPO_ROOT,
@@ -82,6 +83,8 @@ def test_settings_default_paths_are_under_repository_root(
     assert settings.var_dir == EXPECTED_REPO_ROOT / "var"
     assert settings.seed_path == EXPECTED_REPO_ROOT / "data" / "seed" / "demo_seed.json"
     assert settings.demo_date is None
+    assert DEFAULT_FRONTEND_DIST == EXPECTED_REPO_ROOT / "frontend" / "dist"
+    assert settings.frontend_dist == DEFAULT_FRONTEND_DIST
     assert paths.app_db == EXPECTED_REPO_ROOT / "var" / "app.db"
     assert _list_repo_var_files() == before
 
@@ -198,7 +201,8 @@ def test_resolve_demo_date_rejects_invalid_setting_even_with_valid_cli(
 
 
 @pytest.mark.parametrize(
-    ("env_name", "field"), [("VAR_DIR", "var_dir"), ("SEED_PATH", "seed_path")]
+    ("env_name", "field"),
+    [("VAR_DIR", "var_dir"), ("SEED_PATH", "seed_path"), ("FRONTEND_DIST", "frontend_dist")],
 )
 def test_relative_storage_paths_are_anchored_to_repo_root(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path, env_name: str, field: str
@@ -214,6 +218,13 @@ def test_home_relative_var_dir_is_expanded(monkeypatch: pytest.MonkeyPatch, tmp_
     monkeypatch.setenv("VAR_DIR", "~/nutrisight-var")
 
     assert Settings(_env_file=None).var_dir == tmp_path / "nutrisight-var"
+
+
+def test_collection_frontend_dist_points_to_missing_directory() -> None:
+    frontend_dist = Path(os.environ["FRONTEND_DIST"])
+
+    assert not frontend_dist.exists()
+    assert Settings().frontend_dist == frontend_dist
 
 
 def test_autouse_fixture_isolates_var_dir_and_dotenv(tmp_path: Path) -> None:
