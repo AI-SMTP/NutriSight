@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from "react-router";
 
 import type { ConnectSystemEvents } from "../api/events";
+import { BaselinePage } from "../features/baseline/BaselinePage";
 import { CameraCheck } from "../features/cameraCheck/CameraCheck";
 import { AppLayout, MealScreensLayout, PlaceholderScreen } from "./AppLayout";
 import { RoleSelect } from "./RoleSelect";
@@ -18,7 +19,7 @@ export function AppRoutes({ connectEvents }: AppRoutesProps = {}) {
       <Route element={<AppLayout />}>
         <Route index element={<RoleSelect />} />
         <Route element={<MealScreensLayout connectEvents={connectEvents} />}>
-          <Route path={PATHS.baseline} element={<PlaceholderScreen />} />
+          <Route path={PATHS.baseline} element={<BaselinePage />} />
           <Route path={PATHS.postMeal} element={<PlaceholderScreen />} />
         </Route>
         <Route path={PATHS.cameraCheck} element={<CameraCheck />} />

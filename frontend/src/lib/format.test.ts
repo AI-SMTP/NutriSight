@@ -1,4 +1,4 @@
-import { formatBytes } from "./format";
+import { formatBytes, formatClock } from "./format";
 
 describe("formatBytes", () => {
   it.each([
@@ -20,4 +20,18 @@ describe("formatBytes", () => {
       expect(formatBytes(bytes)).toBe("알 수 없음");
     },
   );
+});
+
+describe("formatClock", () => {
+  it.each([
+    [new Date(2026, 10, 27, 7, 5), "07:05"],
+    [new Date(2026, 10, 27, 17, 20), "17:20"],
+    [new Date(2026, 10, 27, 0, 0), "00:00"],
+  ])("ISO 시각 %s를 기기 로컬 시각 %s로 표기한다", (date, expected) => {
+    expect(formatClock(date.toISOString())).toBe(expected);
+  });
+
+  it.each(["", "not-a-date"])("해석할 수 없는 값 '%s'는 '--:--'다", (value) => {
+    expect(formatClock(value)).toBe("--:--");
+  });
 });

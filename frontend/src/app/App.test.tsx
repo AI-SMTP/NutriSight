@@ -36,10 +36,17 @@ describe("AppRoutes", () => {
     }
   });
 
-  it.each(["/baseline", "/post-meal"])("%s는 이 단계에서 자리표시 화면이다", (path) => {
-    renderRoute(path);
+  it("/post-meal은 이 단계에서 자리표시 화면이다", () => {
+    renderRoute("/post-meal");
 
     expect(screen.getByText("화면을 준비하고 있습니다")).toBeInTheDocument();
+  });
+
+  it("/baseline은 기준 식전 사진 화면이다", async () => {
+    renderRoute("/baseline");
+
+    expect(screen.getByRole("button", { name: "기준 사진 업로드" })).toBeInTheDocument();
+    expect(await screen.findByTestId("baseline-status")).toBeInTheDocument();
   });
 
   it("모르는 경로는 역할 선택으로 보낸다", () => {

@@ -11,3 +11,13 @@ export function formatBytes(bytes: number): string {
   if (kb < UNIT_STEP) return `${kb.toFixed(1)} KB`;
   return `${(bytes / UNIT_STEP / UNIT_STEP).toFixed(1)} MB`;
 }
+
+const UNKNOWN_CLOCK = "--:--";
+
+/** ISO 시각을 기기 로컬 시각 `HH:MM`으로 표기한다. 해석할 수 없으면 `--:--`다. */
+export function formatClock(iso: string): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return UNKNOWN_CLOCK;
+  const pad = (value: number) => String(value).padStart(2, "0");
+  return `${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
