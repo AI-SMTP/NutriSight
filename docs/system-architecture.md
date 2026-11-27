@@ -208,7 +208,7 @@ class EstimationRequest:
     meal_order_id: str    # 환자의 한 끼 (예: "NS07_2026-11-23_lunch")
     baseline_image: Path  # 끼니의 기준 식전 사진
     post_image: Path      # 환자의 식후 사진
-    slots: tuple[SlotSpec, ...]
+    slots: tuple[SlotSpec, ...]  # 미배식 칸(served_g = 0)은 넣지 않는다
 
 
 class SlotStatus(StrEnum):

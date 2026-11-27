@@ -277,8 +277,8 @@ erDiagram
 | `slot_id` | TEXT | `slot_1` ~ `slot_6` |
 | `position` | TEXT | 식판 위치 설명. 예: "아랫줄 왼쪽" |
 | `dish_type` | TEXT | `rice` / `soup` / `main` / `side` / `kimchi` |
-| `menu_name` | TEXT | 예: "두부조림" |
-| `served_g` | REAL | 표준 배식량 (팀이 저울로 잰 값) |
+| `menu_name` | TEXT, NULL | 예: "두부조림". 미배식 칸이면 NULL |
+| `served_g` | REAL | 표준 배식량 (팀이 저울로 잰 값). 미배식 칸이면 0 |
 | `energy_kcal` | REAL | 표준 배식량 기준 에너지 |
 | `protein_g` | REAL | 표준 배식량 기준 단백질 |
 
@@ -302,6 +302,8 @@ erDiagram
 │       밥        │       국        │
 └─────────────────┴─────────────────┘
 ```
+
+**미배식 칸 (제안)**: 메뉴가 다섯 가지인 끼니처럼 비는 칸이 있어도 칸 6개는 그대로 둔다. 빈 칸은 `menu_name = NULL`, `served_g = 0`, `energy_kcal = 0`, `protein_g = 0`으로 넣는다. 이 칸에는 `slot_intakes` 행을 만들지 않고, 섭취 추정 요청(`SlotSpec`)에도 넣지 않는다. 화면은 이 칸을 "미배식"으로 표시하고 섭취율을 보여 주지 않는다. 열량이 0이므로 끼니·하루 합계에는 영향이 없다. `served_g = 0`과 `menu_name IS NULL`은 함께만 쓴다.
 
 - 영양성분은 식약처 식품영양성분 데이터로 채운다. 표준레시피의 식재료명(예: "근대, 생것")이 그 데이터의 식품명 형식과 같아 재료별로 합산할 수 있다.
 - 표준레시피의 식재료량은 조리 전 무게라 국물이 빠져 있다. 배식량은 저울 실측값을 쓴다.
@@ -359,7 +361,7 @@ erDiagram
 | 필드 | 타입 | 설명 |
 | --- | --- | --- |
 | `meal_order_id` | TEXT FK | |
-| `slot_id` | TEXT | `meal_plan_slots.slot_id`와 같은 칸 |
+| `slot_id` | TEXT | `meal_plan_slots.slot_id`와 같은 칸. 미배식 칸(`served_g = 0`)은 행을 만들지 않는다 |
 | `intake_fraction_est` | REAL, NULL | 0~1, 0.1 단위. 판단 불가면 NULL |
 | `status` | TEXT | `estimated` / `not_determinable` |
 | `quality_issues` | TEXT (JSON 배열) | `blur`, `occluded`, `angle`, `lighting`, `tray_mismatch` |
