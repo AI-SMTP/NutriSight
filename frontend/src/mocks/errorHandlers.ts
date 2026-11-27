@@ -20,7 +20,8 @@ export function detailResponse(status: number, message: string): Response {
   return HttpResponse.json({ detail: message }, { status });
 }
 
-function errorResponse(kind: ApiErrorKind): Response {
+/** `kind`에 맞는 오류 응답(`network`는 연결 오류). 테스트 도우미도 같은 응답을 쓴다 */
+export function errorResponse(kind: ApiErrorKind): Response {
   if (kind === "network") return HttpResponse.error();
   const { status, message } = KIND_RESPONSES[kind];
   return detailResponse(status, message);

@@ -2,6 +2,7 @@ import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 import type { PreparedUpload } from "../../lib/image";
+import { deferred } from "../../test/deferred";
 import { makePhoto, stubObjectUrl } from "../../test/objectUrl";
 import { renderRoute } from "../../test/renderRoute";
 import { CameraCheck } from "./CameraCheck";
@@ -23,14 +24,6 @@ const CONVERTED: PreparedUpload = {
   source: { type: "image/jpeg", bytes: 4_194_304, width: 4032, height: 3024 },
   output: { type: "image/jpeg", bytes: 524_288, width: 2048, height: 1536 },
 };
-
-function deferred<T>() {
-  let resolve!: (value: T) => void;
-  const promise = new Promise<T>((r) => {
-    resolve = r;
-  });
-  return { promise, resolve };
-}
 
 describe("CameraCheck", () => {
   it("변환에 성공하면 원본·변환 크기와 용량을 보여 준다", async () => {
