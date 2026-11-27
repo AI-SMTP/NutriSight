@@ -26,6 +26,7 @@ from app.storage.seed_load import (
     build_engine,
 )
 from app.storage.seed_models import DemoSeed, SeedMealOrder, SeedMealPlan
+from app.storage.seed_reset import finish_cleanup
 
 # 적재(`build_database`)는 `seed_load.py`에 두고, 시드 관련 진입점은 이 모듈에서 함께 내보낸다.
 __all__ = [
@@ -34,6 +35,7 @@ __all__ = [
     "build_database",
     "build_engine",
     "check_demo_date_range",
+    "finish_cleanup",
     "load_seed_file",
 ]
 
