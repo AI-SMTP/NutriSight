@@ -107,9 +107,12 @@ def test_bm25_korean_tokenization_particles_compounds_and_clinical_units() -> No
     assert "50%" in tokens
 
     # 띄어쓰기 복합명사 결합
-    spaced_tokens = tokenize("욕창 예방과 식사 강화")
+    spaced_tokens = tokenize("욕창 예방과 식사 강화 및 인지 저하 식욕 저하 수분 섭취")
     assert "욕창예방" in spaced_tokens
     assert "식사강화" in spaced_tokens
+    assert "인지저하" in spaced_tokens
+    assert "식욕저하" in spaced_tokens
+    assert "수분섭취" in spaced_tokens
 
 
 async def test_bm25_ranks_pressure_injury_and_handles_ko_en_cross_lingual() -> None:
@@ -160,3 +163,43 @@ def test_wiring_selects_bm25_implementation(
     app = create_app(Settings(_env_file=None, guideline_search="bm25"))
 
     assert isinstance(app.state.guideline_search, Bm25GuidelineSearch)
+
+
+async def test_bm25_cross_lingual_dementia_and_dehydration_queries() -> None:
+    extra_chunks = SAMPLE_CHUNKS + (
+        GuidelineChunk(
+            chunk_id="espen_geriatrics_pdf::p.22#c1",
+            doc_id="espen_geriatrics",
+            artifact_id="espen_geriatrics_pdf",
+            section="p.22#c1",
+            locator="p.22#c1",
+            verified_recommendation_no=None,
+            text=(
+                "Older adults with dementia or cognitive impairment experiencing loss of appetite "
+                "should receive supportive mealtime interventions. To prevent low-intake "
+                "dehydration, adequate daily fluid intake and hydration drinks are recommended."
+            ),
+            source_url=SAMPLE_CHUNKS[0].source_url,
+            document_title="ESPEN Geriatrics",
+            publisher="ESPEN",
+            published_year_or_edition="2022",
+            actual_source_file="espen-geriatrics/espen-practical-guideline-geriatrics.pdf",
+            source_format="pdf",
+            language="en",
+            file_sha256="a" * 64,
+            review_status="approved",
+        ),
+    )
+    searcher = Bm25GuidelineSearch(extra_chunks, enable_bilingual_expand=True)
+
+    dementia_hits = await searcher.search(
+        "치매나 인지저하가 있는 고령 환자의 식욕 저하 영양 중재", limit=2
+    )
+    assert dementia_hits
+    assert dementia_hits[0].section == "p.22#c1"
+
+    dehydration_hits = await searcher.search(
+        "고령 환자의 탈수 예방을 위한 하루 수분 섭취량 권장 기준과 저수분 상태 모니터링", limit=2
+    )
+    assert dehydration_hits
+    assert dehydration_hits[0].section == "p.22#c1"

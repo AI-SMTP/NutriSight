@@ -498,6 +498,39 @@ def test_bilingual_query_expansion_handles_ko_en_and_unrelated() -> None:
     assert expand_bilingual_query(unrelated) == unrelated
 
 
+def test_bilingual_query_expansion_covers_dementia_dehydration_without_leaks() -> None:
+    dementia_exp = expand_bilingual_query(
+        "치매나 인지저하가 있는 고령 환자의 식사 시간 식욕 저하와 영양 중재 권고"
+    )
+    assert "dementia" in dementia_exp
+    assert "cognitive" in dementia_exp
+    assert "appetite" in dementia_exp
+    # 중복 토큰이 힌트 괄호 안에 반복 추가되지 않아야 한다.
+    assert dementia_exp.count("dementia") == 1
+
+    dehydration_exp = expand_bilingual_query(
+        "고령 환자의 탈수 예방을 위한 하루 수분 섭취량 권장 기준과 저수분 상태 모니터링"
+    )
+    assert "dehydration" in dehydration_exp
+    assert "fluid" in dehydration_exp
+    assert "hydration" in dehydration_exp
+
+    # 욕창+수분 질의(HOLD-04)에는 탈수/저수분 편향 토큰이 붙지 않아야 한다.
+    pressure_exp = expand_bilingual_query(
+        "욕창예방과 상처 치유를 위한 영양사정 및 에너지·단백질·수분 섭취 모니터링"
+    )
+    assert "pressure" in pressure_exp
+    assert "dehydration" not in pressure_exp
+    assert "fluid" not in pressure_exp
+
+    en_dementia = expand_bilingual_query("older adults with dementia and dehydration")
+    assert "치매" in en_dementia
+    assert "탈수" in en_dementia
+
+    oos_query = "임신성 당뇨 산모의 인슐린 용량 조절과 태아 성장 초음파 추적 간격"
+    assert expand_bilingual_query(oos_query) == oos_query
+
+
 async def test_chroma_search_handles_corrupted_pointer_and_missing_index(tmp_path: Path) -> None:
     missing_searcher = ChromaGuidelineSearch(
         persist_dir=tmp_path / "missing_index",

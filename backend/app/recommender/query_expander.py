@@ -29,6 +29,12 @@ _KO_TO_EN_GLOSSARY: tuple[tuple[str, str], ...] = (
     ("섭취부족", "reduced intake inadequate energy protein"),
     ("체중감소", "unintended weight loss"),
     ("영양관리팀", "multidisciplinary nutrition support team"),
+    ("치매", "dementia cognitive impairment"),
+    ("인지저하", "cognitive impairment dementia"),
+    ("식욕저하", "loss of appetite anorexia reduced intake"),
+    ("탈수", "dehydration low-intake fluid hydration"),
+    ("저수분", "low-intake dehydration fluid intake hydration"),
+    ("수분섭취량", "fluid intake hydration drinks"),
 )
 
 # (영문 임상 키워드, 한국어 핵심 용어) — 영문 질의 → 국문 가이드라인(KJG, 욕창) 검색 지원
@@ -40,6 +46,9 @@ _EN_TO_KO_GLOSSARY: tuple[tuple[str, str], ...] = (
     ("food fortification", "식사 강화 강화식"),
     ("dysphagia", "연하곤란 사레 삼킴"),
     ("malnutrition", "영양불량 고령자 영양"),
+    ("dementia", "치매 인지저하 식욕저하 고령자"),
+    ("dehydration", "탈수 저수분 수분 섭취 고령자"),
+    ("hydration", "수분 섭취 탈수 예방 고령자"),
 )
 
 
