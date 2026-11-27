@@ -14,8 +14,8 @@
 backend/
   pyproject.toml · uv.lock · .python-version (3.12)
   app/
-    main.py                          create_app(settings=None), GET /api/health
-    config.py                        Settings, ConfigError
+    main.py                          create_app(settings=None), GET /api/health, lifespan(앱 잠금·자동 시드)
+    config.py                        Settings, ConfigError, StoragePaths, resolve_demo_date()
     wiring.py                        계약별 이름 등록부, build_components()
     intake/types.py                  IntakeEstimator 계약
     intake/fake.py                   FakeEstimator
@@ -25,6 +25,8 @@ backend/
     recommender/fake_guideline.py    FakeGuidelineSearch
     services/ports.py                PatientDataPort 계약, 추천 카드 타입, 포트 예외
     services/fake_patient_data.py    FakePatientData
+    storage/                         SQLite 저장소·시드·리셋 (docs/specs/storage-seed.md)
+  scripts/seed.py                    리셋 CLI
   tests/
     conftest.py                      설정 환경 변수 고정
     contracts/{intake,nutrition,guideline,patient_data}.py   계약 테스트 기반 클래스
@@ -96,6 +98,8 @@ backend/
    | `PATIENT_DATA` | `fake` | `PATIENT_DATA_PORTS` | `patient_data` |
    | `FAKE_INTAKE_DELAY_S` | `2.0` (0 이상) | — | `FakeEstimator.delay_s` |
 
+   저장소 경로와 시연일 설정(`VAR_DIR`, `SEED_PATH`, `DEMO_DATE`)은 `docs/specs/storage-seed.md`에 정리했다.
+
 2. `create_app()`이 `build_components(settings)`로 네 구현을 만들어 `app.state`에 둔다. 등록되지 않은 이름이면 설정 이름과 값을 담은 `ConfigError`를 던진다.
 3. 실제 구현은 `app/wiring.py`의 해당 등록부에 `이름 → 생성 함수(Settings)`로 추가한다. 생성 함수 안에서 구현 모듈을 import해, 그 이름이 선택됐을 때만 SDK·색인을 읽게 한다.
 
@@ -115,13 +119,14 @@ cd backend
 uv sync --locked
 uv run ruff check && uv run ruff format --check
 uv run pytest --cov=app
-uv run fastapi dev        # http://127.0.0.1:8000/api/health → 200
+uv run fastapi dev        # http://127.0.0.1:8000/api/health → 200 (var/app.db가 없으면 시드를 적재한다)
+uv run python -m scripts.seed   # 앱을 끈 상태에서 DB 리셋
 ```
 
 ## 제약사항
 
 - Python 3.12 계열만 지원한다(`requires-python = ">=3.12,<3.13"`). 의존성 버전은 `uv.lock`으로 고정한다.
-- HTTP 엔드포인트는 `GET /api/health`뿐이다. 업무 API, SQLite 저장소, 이벤트·SSE, 에이전트, 실제 VLM·영양 규칙·가이드라인 검색, 프론트엔드는 후속 토픽과 병행 트랙에서 붙인다.
+- HTTP 엔드포인트는 `GET /api/health`뿐이다. SQLite 저장소와 시드는 있지만(`docs/specs/storage-seed.md`) 업무 API, 이벤트·SSE, 에이전트, 실제 VLM·영양 규칙·가이드라인 검색, 프론트엔드는 후속 토픽과 병행 트랙에서 붙인다.
 - 접근 제어와 rate limiting이 없다(파일럿 전제). 서버는 기본 호스트 `127.0.0.1`로 띄운다.
 - `EstimationRequest`의 이미지 경로는 계약 단계에서 검증하지 않는다. 사진을 실제로 여는 구현(VLM 어댑터·업로드 API)은 경로가 `var/photos/` 안인지 확인하고 이미지 내용을 검증해야 한다.
 - 타입 검사기(mypy·pyright), CI, Docker는 쓰지 않는다.
