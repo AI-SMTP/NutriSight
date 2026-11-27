@@ -84,12 +84,18 @@ def _build_chroma_search(_settings: Settings) -> GuidelineSearch:
 
 
 def _build_bm25_search(_settings: Settings) -> GuidelineSearch:
-    """`GUIDELINE_SEARCH=bm25` 선택 시에만 원문 문서에서 로컬 BM25 색인을 구성한다."""
+    """`GUIDELINE_SEARCH=bm25` 선택 시에만 승인 원문에서 로컬 BM25 색인을 구성한다."""
     from app.recommender.bm25_search import Bm25GuidelineSearch
-    from app.recommender.rag_sources import DEFAULT_SOURCES_DIR
+    from app.recommender.rag_sources import DEFAULT_MANIFEST_PATH, DEFAULT_SOURCES_DIR
 
     sources_dir = _read_rag_env("RAG_SOURCES_DIR", str(DEFAULT_SOURCES_DIR))
-    return Bm25GuidelineSearch.from_sources_dir(sources_dir)
+    manifest_path = _read_rag_env("RAG_MANIFEST_PATH", str(DEFAULT_MANIFEST_PATH))
+    min_score = float(_read_rag_env("RAG_BM25_MIN_SCORE", "0.0"))
+    return Bm25GuidelineSearch.from_sources_dir(
+        sources_dir,
+        manifest_path=manifest_path,
+        min_score=min_score,
+    )
 
 
 INTAKE_ESTIMATORS: dict[str, Callable[[Settings], IntakeEstimator]] = {

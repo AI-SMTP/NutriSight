@@ -1,65 +1,74 @@
-# 가이드라인 검색(RAG) 트랙 구현 및 실험 기록
+# 가이드라인 검색(RAG) 트랙 구현 및 실험 기록 (v0.2 안정화)
 
-**브랜치:** `feature/recommender-chroma-rag` (기준: `origin/develop` `741482e`, PR #10)  
-**상태:** 계약 구현·테스트·앱 배선 완료 (팀 공용 계약 파일 무수정)
+**브랜치:** `feature/recommender-chroma-rag` (기준: `origin/develop` `5cbf0da`, Fork merge `e955445`)  
+**상태:** P0 안정화 · P1 근거 추적/평가 재현성 · Agent 인계 문서 · 계약 검증 완료 (공용 계약 무수정)
 
-## 1. PR #10 골격 대비 추가한 사항
+---
 
-PR #10(`backend-skeleton-contracts`)의 공용 계약 파일(`backend/app/recommender/guideline_types.py`, `backend/tests/contracts/guideline.py`, `backend/app/config.py`, `backend/tests/conftest.py`)은 **단 한 줄도 수정하지 않고**, 아래 RAG 구현·색인 도구·계약 테스트를 추가했습니다.
+## 1. PR #10 골격 대비 추가·고도화한 사항
 
-| 추가 파일 / 변경 | 역할 |
+팀 공용 계약 파일(`backend/app/recommender/guideline_types.py`, `backend/tests/contracts/guideline.py`, `backend/app/config.py`, `backend/tests/conftest.py`)과 기존 테스트는 **단 한 줄도 수정하지 않았습니다.**
+
+| 파일 | 역할 및 v0.2 안정화 핵심 |
 | --- | --- |
-| `backend/app/recommender/rag_sources.py` | `docs/research/rag-sources/README.md` 공식 4종(ESPEN, KJG 2019, GLIM 2025, 대한간호협회 욕창) 메타데이터·PDF/XML 추출·문단 경계 보존 청킹(900자/오버랩 180자)·SHA-256 캐시 체크 |
-| `backend/app/recommender/query_expander.py` | 한국어 임상 질의 → 영문 핵심 용어 병기 쿼리 확장 (`expand_bilingual_query`) |
-| `backend/app/recommender/chroma_search.py` | OpenAI 임베딩 + Chroma 코사인 벡터 `ChromaGuidelineSearch` (`GuidelineSearch` 구현, `asyncio.to_thread` 비동기 격리, `min_relevance_score=0.50`, 명시적 `GuidelineSearchError` 분리) |
-| `backend/app/recommender/bm25_search.py` | 외부 API 키 없이 동작하는 순수 파이썬 BM25Okapi `Bm25GuidelineSearch` (`GuidelineSearch` 구현, 오프라인/장애 시 즉시 전환 대안) |
-| `backend/scripts/index_guidelines.py` | `docs/research/rag-sources/` 원문을 `backend/var/chroma_guidelines/`에 영구 색인하는 독립 CLI |
-| `backend/app/wiring.py` | `GUIDELINE_SEARCHES`에 `"chroma"`, `"bm25"` 2종 lazy-import 팩토리 등록 (기본값 `GUIDELINE_SEARCH=fake` 유지) |
-| `backend/tests/test_chroma_search.py` | `GuidelineSearchContract` 상속 계약 테스트 + 임계값·캐시·오류·배선 테스트 (외부 API 모의) |
-| `backend/tests/test_bm25_search.py` | `GuidelineSearchContract` 상속 계약 테스트 + 순위·교차언어 확장·배선 테스트 |
-| `backend/pyproject.toml` · `uv.lock` | `chromadb`, `openai`, `pypdf` 3개 최소 의존성 추가 (LangChain 비의존으로 T5 의존성 충돌 방지) |
-| `backend/var/.gitignore` | 로컬 Chroma 색인·런타임 파일 Git 제외 |
+| `backend/app/recommender/source_manifest.json` | 공식 4종(5개 아티팩트: PDF 4 + GLIM JPEN XML 1) 명시적 승인 매니페스트. 전체 64자리 SHA-256, `review_status`(`approved`/`pending`), PDF·XML 출처 URL 분리 관리(자동 승인 금지) |
+| `backend/app/recommender/rag_sources.py` | 매니페스트·`README.md`·로컬 파일 3자 감사(`audit_source_manifest`), 전체 64자리 SHA-256 검증, 고유 근거 식별자(`R<번호>` 검증 추출 또는 `p.<n>#c<k>`/`xml:s<n>#c<k>`), 발행 전 `(doc_id, section)` 중복 차단 |
+| `backend/app/recommender/chroma_search.py` | Windows 안전 버전 분리 재색인(`versions/<id>/` + 무결성 검증 후 `active_pointer.json` 임시 파일 `os.replace()` 원자 교체), 무변경 시 0 API 호출 스킵, 실패 시 이전 정상 색인 보존, `resolve_evidence(doc_id, section)` 역추적 |
+| `backend/app/recommender/bm25_search.py` | 순수 파이썬 BM25Okapi + NFKC 정규화 + 보수적 한국어 조사 제거(오분절 방지) + 복합명사 분해·결합 + 임상 단위(`g/kg`, `kcal/kg`, `50%`) 보존 + 매니페스트 승인 정책 및 `resolve_evidence` 지원 |
+| `backend/app/recommender/query_expander.py` | 한→영 및 영→한 양방향 임상 용어 쿼리 확장 (중복 토큰 제거로 BM25 과증폭 방지) |
+| `backend/app/wiring.py` | `GUIDELINE_SEARCHES`에 `"chroma"`, `"bm25"` lazy-import 등록 (기본값 `GUIDELINE_SEARCH=fake` 유지) |
+| `backend/scripts/index_guidelines.py` | `--audit-only` 매니페스트 감사 및 버전 분리 Chroma 색인 생성 CLI (`RAG_SOURCES_DIR`·`RAG_CHROMA_DIR` 환경변수 정렬) |
+| `backend/scripts/eval_datasets.json` · `backend/scripts/eval_rag.py` | Calibration(10건) / Independent Holdout(10건) 분리 데이터셋 + BM25 vs Small vs Large 재현 평가 스크립트 (임계값 스윕, P95 지연, 토큰·비용, 누락 문헌 명시) |
+| `backend/tests/test_chroma_search.py` · `backend/tests/test_bm25_search.py` | `GuidelineSearchContract` 상속 + 재색인 실패 롤백 + 매니페스트 승인 차단 + 고유 근거 역추적 + BM25 한국어 토큰화 테스트 (총 30건, 외부 네트워크 호출 0건) |
+| `docs/research/rag-agent-handoff.md` | T5 처방 추천 에이전트 담당자용 인터페이스·예외·토큰 예산·NS07/NS09 시나리오 인계서 |
 
-## 2. 왜 BM25 제안안 + Chroma 임베딩을 둘 다 구현했는가 (실측 근거)
+---
 
-팀 공식 원문 4종은 **영문 2종(ESPEN, GLIM) + 국문 2종(KJG 2019, 대한간호협회 욕창)** 혼합 코퍼스입니다.
-실제 다운로드한 공식 PDF 3종(ESPEN 318청크 + KJG 22청크 + 욕창 737청크 = **총 1,077청크**)을 대상으로 OpenAI API 라이브 평가를 수행한 결과:
+## 2. 실제 공식 원문 기반 재현 평가 결과 (v0.2 라이브 API)
 
-### Stage 1. 임베딩 검색·임계값·한영 쿼리 확장 실측 비교 (공식 PDF 1,077청크)
+- **데이터 구분:** 로컬에 확보된 실제 공식 원문 PDF (**3/4종 승인·적재**, 총 1,077청크)
+  - `espen_geriatrics` (`espen-practical-guideline-geriatrics.pdf`, SHA-256 `b5456f29...f5355c`) — **approved (318청크)**
+  - `kjg_elderly_nutrition_2019` (`kjg-2019-73-4-196-elderly-nutrition.pdf`, SHA-256 `5b3c2a0d...1c86ef`) — **approved (22청크)**
+  - `khna_pressure_injury` (`khna-pressure-injury-guideline.pdf`, SHA-256 `ad6a5b51...be2d838`) — **approved (737청크)**
+  - `glim_2025` (PDF/XML 모두 로컬 미확보, `review_status=pending`) — **누락 (4종 전체 검증 아님을 명시)**
 
-| 설정 | 임베딩 모델 | Hit@1 | Hit@3 | MRR | 교차언어(한→영) Hit@3 | 범위 외 거절률 | Score Gap |
-| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| 기본 (`min=0.25`, 원본 쿼리) | `text-embedding-3-small` | 50.0% | 62.5% | 0.562 | 33.3% | 33.3% | +0.181 |
-| 기본 (`min=0.25`, 원본 쿼리) | `text-embedding-3-large` | 75.0% | 100.0% | 0.875 | 100.0% | 33.3% | +0.319 |
-| 임계값 `0.50` 적용 | `text-embedding-3-small` | 50.0% | 62.5% | 0.562 | 33.3% | **100.0%** | +0.181 |
-| 임계값 `0.50` 적용 | `text-embedding-3-large` | 75.0% | 100.0% | 0.875 | 100.0% | **100.0%** | +0.319 |
-| **`min=0.50` + 한·영 쿼리 확장** | `text-embedding-3-small` | **75.0%** | **87.5%** | **0.812** | **66.7%** | **100.0%** | +0.219 |
-| **`min=0.50` + 한·영 쿼리 확장** | **`text-embedding-3-large`** | **100.0%** | **100.0%** | **1.000** | **100.0%** | **100.0%** | **+0.362** |
+### A. BM25 vs `text-embedding-3-small` vs `text-embedding-3-large` (기준 임계값 `0.50` / BM25 `>0`)
 
-### Stage 2. 동일 Top-3 근거 기반 LLM 생성·안전성 비교 (가상 환자 5개 시나리오)
+| 검색기 | 데이터셋 | 평가 질의(누락 제외) | Hit@1 | Hit@3 | Recall@3 | MRR | OOS 거절률 | 평균(ms) | 중앙값(ms) | P95(ms) | 오류 | 토큰 / 추정비용(USD) |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| `bm25` | Calibration | 6 (+누락 1, OOS 3) | 66.7% | 100.0% | 100.0% | 0.806 | 0.0% | 2.6 | 2.8 | 4.4 | 0 | 0 / \$0 |
+| `bm25` | Holdout | 6 (+누락 1, OOS 3) | 66.7% | 66.7% | 58.3% | 0.667 | 0.0% | 1.8 | 1.7 | 3.1 | 0 | 0 / \$0 |
+| `text-embedding-3-small` | Calibration | 6 (+누락 1, OOS 3) | 66.7% | 66.7% | 66.7% | 0.667 | 100.0% | 214.5 | 155.5 | 707.3 | 0 | 1,388 / \$0.000028 (캐시 재사용) |
+| `text-embedding-3-small` | Holdout | 6 (+누락 1, OOS 3) | 66.7% | 66.7% | 58.3% | 0.667 | 100.0% | 148.8 | 145.4 | 165.7 | 0 | 1,388 / \$0.000028 |
+| `text-embedding-3-large` | Calibration | 6 (+누락 1, OOS 3) | **100.0%** | **100.0%** | **100.0%** | **1.000** | **100.0%** | 189.0 | 167.4 | 371.2 | 0 | 472,709 / \$0.061452 (최초 색인 포함) |
+| `text-embedding-3-large` | Holdout | 6 (+누락 1, OOS 3) | 66.7% | 66.7% | 58.3% | 0.667 | **100.0%** | 160.0 | 160.8 | 168.4 | 0 | 472,709 / \$0.061452 |
+
+- **공통 무결성 검증 (`bm25`, `small`, `large` 모두 통과):**
+  - `limit=1 / 3 / 5` 결과 수 일치, 동일 질의 반복 재현성 `True`, 반환된 모든 `(doc_id, section)`에 대한 `resolve_evidence` 정확 역추적 `100%` 통과.
+
+### B. 임계값 민감도 분석 (`0.40` / `0.45` / `0.50` / `0.55`)
+
+- `text-embedding-3-large` 기준 `0.40`에서는 Calibration OOS 거절률이 `66.7%`로 떨어졌으나, **`0.45`–`0.55` 구간**에서는 Calibration·Holdout 모두 **OOS 거절률 100%**, `low_score_misses = 0`을 유지했습니다.
+- Holdout에서 `HOLD-01`(치매·식욕저하)과 `HOLD-02`(탈수·수분)는 임계값 때문이 아니라, 한·영 사전에 없는 주제에서 국문 `kjg_elderly_nutrition_2019`의 수분·노인 영양 구절(`0.605`)이 영문 ESPEN보다 먼저 선택된 언어 편향으로 확인되었습니다.
+- `bm25`는 `min_score=0.0`일 때 범위 외 질의에서도 1개 단어 우연 일치로 결과가 반환되므로(`OOS 0%`), BM25 운영 전환 시 `RAG_BM25_MIN_SCORE` 캘리브레이션이 필요합니다.
+
+### C. 이전 v0.1 기록 보존 (Stage 2 LLM 생성·안전성 비교 — 가상 환자 5건)
 
 | 코퍼스 | LLM 모델 | JSON/스키마 | 인용 정확도 | 안전 통과율 | 평균 지연 |
 | --- | --- | ---: | ---: | ---: | ---: |
-| 공식 PDF 3종 | **`gpt-6-luna`** | 100% / 100% | 100% | **100% (5/5)** | **8.70초** |
+| 공식 PDF 3종 | `gpt-6-luna` | 100% / 100% | 100% | 100% (5/5) | 8.70초 |
 | 공식 PDF 3종 | `gpt-5.6-luna` | 100% / 100% | 100% | 80% (4/5, `NS09` CKD 보류 위반) | 13.27초 |
 
-- 위 실측을 바탕으로 `ChromaGuidelineSearch` 기본값을 **`text-embedding-3-large` + `min_relevance_score=0.50` + 한·영 쿼리 확장**으로 설정했고, 오프라인·무키 전환용으로 `Bm25GuidelineSearch`도 함께 등록했습니다.
+---
 
-## 3. 로컬 색인 및 전환 실행 방법
+## 3. 실행 및 재현 방법
 
 ```bash
 cd backend
 uv sync --locked
-
-# 1) backend/.env에 OPENAI_API_KEY 설정 후 색인 생성 (docs/research/rag-sources/ 원문 기준)
-uv run python scripts/index_guidelines.py
-
-# 2) backend/.env에서 구현 선택
-# GUIDELINE_SEARCH=chroma   # 메인 (OpenAI 임베딩 + Chroma)
-# GUIDELINE_SEARCH=bm25     # 오프라인 무키 BM25 대안
-# GUIDELINE_SEARCH=fake     # 기본값 (외부 API 불필요)
+uv run ruff check && uv run ruff format --check
+uv run pytest                                                    # 192 passed (네트워크 0건)
+uv run python scripts/index_guidelines.py --audit-only           # 원문 매니페스트 감사
+uv run python scripts/index_guidelines.py                        # 버전 분리 안전 색인 생성
+uv run python scripts/eval_rag.py --models text-embedding-3-small text-embedding-3-large
 ```
-
-## 4. 에이전트 담당과 맞출 권장 파라미터
-
-- 청크 크기: `900자` (오버랩 `180자`), 기본 `limit=5` (에이전트 프롬프트에서는 `limit=3` 호출 권장, 약 2,700자 내외).

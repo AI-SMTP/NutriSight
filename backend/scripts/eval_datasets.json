@@ -1,0 +1,168 @@
+{
+  "dataset_version": "2.0",
+  "description": "NutriSight 공식 원문(ESPEN, KJG 2019, GLIM 2025, KHNA 욕창) RAG 평가용 분리 데이터셋 (Calibration vs Independent Holdout)",
+  "calibration_queries": [
+    {
+      "query_id": "CAL-01",
+      "category": "ko_to_en",
+      "query": "영양불량 위험 노인 환자에게 식사 강화와 경구영양보충(ONS) 하루 400 kcal 단백질 30 g 이상 제공 및 최소 1개월 지속 평가",
+      "expected_doc_ids": ["espen_geriatrics"],
+      "gold_keywords": ["400", "30", "ONS", "fortified"],
+      "is_out_of_scope": false
+    },
+    {
+      "query_id": "CAL-02",
+      "category": "ko_to_en",
+      "query": "고령 입원 환자의 체중 기준 하루 에너지 필요량 30 kcal/kg과 단백질 1.0 g/kg 권장 기준",
+      "expected_doc_ids": ["espen_geriatrics"],
+      "gold_keywords": ["30", "kcal", "1.0"],
+      "is_out_of_scope": false
+    },
+    {
+      "query_id": "CAL-03",
+      "category": "ko_to_en",
+      "query": "노인 환자의 식사 보조(mealtime assistance) 및 식사 환경 개선, 연하곤란 식이 질감 조정 권고",
+      "expected_doc_ids": ["espen_geriatrics"],
+      "gold_keywords": ["dysphagia", "texture", "assistance"],
+      "is_out_of_scope": false
+    },
+    {
+      "query_id": "CAL-04",
+      "category": "ko_to_ko",
+      "query": "고령자 영양 관리에서 경구영양보충제 하루 2회에서 3회 400에서 600 mL 섭취와 지나치게 엄격한 치료식 제한식 지양",
+      "expected_doc_ids": ["kjg_elderly_nutrition_2019"],
+      "gold_keywords": ["경구영양", "치료식"],
+      "is_out_of_scope": false
+    },
+    {
+      "query_id": "CAL-05",
+      "category": "ko_to_ko",
+      "query": "욕창이 있는 노인 환자에서 영양 부족 시 고단백 경구영양보충 제공과 다학제 영양관리팀 의뢰",
+      "expected_doc_ids": ["khna_pressure_injury"],
+      "gold_keywords": ["욕창", "영양", "단백질"],
+      "is_out_of_scope": false
+    },
+    {
+      "query_id": "CAL-06",
+      "category": "en_to_ko",
+      "query": "pressure injury prevention nutrition assessment high protein oral nutritional supplement multidisciplinary team",
+      "expected_doc_ids": ["khna_pressure_injury"],
+      "gold_keywords": ["욕창", "영양"],
+      "is_out_of_scope": false
+    },
+    {
+      "query_id": "CAL-07",
+      "category": "missing_doc_glim",
+      "query": "GLIM 영양불량 진단 기준에서 필요 에너지 대비 50% 이하 섭취 감소가 1주 초과 지속되는 경우",
+      "expected_doc_ids": ["glim_2025"],
+      "gold_keywords": ["GLIM", "50%"],
+      "is_out_of_scope": false
+    },
+    {
+      "query_id": "CAL-NEG-01",
+      "category": "out_of_scope",
+      "query": "소아 천식 환자의 흡입 스테로이드 단계별 증량 기준과 기관지확장제 용량",
+      "expected_doc_ids": [],
+      "gold_keywords": [],
+      "is_out_of_scope": true
+    },
+    {
+      "query_id": "CAL-NEG-02",
+      "category": "out_of_scope",
+      "query": "급성 심근경색 환자의 관상동맥 중재술 스텐트 시술 후 항혈소판제 투여 기간",
+      "expected_doc_ids": [],
+      "gold_keywords": [],
+      "is_out_of_scope": true
+    },
+    {
+      "query_id": "CAL-NEG-03",
+      "category": "out_of_scope",
+      "query": "파이썬 FastAPI 비동기 웹소켓 연결 타임아웃 및 리버스 프록시 설정 방법",
+      "expected_doc_ids": [],
+      "gold_keywords": [],
+      "is_out_of_scope": true
+    }
+  ],
+  "holdout_queries": [
+    {
+      "query_id": "HOLD-01",
+      "category": "ko_to_en",
+      "query": "치매나 인지저하가 있는 고령 환자의 식사 시간 식욕 저하와 영양 중재 권고",
+      "expected_doc_ids": ["espen_geriatrics"],
+      "gold_keywords": ["dementia", "older", "nutrition"],
+      "is_out_of_scope": false
+    },
+    {
+      "query_id": "HOLD-02",
+      "category": "ko_to_en",
+      "query": "고령 환자의 탈수 예방을 위한 하루 수분 섭취량 권장 기준과 저수분 상태 모니터링",
+      "expected_doc_ids": ["espen_geriatrics"],
+      "gold_keywords": ["fluid", "hydration", "dehydration"],
+      "is_out_of_scope": false
+    },
+    {
+      "query_id": "HOLD-03",
+      "category": "ko_to_ko_particle_stress",
+      "query": "노인에서 저염식이나 당뇨식같은 과도한 식이 제한이 식욕저하와 영양불량을 악화시키는 문제",
+      "expected_doc_ids": ["kjg_elderly_nutrition_2019", "espen_geriatrics"],
+      "gold_keywords": ["제한", "영양불량"],
+      "is_out_of_scope": false
+    },
+    {
+      "query_id": "HOLD-04",
+      "category": "ko_to_ko_compound_stress",
+      "query": "욕창예방과 상처 치유를 위한 영양사정 및 에너지·단백질·수분 섭취 모니터링",
+      "expected_doc_ids": ["khna_pressure_injury"],
+      "gold_keywords": ["욕창", "영양", "수분"],
+      "is_out_of_scope": false
+    },
+    {
+      "query_id": "HOLD-05",
+      "category": "en_to_ko",
+      "query": "Korean elderly restrictive therapeutic diet low salt diabetic diet worsening malnutrition",
+      "expected_doc_ids": ["kjg_elderly_nutrition_2019", "espen_geriatrics"],
+      "gold_keywords": ["치료식", "제한", "restrict"],
+      "is_out_of_scope": false
+    },
+    {
+      "query_id": "HOLD-06",
+      "category": "en_to_en",
+      "query": "ESPEN practical guideline oral nutritional supplements 400 kcal 30 g protein older patients",
+      "expected_doc_ids": ["espen_geriatrics"],
+      "gold_keywords": ["400", "30", "ONS"],
+      "is_out_of_scope": false
+    },
+    {
+      "query_id": "HOLD-07",
+      "category": "missing_doc_glim",
+      "query": "GLIM 5-year update phenotypic criteria weight loss low BMI reduced muscle mass and etiologic criteria",
+      "expected_doc_ids": ["glim_2025"],
+      "gold_keywords": ["GLIM", "phenotypic"],
+      "is_out_of_scope": false
+    },
+    {
+      "query_id": "HOLD-NEG-01",
+      "category": "out_of_scope",
+      "query": "임신성 당뇨 산모의 인슐린 용량 조절과 태아 성장 초음파 추적 간격",
+      "expected_doc_ids": [],
+      "gold_keywords": [],
+      "is_out_of_scope": true
+    },
+    {
+      "query_id": "HOLD-NEG-02",
+      "category": "out_of_scope",
+      "query": "신생아 황달 광선치료 시작 빌리루빈 기준과 교환수혈 적응증",
+      "expected_doc_ids": [],
+      "gold_keywords": [],
+      "is_out_of_scope": true
+    },
+    {
+      "query_id": "HOLD-NEG-03",
+      "category": "out_of_scope",
+      "query": "쿠버네티스 클러스터 Ingress 컨트롤러 TLS 인증서 자동 갱신 설정",
+      "expected_doc_ids": [],
+      "gold_keywords": [],
+      "is_out_of_scope": true
+    }
+  ]
+}

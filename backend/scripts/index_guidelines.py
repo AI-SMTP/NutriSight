@@ -1,7 +1,8 @@
-"""공식 RAG 원문(PDF·XML)을 Chroma 코사인 색인으로 구축하는 독립 CLI 스크립트.
+"""공식 RAG 원문(PDF·XML) 매니페스트 감사 및 Windows 안전 버전 분리 Chroma 색인 CLI.
 
 사용 예시:
   cd backend
+  uv run python scripts/index_guidelines.py --audit-only
   uv run python scripts/index_guidelines.py
   uv run python scripts/index_guidelines.py --model text-embedding-3-small --rebuild
 """
@@ -26,7 +27,12 @@ from app.recommender.chroma_search import (  # noqa: E402
     OpenAIEmbeddingBackend,
     index_guideline_sources,
 )
-from app.recommender.rag_sources import DEFAULT_CHROMA_DIR, DEFAULT_SOURCES_DIR  # noqa: E402
+from app.recommender.rag_sources import (  # noqa: E402
+    DEFAULT_CHROMA_DIR,
+    DEFAULT_MANIFEST_PATH,
+    DEFAULT_SOURCES_DIR,
+    audit_source_manifest,
+)
 
 
 def _read_env(name: str, default: str = "") -> str:
@@ -43,8 +49,18 @@ def _read_env(name: str, default: str = "") -> str:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="NutriSight 공식 가이드라인 Chroma 색인 생성기")
-    parser.add_argument("--sources-dir", default=str(DEFAULT_SOURCES_DIR))
-    parser.add_argument("--persist-dir", default=str(DEFAULT_CHROMA_DIR))
+    parser.add_argument(
+        "--sources-dir",
+        default=_read_env("RAG_SOURCES_DIR", str(DEFAULT_SOURCES_DIR)),
+    )
+    parser.add_argument(
+        "--persist-dir",
+        default=_read_env("RAG_CHROMA_DIR", str(DEFAULT_CHROMA_DIR)),
+    )
+    parser.add_argument(
+        "--manifest-path",
+        default=_read_env("RAG_MANIFEST_PATH", str(DEFAULT_MANIFEST_PATH)),
+    )
     parser.add_argument(
         "--model",
         default=_read_env("RAG_EMBEDDING_MODEL", DEFAULT_EMBEDDING_MODEL),
@@ -52,8 +68,16 @@ def main() -> int:
     )
     parser.add_argument("--chunk-size", type=int, default=900)
     parser.add_argument("--chunk-overlap", type=int, default=180)
-    parser.add_argument("--rebuild", action="store_true", help="기존 색인을 무시하고 전체 재색인")
+    parser.add_argument("--rebuild", action="store_true", help="기존 색인을 무시하고 새 버전 구축")
+    parser.add_argument(
+        "--audit-only", action="store_true", help="색인 없이 매니페스트·원문 감사 결과만 출력"
+    )
     args = parser.parse_args()
+
+    if args.audit_only:
+        audit = audit_source_manifest(args.sources_dir, manifest_path=args.manifest_path)
+        print(json.dumps(audit, ensure_ascii=False, indent=2))
+        return 0
 
     api_key = _read_env("OPENAI_API_KEY")
     base_url = _read_env("OPENAI_BASE_URL") or None
@@ -61,6 +85,7 @@ def main() -> int:
     report = index_guideline_sources(
         sources_dir=args.sources_dir,
         persist_dir=args.persist_dir,
+        manifest_path=args.manifest_path,
         embedding_model=args.model,
         embedding_backend=backend,
         chunk_size=args.chunk_size,
