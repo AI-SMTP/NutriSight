@@ -104,6 +104,7 @@ erDiagram
     TEXT order_note
     TEXT record_status "not_recorded, pending, recorded 등"
     TEXT post_photo_id FK
+    TEXT staff_zero_reason "refused, not_eaten"
     REAL energy_kcal_est
     REAL protein_g_est
     BOOLEAN incomplete
@@ -115,7 +116,7 @@ erDiagram
     REAL intake_fraction_est "0~1, 판단 불가면 NULL"
     TEXT status "estimated, not_determinable"
     TEXT quality_issues "JSON 배열"
-    TEXT estimate_basis "vlm, mock"
+    TEXT estimate_basis "vlm, staff, mock"
   }
   photos {
     TEXT photo_id PK
@@ -150,6 +151,7 @@ erDiagram
     TEXT level "none, caution, warning"
     TEXT basis_period
     TEXT basis_values
+    TEXT nutrients "energy, protein"
     INTEGER unrecorded_meals
   }
   recommendations {
@@ -323,6 +325,7 @@ erDiagram
 | `order_note` | TEXT | 특이사항. 예: "딱딱한 반찬 다져서". 파일럿은 사전 입력값만 쓰고 화면에서 기록하지 않는다. |
 | `record_status` | TEXT | 아래 표 |
 | `post_photo_id` | TEXT FK, NULL | 요양보호사가 올린 식후 사진 |
+| `staff_zero_reason` | TEXT, NULL | 직원이 끼니 단위로 0을 확인한 이유: `refused`(전량 거부) / `not_eaten`(식판을 받았지만 전량 미섭취). 이때 모든 칸은 0%, `estimate_basis = "staff"`, `record_status = "recorded"` |
 | `energy_kcal_est` | REAL, NULL | 이 끼니의 에너지 섭취량 (계산값) |
 | `protein_g_est` | REAL, NULL | 이 끼니의 단백질 섭취량 (계산값) |
 | `incomplete` | BOOLEAN | 판단 불가 칸이 있어 합계가 불완전한지 |
@@ -347,6 +350,8 @@ erDiagram
 | `ordered` | `pending` | 아직 집계하지 않는다 |
 | `npo` · `cancelled` | (해당 없음) | 식사가 나가지 않았으므로 평균에서 빼고 미기록으로도 세지 않는다 |
 
+**전량 거부·전량 미섭취 (결정)**: 요양보호사 화면(②)에 "전량 거부"·"전량 미섭취" 버튼을 둔다. 누르면 그 끼니는 사진 없이 기록 완료(`recorded`)가 되고 모든 칸이 0%다. 경고 계산에서는 0 섭취로 포함한다(미기록이 아니다). 직원이 칸별 섭취율을 입력하는 기능은 두지 않는다.
+
 **금식·취소 끼니의 화면 표시 (결정)**: 요양보호사 화면(②)의 환자 목록에 금식·취소 환자를 회색 배지("금식", "취소")로 표시하고 고를 수 없게 한다. 업로드 현황의 분모에서 빼고 따로 센다(예: "1 / 2 · 금식 1"). 서버도 발주 상태가 `ordered`가 아니면 식후 사진 업로드를 거절한다. 모의 이력에는 금식 끼니를 섞어, 금식과 미기록을 다르게 계산하는 규칙을 시연한다.
 
 ### `slot_intakes`
@@ -358,7 +363,7 @@ erDiagram
 | `intake_fraction_est` | REAL, NULL | 0~1, 0.1 단위. 판단 불가면 NULL |
 | `status` | TEXT | `estimated` / `not_determinable` |
 | `quality_issues` | TEXT (JSON 배열) | `blur`, `occluded`, `angle`, `lighting`, `tray_mismatch` |
-| `estimate_basis` | TEXT | `vlm:<어댑터>` / `mock`. 직원이 섭취율을 직접 입력하는 기능은 파일럿에 두지 않는다 (결정). 사진이 없거나 판단 불가면 미기록·재촬영으로만 처리한다. |
+| `estimate_basis` | TEXT | `vlm:<어댑터>` / `staff` / `mock`. `staff`는 끼니 단위 0 확인(전량 거부·전량 미섭취)에만 쓴다. 직원이 칸별 섭취율을 매기는 기능은 두지 않는다 (결정). 그 밖에 사진이 없거나 판단 불가면 미기록·재촬영으로만 처리한다. |
 
 필드 이름은 섭취 추정 인터페이스([시스템 구조](system-architecture.md) 5절)와 같다. 칸 하나의 섭취량은 `intake_fraction_est × meal_plan_slots.energy_kcal`(단백질도 같음)이다.
 
@@ -407,7 +412,7 @@ erDiagram
 | 테이블 | 주요 필드 |
 | --- | --- |
 | `daily_intakes` | 환자, 날짜, 에너지·단백질 섭취량(기록된 끼니 합계), 목표 대비 %(기록된 끼니로 환산), 기록된 끼니 수, 미기록 끼니 수, 금식·취소 끼니 수 |
-| `alerts` | 환자, 판정 시점, 수준(`none`/`caution`/`warning`), 근거 기간, 근거 수치, 미기록 수 |
+| `alerts` | 환자, 판정 시점(매일), 수준(`none`/`caution`/`warning`), 기준에 걸린 영양소(`nutrients`: `energy`·`protein`, JSON 배열), 근거 기간, 근거 수치, 미기록 수. 화면은 영양소별로 표시한다(예: "주의 · 단백질 61%", "경고 · 에너지 50% 이하 6일 연속") |
 | `recommendations` | 환자, 연결된 경고, 추천 항목(`items`, 아래 스키마의 JSON), 확인 필요 문구(`cautions`, JSON 배열), 마지막으로 고친 주체(`last_modified_by`: `agent` / `chat` / `doctor`), 수정한 대화(`thread_id`), 생성·수정 시점, 상태(`active`/`superseded`/`confirmed`/`failed`) |
 | `prescriptions` | 환자, 원래 추천(의사가 추천 없이 작성했으면 비움), 처방 항목(추천 항목과 같은 스키마), 확정 시점, 상태(`confirmed`) |
 | `chat_threads` | 스레드 ID(체크포인터 `thread_id`), 환자, 생성 시점, 제목 |
