@@ -91,7 +91,7 @@ CREATE TABLE meal_orders (
     order_status      TEXT NOT NULL CHECK (order_status IN ('ordered', 'npo', 'cancelled')),
     order_from        TEXT,
     order_note        TEXT,
-    record_status     TEXT CHECK (record_status IN (
+    record_status     TEXT NOT NULL CHECK (record_status IN (
         'not_recorded', 'pending', 'recorded', 'not_determinable', 'failed'
     )),
     post_photo_id     TEXT REFERENCES photos (photo_id) DEFERRABLE INITIALLY DEFERRED,

@@ -450,11 +450,12 @@ def test_patient_enum_check_rejects_invalid(db_path: Path, column: str, invalid:
     [
         ("order_status", "delivered"),
         ("record_status", "done"),
+        ("record_status", None),
         ("staff_zero_reason", "sleeping"),
         ("data_source", "manual"),
     ],
 )
-def test_meal_order_enum_check_rejects_invalid(db_path: Path, column: str, invalid: str) -> None:
+def test_meal_order_enum_check_rejects_invalid(db_path: Path, column: str, invalid: object) -> None:
     with connect(db_path) as conn:
         insert_patient(conn)
         insert_meal_plan(conn)
@@ -465,7 +466,6 @@ def test_meal_order_enum_check_rejects_invalid(db_path: Path, column: str, inval
 @pytest.mark.parametrize(
     ("column", "valid"),
     [
-        ("record_status", None),
         ("staff_zero_reason", "refused"),
         ("staff_zero_reason", "not_eaten"),
         ("order_status", "npo"),
