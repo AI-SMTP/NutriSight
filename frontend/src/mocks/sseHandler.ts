@@ -8,11 +8,12 @@
  */
 import { sse } from "msw/sse";
 
-import type { PhotoStatusChangedEvent } from "../api/provisional";
+import {
+  EVENTS_PATH,
+  PHOTO_STATUS_CHANGED_EVENT,
+  type PhotoStatusChangedEvent,
+} from "../api/provisional";
 import { eventBus as sharedBus, type EventBus } from "./eventBus";
-
-/** 이벤트 이름(시스템 구조 8-1절) */
-export const PHOTO_STATUS_CHANGED = "photo.status_changed";
 
 /**
  * 연결 직후 보내는 재연결 간격(ms). 첫 프레임을 곧바로 보내야 응답이 열린다
@@ -20,13 +21,13 @@ export const PHOTO_STATUS_CHANGED = "photo.status_changed";
  */
 export const SSE_RETRY_MS = 2000;
 
-type EventMap = { [PHOTO_STATUS_CHANGED]: PhotoStatusChangedEvent };
+type EventMap = { [PHOTO_STATUS_CHANGED_EVENT]: PhotoStatusChangedEvent };
 
 export function createEventsHandler(bus: Pick<EventBus, "subscribe"> = sharedBus) {
-  return sse<EventMap>("/api/events", ({ client, request }) => {
+  return sse<EventMap>(EVENTS_PATH, ({ client, request }) => {
     client.send({ retry: SSE_RETRY_MS });
     const unsubscribe = bus.subscribe((event) => {
-      client.send({ event: PHOTO_STATUS_CHANGED, data: event });
+      client.send({ event: PHOTO_STATUS_CHANGED_EVENT, data: event });
     });
     // 탭을 닫거나 EventSource를 닫아 요청이 중단되면 버스 구독도 끊는다.
     request.signal.addEventListener("abort", unsubscribe, { once: true });

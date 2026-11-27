@@ -95,6 +95,10 @@ export interface StaffZeroResult {
   staff_zero_reason: StaffZeroReason;
 }
 
+/** SSE 스트림 경로와 이벤트 이름(시스템 구조 8-1절). 모의 SSE 핸들러도 이 값을 쓴다 */
+export const EVENTS_PATH = "/api/events";
+export const PHOTO_STATUS_CHANGED_EVENT = "photo.status_changed";
+
 /**
  * SSE `photo.status_changed` 이벤트 데이터 (시스템 구조 8-1절).
  * `kind`와 기준 사진 이벤트(환자·발주 `null`)는 제안 확장이라 화면은 `kind`에 의존하지 않는다.
