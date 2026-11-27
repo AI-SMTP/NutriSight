@@ -45,7 +45,10 @@ RULE_VIOLATION_THREAD_ID = "t1"  # 규칙 위반으로 거부되는 입력이라
 
 @dataclass(frozen=True)
 class PortFixture:
-    """`port`에 넣은 픽스처 배치의 ID·날짜 (스펙 §3.4 표)."""
+    """`port`에 넣은 픽스처 배치의 ID·날짜 (스펙 §3.4 표).
+
+    `patient_without_card`에는 카드뿐 아니라 판정(alert)도 두지 않는다.
+    """
 
     patient_with_active: str
     expected_active_id: str
@@ -340,6 +343,17 @@ class PatientDataPortContract:
         fractions = [menu.avg_intake_fraction for menu in menus]
         assert fractions == sorted(fractions)  # 덜 먹은 메뉴부터 (비내림차순)
 
+    async def test_intake_summary_without_judgement_has_no_alert(
+        self, port: PatientDataPort, port_fixture: PortFixture
+    ) -> None:
+        """판정이 없는 환자(`patient_without_card`)의 요약은 `alert is None`이다."""
+        summary = await port.get_intake_summary(
+            port_fixture.patient_without_card, port_fixture.summary_days, port_fixture.summary_on
+        )
+
+        assert isinstance(summary, IntakeSummary)
+        assert summary.alert is None
+
     async def test_intake_summary_unknown_patient_raises(
         self, port: PatientDataPort, port_fixture: PortFixture
     ) -> None:
@@ -460,6 +474,8 @@ class PatientDataPortContract:
         )
         for name in preserved:
             assert getattr(result, name) == getattr(before, name), name
+        # 고칠 때 `updated_at`이 갱신된다 (시계 해상도 때문에 같을 수 있어 >=로 본다).
+        assert result.updated_at >= before.updated_at
 
         reread = await port.get_recommendation(port_fixture.patient_with_active)
         assert isinstance(reread, RecommendationCard)

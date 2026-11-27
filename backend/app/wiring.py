@@ -4,9 +4,19 @@
 
 병행 트랙이 실제 구현을 추가하는 방법:
 
-1. 구현 모듈에 `def build_xxx(settings: Settings) -> <계약>` 생성 함수를 만든다.
-2. 아래 해당 등록부에 이름으로 추가한다. 예: `INTAKE_ESTIMATORS["vlm"] = build_vlm_estimator`
+1. 이 모듈에 `def _build_xxx(settings: Settings) -> <계약>` 생성 함수를 만들고, 구현 모듈은
+   함수 안에서 import한다. 그 이름이 선택됐을 때만 SDK·색인을 읽게 해, 다른 구현으로 띄우거나
+   테스트를 수집할 때 무거운 의존성이 로드되거나 미설치로 import가 깨지지 않게 한다.
+
+       def _build_vlm_estimator(settings: Settings) -> IntakeEstimator:
+           from app.intake.vlm import VlmEstimator  # 선택됐을 때만 로드
+
+           return VlmEstimator(...)
+
+2. 아래 해당 등록부에 이름으로 추가한다. 예: `"vlm": _build_vlm_estimator`
 3. 환경 변수(또는 `backend/.env`)로 고른다. 예: `INTAKE_ADAPTER=vlm`
+
+기본 Fake는 외부 의존성이 없어 모듈 상단에서 import한다.
 
 | 등록부 | 설정(환경 변수) | `app.state` 속성 |
 | --- | --- | --- |

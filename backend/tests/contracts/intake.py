@@ -15,6 +15,7 @@ from app.intake.types import (
     EstimationRequest,
     EstimationResult,
     IntakeEstimator,
+    QualityIssue,
     SlotEstimate,
     SlotSpec,
     SlotStatus,
@@ -128,3 +129,9 @@ class IntakeEstimatorContract:
         assert all(isinstance(slot, SlotEstimate) for slot in result.slots)
         assert all(isinstance(slot.status, SlotStatus) for slot in result.slots)
         assert isinstance(result.image_status, SlotStatus)
+        # 모델 응답 문자열을 그대로 넣지 않고 열거형으로 바꿔야 한다.
+        assert isinstance(result.image_issues, tuple)
+        assert all(isinstance(issue, QualityIssue) for issue in result.image_issues)
+        for slot in result.slots:
+            assert isinstance(slot.quality_issues, tuple)
+            assert all(isinstance(issue, QualityIssue) for issue in slot.quality_issues)

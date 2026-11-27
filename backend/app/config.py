@@ -5,9 +5,13 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+# 실행 위치와 무관하게 `backend/.env`를 읽는다.
+BACKEND_ENV_FILE = Path(__file__).resolve().parents[1] / ".env"
 DEFAULT_IMPLEMENTATION = "fake"
 DEFAULT_FAKE_INTAKE_DELAY_S = 2.0
 
@@ -19,7 +23,7 @@ class ConfigError(Exception):
 class Settings(BaseSettings):
     """네 계약의 구현 이름과 Fake 섭취 추정 지연 시간."""
 
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    model_config = SettingsConfigDict(env_file=BACKEND_ENV_FILE, extra="ignore")
 
     intake_adapter: str = DEFAULT_IMPLEMENTATION
     nutrition_engine: str = DEFAULT_IMPLEMENTATION
