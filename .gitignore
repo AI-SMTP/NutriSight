@@ -222,3 +222,7 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 .DS_Store
+
+# RAG 원문 (재배포 라이선스 미확인 — 출처는 docs/research/rag-sources/README.md)
+docs/research/rag-sources/**/*.pdf
+docs/research/rag-sources/**/*.xml
