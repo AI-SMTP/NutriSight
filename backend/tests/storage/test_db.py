@@ -3,12 +3,26 @@
 from __future__ import annotations
 
 import sqlite3
-from collections.abc import Mapping
 from pathlib import Path
 
 import pytest
 
 from app.storage.db import SCHEMA_VERSION, connect, create_schema
+from tests.storage.rows import (
+    MEAL_ORDER_ID,
+    MEAL_PLAN_ID,
+    PATIENT_ID,
+    insert_alert,
+    insert_assessment,
+    insert_meal_order,
+    insert_meal_plan,
+    insert_patient,
+    insert_photo,
+    insert_recommendation,
+    insert_row,
+    insert_slot,
+    insert_slot_intake,
+)
 
 BUSINESS_TABLES = frozenset(
     {
@@ -35,158 +49,6 @@ EXPECTED_INDEXED_COLUMNS = {
     ("recommendations", ("patient_id", "status")),
     ("photos", ("status",)),
 }
-
-PATIENT_ID = "NS07"
-MEAL_PLAN_ID = "2026-11-23_lunch_general"
-MEAL_ORDER_ID = "NS07_2026-11-23_lunch"
-
-
-# ---------------------------------------------------------------------------
-# 행 만들기 도우미: 유효한 기본 행에 바꿀 열만 덮어쓴다.
-# ---------------------------------------------------------------------------
-
-
-def _insert(conn: sqlite3.Connection, table: str, row: Mapping[str, object]) -> None:
-    columns = ", ".join(row)
-    placeholders = ", ".join("?" for _ in row)
-    conn.execute(f"INSERT INTO {table} ({columns}) VALUES ({placeholders})", tuple(row.values()))
-
-
-def insert_patient(conn: sqlite3.Connection, **overrides: object) -> None:
-    row = {
-        "patient_id": PATIENT_ID,
-        "display_name": "NS07",
-        "room": "302호",
-        "sex": "female",
-        "birth_year": 1944,
-        "height_cm": 154.0,
-        "default_diet_type": "general",
-        "conditions": '["고혈압"]',
-        "diet_restrictions": "",
-        "ckd_dialysis": "none",
-        "observation_start": "2026-11-16",
-        "data_source": "mock",
-    }
-    _insert(conn, "patients", {**row, **overrides})
-
-
-def insert_meal_plan(conn: sqlite3.Connection, **overrides: object) -> None:
-    row = {
-        "meal_plan_id": MEAL_PLAN_ID,
-        "date": "2026-11-23",
-        "meal": "lunch",
-        "diet_type": "general",
-        "baseline_photo_id": None,
-    }
-    _insert(conn, "meal_plans", {**row, **overrides})
-
-
-def insert_slot(conn: sqlite3.Connection, **overrides: object) -> None:
-    row = {
-        "meal_plan_id": MEAL_PLAN_ID,
-        "slot_id": "slot_3",
-        "position": "윗줄 1 (왼쪽 끝)",
-        "dish_type": "main",
-        "menu_name": "두부조림",
-        "served_g": 60.0,
-        "energy_kcal": 90.0,
-        "protein_g": 10.0,
-    }
-    _insert(conn, "meal_plan_slots", {**row, **overrides})
-
-
-def insert_meal_order(conn: sqlite3.Connection, **overrides: object) -> None:
-    row = {
-        "meal_order_id": MEAL_ORDER_ID,
-        "patient_id": PATIENT_ID,
-        "meal_plan_id": MEAL_PLAN_ID,
-        "diet_category": "상식",
-        "diet_code": "일반상식",
-        "order_status": "ordered",
-        "order_from": "2026-11-16 breakfast",
-        "order_note": "",
-        "record_status": "recorded",
-        "post_photo_id": None,
-        "staff_zero_reason": None,
-        "energy_kcal_est": 300.0,
-        "protein_g_est": 12.0,
-        "incomplete": 0,
-        "data_source": "mock",
-    }
-    _insert(conn, "meal_orders", {**row, **overrides})
-
-
-def insert_slot_intake(conn: sqlite3.Connection, **overrides: object) -> None:
-    row = {
-        "meal_order_id": MEAL_ORDER_ID,
-        "slot_id": "slot_3",
-        "intake_fraction_est": 0.5,
-        "status": "estimated",
-        "quality_issues": "[]",
-        "estimate_basis": "mock",
-    }
-    _insert(conn, "slot_intakes", {**row, **overrides})
-
-
-def insert_photo(conn: sqlite3.Connection, **overrides: object) -> None:
-    row = {
-        "photo_id": "P0001",
-        "kind": "baseline",
-        "meal_plan_id": MEAL_PLAN_ID,
-        "meal_order_id": None,
-        "uploader_role": "dietitian",
-        "file_path": "var/photos/P0001.jpg",
-        "status": "done",
-        "stage": None,
-        "outcome": None,
-        "error": None,
-        "uploaded_at": "2026-11-23T11:50:00",
-        "updated_at": "2026-11-23T11:50:00",
-        "data_source": "mock",
-    }
-    _insert(conn, "photos", {**row, **overrides})
-
-
-def insert_assessment(conn: sqlite3.Connection, **overrides: object) -> None:
-    row = {
-        "patient_id": PATIENT_ID,
-        "assessed_on": "2026-11-23",
-        "kind": "mna_sf",
-        "result": "at_risk",
-        "score": 10.0,
-        "note": "",
-    }
-    _insert(conn, "patient_assessments", {**row, **overrides})
-
-
-def insert_alert(conn: sqlite3.Connection, **overrides: object) -> None:
-    row = {
-        "alert_id": "A0001",
-        "patient_id": PATIENT_ID,
-        "evaluated_at": "2026-11-23T00:00:00",
-        "level": "caution",
-        "basis_period": "2026-11-17~2026-11-23",
-        "basis_values": "{}",
-        "nutrients": '["protein"]',
-        "unrecorded_meals": 0,
-    }
-    _insert(conn, "alerts", {**row, **overrides})
-
-
-def insert_recommendation(conn: sqlite3.Connection, **overrides: object) -> None:
-    row = {
-        "recommendation_id": "R0001",
-        "patient_id": PATIENT_ID,
-        "alert_id": None,
-        "items": "[]",
-        "cautions": "[]",
-        "last_modified_by": "agent",
-        "thread_id": None,
-        "created_at": "2026-11-23T12:00:00",
-        "updated_at": "2026-11-23T12:00:00",
-        "status": "active",
-    }
-    _insert(conn, "recommendations", {**row, **overrides})
 
 
 def _seed_order_context(conn: sqlite3.Connection) -> None:
@@ -372,9 +234,9 @@ def test_history_tables_use_composite_primary_key(
 ) -> None:
     with connect(db_path) as conn:
         insert_patient(conn)
-        _insert(conn, table, {"patient_id": PATIENT_ID, **row})
+        insert_row(conn, table, {"patient_id": PATIENT_ID, **row})
         with pytest.raises(sqlite3.IntegrityError):
-            _insert(conn, table, {"patient_id": PATIENT_ID, **row})
+            insert_row(conn, table, {"patient_id": PATIENT_ID, **row})
 
 
 def test_meal_plans_date_meal_diet_type_is_unique(db_path: Path) -> None:
@@ -559,7 +421,7 @@ def test_prescription_status_check_rejects_invalid(db_path: Path) -> None:
             "status": "draft",
         }
         with pytest.raises(sqlite3.IntegrityError):
-            _insert(conn, "prescriptions", row)
+            insert_row(conn, "prescriptions", row)
 
 
 def test_patient_target_source_check_rejects_invalid(db_path: Path) -> None:
@@ -574,7 +436,7 @@ def test_patient_target_source_check_rejects_invalid(db_path: Path) -> None:
             "note": "",
         }
         with pytest.raises(sqlite3.IntegrityError):
-            _insert(conn, "patient_targets", row)
+            insert_row(conn, "patient_targets", row)
 
 
 @pytest.mark.parametrize("invalid", ["bmi", "MNA_SF", ""])
