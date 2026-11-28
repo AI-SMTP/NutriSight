@@ -236,11 +236,17 @@ export async function getMeal(
 ): Promise<MealDetail> {
   const { signal } = options;
   const response = await send(mealPath(date, meal), { signal });
-  return readBody<MealDetail>(
+  const detail = await readBody<MealDetail>(
     response,
     ["meal_plan_id", "date", "meal", "slots", "baseline_photo", "orders"],
     signal,
   );
+  // 화면이 두 필드를 바로 `map`으로 그린다. 배열이 아니면 렌더 중 오류로 화면 전체가 내려가므로
+  // 여기서 `server`로 분류해 조회 오류 안내를 띄운다.
+  if (!Array.isArray(detail.slots) || !Array.isArray(detail.orders)) {
+    throw new ApiError("server", response.status);
+  }
+  return detail;
 }
 
 /** `POST /api/meals/{date}/{meal}/baseline` — 기준 식전 사진 등록(201) */

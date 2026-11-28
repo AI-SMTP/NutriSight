@@ -285,6 +285,17 @@ describe("응답 본문 검증", () => {
     await expectApiError(getMeta(), "server", 200);
   });
 
+  it.each([
+    ["orders가 null", { orders: null }],
+    ["slots가 객체", { slots: {} }],
+  ])("getMeal 응답의 배열 필드가 배열이 아니면(%s) server로 던진다", async (_label, patch) => {
+    server.use(
+      http.get("/api/meals/:date/:meal", () => HttpResponse.json({ ...mealDetail, ...patch })),
+    );
+
+    await expectApiError(getMeal(DATE, "lunch"), "server", 200);
+  });
+
   it("성공 응답이 객체가 아니면 server로 던진다", async () => {
     server.use(http.get("/api/meta", () => HttpResponse.json(null)));
 
