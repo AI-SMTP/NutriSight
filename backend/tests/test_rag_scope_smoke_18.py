@@ -8,7 +8,6 @@ import pytest
 
 from app.recommender.retrieval_guard import detect_unsupported_scope
 
-
 UNSUPPORTED_QUERIES = (
     "미기록 끼니가 있고 단백질 목표가 미등록인 노인 만성콩팥병 G3b 환자의 단백질 처방 수치",
     "CKD G3b 노인 단백질 섭취량 몇 g/kg/day로 하면 돼?",
