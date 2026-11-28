@@ -8,11 +8,17 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import sys
+from pathlib import Path
 
-from app.agent_preview.bridge import bind_patient_tools
-from app.agent_preview.fake_agent import FakeAgentPreview
-from app.recommender.fake_guideline import FakeGuidelineSearch
-from app.services.fake_patient_data import SUMMARY_ON, FakePatientData
+BACKEND_DIR = Path(__file__).resolve().parents[1]
+if str(BACKEND_DIR) not in sys.path:
+    sys.path.insert(0, str(BACKEND_DIR))
+
+from app.agent_preview.bridge import bind_patient_tools  # noqa: E402
+from app.agent_preview.fake_agent import FakeAgentPreview  # noqa: E402
+from app.recommender.fake_guideline import FakeGuidelineSearch  # noqa: E402
+from app.services.fake_patient_data import SUMMARY_ON, FakePatientData  # noqa: E402
 
 
 async def run_demo(patient_id: str, question: str) -> None:
