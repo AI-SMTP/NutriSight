@@ -50,8 +50,29 @@ from app.services.fake_patient_data import FakePatientData
 from app.services.ports import PatientDataPort
 from app.services.runtime import AppRuntime
 
+
+def _build_claude(settings: Settings) -> IntakeEstimator:
+    key = settings.anthropic_api_key
+    if key is None or not key.get_secret_value().strip():
+        raise ConfigError("INTAKE_ADAPTER=claude requires ANTHROPIC_API_KEY")
+
+    from anthropic import AsyncAnthropic
+
+    from app.intake.claude_estimator import ClaudeIntakeEstimator
+
+    image_root = storage_paths(settings).photos_dir.resolve()
+    client = AsyncAnthropic(
+        api_key=key.get_secret_value().strip(),
+        base_url="https://api.anthropic.com",
+        timeout=60.0,
+        max_retries=0,
+    )
+    return ClaudeIntakeEstimator(client=client, allowed_image_root=image_root)
+
+
 INTAKE_ESTIMATORS: dict[str, Callable[[Settings], IntakeEstimator]] = {
     "fake": lambda settings: FakeEstimator(delay_s=settings.fake_intake_delay_s),
+    "claude": _build_claude,
 }
 NUTRITION_ENGINES: dict[str, Callable[[Settings], NutritionEngine]] = {
     "fake": lambda settings: FakeNutritionEngine(),

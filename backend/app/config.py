@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
 
-from pydantic import Field, field_validator
+from pydantic import Field, SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # 실행 위치와 무관하게 `config.py` 위치에서 저장소 루트와 `backend/.env`를 계산한다.
@@ -42,6 +42,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=BACKEND_ENV_FILE, extra="ignore")
 
     intake_adapter: str = DEFAULT_IMPLEMENTATION
+    anthropic_api_key: SecretStr | None = None
     nutrition_engine: str = DEFAULT_IMPLEMENTATION
     guideline_search: str = DEFAULT_IMPLEMENTATION
     patient_data: str = DEFAULT_PATIENT_DATA
