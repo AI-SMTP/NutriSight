@@ -1,0 +1,77 @@
+{
+  "manifest_version": "1.0",
+  "readme_reference": "docs/research/rag-sources/README.md",
+  "approval_policy": "원문 파일 존재만으로 자동 승인하지 않으며, 공식 출처·판본·SHA-256 검토 후에만 approved로 승격한다.",
+  "artifacts": [
+    {
+      "artifact_id": "espen_geriatrics_pdf",
+      "doc_id": "espen_geriatrics",
+      "document_title": "ESPEN practical guideline: Clinical nutrition and hydration in geriatrics",
+      "publisher": "European Society for Clinical Nutrition and Metabolism (ESPEN)",
+      "published_year_or_edition": "2022 (Clinical Nutrition 41(4):958-989)",
+      "relative_path": "espen-geriatrics/espen-practical-guideline-geriatrics.pdf",
+      "format": "pdf",
+      "source_url": "https://www.espen.org/files/ESPEN-Guidelines/ESPEN%5Fpractical%5Fguideline%5FClinical%5Fnutrition%5Fand%5Fhydration%5Fin%5Fgeriatrics.pdf",
+      "language": "en",
+      "expected_sha256": "b5456f29359f345ab7c4943c54605934beff4c0175f206f96ca435a344f5355c",
+      "review_status": "approved",
+      "reviewed_at": "2026-11-27"
+    },
+    {
+      "artifact_id": "kjg_elderly_nutrition_2019_pdf",
+      "doc_id": "kjg_elderly_nutrition_2019",
+      "document_title": "대한소화기학회지 「고령자의 영양 관리」(2019)",
+      "publisher": "대한소화기학회 (Korean Journal of Gastroenterology)",
+      "published_year_or_edition": "2019 (Vol. 73, No. 4, pp. 196-204)",
+      "relative_path": "kjg-elderly-nutrition-2019/kjg-2019-73-4-196-elderly-nutrition.pdf",
+      "format": "pdf",
+      "source_url": "https://doi.org/10.4166/kjg.2019.73.4.196",
+      "language": "ko",
+      "expected_sha256": "5b3c2a0d43d45c84adb65283cdb2f35df812d6cd4fad1007eb515343881c86ef",
+      "review_status": "approved",
+      "reviewed_at": "2026-11-27"
+    },
+    {
+      "artifact_id": "glim_2025_clnu_pdf",
+      "doc_id": "glim_2025",
+      "document_title": "GLIM 5년 업데이트(2025) — Clinical Nutrition 게재본",
+      "publisher": "GLIM Working Group / Clinical Nutrition",
+      "published_year_or_edition": "2025 (Clinical Nutrition)",
+      "relative_path": "glim-2025/glim-5-year-update-2025-clnu.pdf",
+      "format": "pdf",
+      "source_url": "https://www.clinicalnutritionjournal.com/article/S0261-5614(25)00086-X/pdf",
+      "language": "en",
+      "expected_sha256": null,
+      "review_status": "pending",
+      "reviewed_at": null
+    },
+    {
+      "artifact_id": "glim_2025_jpen_xml",
+      "doc_id": "glim_2025",
+      "document_title": "GLIM 5년 업데이트(2025) — JPEN 동시 게재본 원문 XML",
+      "publisher": "GLIM Working Group / JPEN (Journal of Parenteral and Enteral Nutrition)",
+      "published_year_or_edition": "2025 (JPEN 49(4):414-427, doi:10.1002/jpen.2756)",
+      "relative_path": "glim-2025/glim-5-year-update-2025-jpen.xml",
+      "format": "xml",
+      "source_url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC12053077/",
+      "language": "en",
+      "expected_sha256": "d80cc184b117efd011cbd3936cceae1773f5e517c11bc30fdabe562f87610340",
+      "review_status": "approved",
+      "reviewed_at": "2026-11-27"
+    },
+    {
+      "artifact_id": "khna_pressure_injury_pdf",
+      "doc_id": "khna_pressure_injury",
+      "document_title": "대한간호협회 욕창 예방·관리 가이드라인",
+      "publisher": "대한간호협회 · 병원간호사회",
+      "published_year_or_edition": "근거기반 임상간호실무지침 (khna_guide_ebp10)",
+      "relative_path": "khna-pressure-injury/khna-pressure-injury-guideline.pdf",
+      "format": "pdf",
+      "source_url": "https://khna.or.kr/home/data/khna_guide_ebp10.pdf",
+      "language": "ko",
+      "expected_sha256": "ad6a5b511a92e7cc3646e5658c6a475bd0a832d20f4ea45d39db2645bbe2d838",
+      "review_status": "approved",
+      "reviewed_at": "2026-11-27"
+    }
+  ]
+}

@@ -34,10 +34,13 @@
 
 from __future__ import annotations
 
+import os
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 
-from app.config import ConfigError, Settings, storage_paths
+from dotenv import dotenv_values
+
+from app.config import BACKEND_ENV_FILE, ConfigError, Settings, storage_paths
 from app.intake.fake import FakeEstimator
 from app.intake.types import IntakeEstimator
 from app.nutrition.fake import FakeNutritionEngine
@@ -50,6 +53,100 @@ from app.services.fake_patient_data import FakePatientData
 from app.services.ports import PatientDataPort
 from app.services.runtime import AppRuntime
 
+
+def _read_rag_env(name: str, default: str = "") -> str:
+    """환경 변수 우선, 없으면 `backend/.env`에서 RAG 전용 설정값을 읽는다."""
+    env_val = os.getenv(name)
+    if env_val is not None and env_val.strip():
+        return env_val.strip()
+    if BACKEND_ENV_FILE.exists():
+        val = dotenv_values(BACKEND_ENV_FILE).get(name)
+        if val and val.strip():
+            return val.strip()
+    return default
+
+
+def _build_chroma_search(_settings: Settings) -> GuidelineSearch:
+    """`GUIDELINE_SEARCH=chroma` 선택 시에만 Chroma·OpenAI SDK와 색인을 지연 로드한다."""
+    from app.recommender.chroma_search import (
+        DEFAULT_EMBEDDING_MODEL,
+        DEFAULT_MIN_RELEVANCE_SCORE,
+        ChromaGuidelineSearch,
+        OpenAIEmbeddingBackend,
+    )
+    from app.recommender.rag_sources import DEFAULT_CHROMA_DIR
+
+    model = _read_rag_env("RAG_EMBEDDING_MODEL", DEFAULT_EMBEDDING_MODEL)
+    persist_dir = _read_rag_env("RAG_CHROMA_DIR", str(DEFAULT_CHROMA_DIR))
+    min_score = float(_read_rag_env("RAG_MIN_RELEVANCE_SCORE", str(DEFAULT_MIN_RELEVANCE_SCORE)))
+    api_key = _read_rag_env("OPENAI_API_KEY")
+    base_url = _read_rag_env("OPENAI_BASE_URL") or None
+    backend = OpenAIEmbeddingBackend(api_key=api_key, model=model, base_url=base_url)
+    return ChromaGuidelineSearch(
+        persist_dir=persist_dir,
+        embedding_backend=backend,
+        embedding_model=model,
+        min_relevance_score=min_score,
+    )
+
+
+def _build_bm25_search(_settings: Settings) -> GuidelineSearch:
+    """`GUIDELINE_SEARCH=bm25` 선택 시에만 승인 원문에서 로컬 BM25 색인을 구성한다."""
+    from app.recommender.bm25_search import Bm25GuidelineSearch
+    from app.recommender.rag_sources import DEFAULT_MANIFEST_PATH, DEFAULT_SOURCES_DIR
+
+    sources_dir = _read_rag_env("RAG_SOURCES_DIR", str(DEFAULT_SOURCES_DIR))
+    manifest_path = _read_rag_env("RAG_MANIFEST_PATH", str(DEFAULT_MANIFEST_PATH))
+    try:
+        min_score = float(_read_rag_env("RAG_BM25_MIN_SCORE", "0.0"))
+        return Bm25GuidelineSearch.from_sources_dir(
+            sources_dir,
+            manifest_path=manifest_path,
+            min_score=min_score,
+        )
+    except (ValueError, OSError) as exc:
+        raise ConfigError(f"GUIDELINE_SEARCH=bm25 초기화 실패: {exc}") from exc
+
+
+def _build_hybrid_search(settings: Settings) -> GuidelineSearch:
+    """`GUIDELINE_SEARCH=hybrid` 선택 시에만 BM25 + Chroma RRF 하이브리드 검색기를 지연 로드한다."""
+    from app.recommender.hybrid_search import (
+        DEFAULT_CANDIDATE_K,
+        DEFAULT_RRF_K,
+        HybridGuidelineSearch,
+    )
+
+    candidate_k = int(_read_rag_env("RAG_HYBRID_CANDIDATE_K", str(DEFAULT_CANDIDATE_K)))
+    rrf_k = int(_read_rag_env("RAG_HYBRID_RRF_K", str(DEFAULT_RRF_K)))
+    return HybridGuidelineSearch(
+        bm25_search=_build_bm25_search(settings),
+        dense_search=_build_chroma_search(settings),
+        candidate_k=candidate_k,
+        rrf_k=rrf_k,
+    )
+
+
+def _build_hybrid_rerank_search(settings: Settings) -> GuidelineSearch:
+    """`GUIDELINE_SEARCH=hybrid_rerank` 선택 시 하이브리드 + 로컬 ONNX BGE Reranker를 구성한다."""
+    from app.recommender.reranker import (
+        DEFAULT_BGE_ONNX_DIR,
+        DEFAULT_MAX_TOKENS,
+        DEFAULT_RERANK_CANDIDATES,
+        OnnxBgeReranker,
+        RerankedGuidelineSearch,
+    )
+
+    model_dir = _read_rag_env("RAG_RERANK_MODEL_DIR", str(DEFAULT_BGE_ONNX_DIR))
+    max_tokens = int(_read_rag_env("RAG_RERANK_MAX_TOKENS", str(DEFAULT_MAX_TOKENS)))
+    top_n = int(_read_rag_env("RAG_RERANK_TOP_N", str(DEFAULT_RERANK_CANDIDATES)))
+    reranker = OnnxBgeReranker(model_dir=model_dir, max_tokens=max_tokens)
+    return RerankedGuidelineSearch(
+        base_search=_build_hybrid_search(settings),
+        reranker=reranker,
+        rerank_top_n=top_n,
+    )
+
+
 INTAKE_ESTIMATORS: dict[str, Callable[[Settings], IntakeEstimator]] = {
     "fake": lambda settings: FakeEstimator(delay_s=settings.fake_intake_delay_s),
 }
@@ -58,6 +155,10 @@ NUTRITION_ENGINES: dict[str, Callable[[Settings], NutritionEngine]] = {
 }
 GUIDELINE_SEARCHES: dict[str, Callable[[Settings], GuidelineSearch]] = {
     "fake": lambda settings: FakeGuidelineSearch(),
+    "chroma": _build_chroma_search,
+    "bm25": _build_bm25_search,
+    "hybrid": _build_hybrid_search,
+    "hybrid_rerank": _build_hybrid_rerank_search,
 }
 
 
