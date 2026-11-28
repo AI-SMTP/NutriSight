@@ -103,7 +103,7 @@ frontend (실제) → api/ 라우터 (실제) → services/ · IntakeEstimator �
 
 | 트랙 | 넘겨줄 계약 | 받아올 것 |
 | --- | --- | --- |
-| **비전 인식** | `IntakeEstimator.estimate(EstimationRequest) -> EstimationResult` ([시스템 구조](system-architecture.md) 5절) | ① VLM 어댑터 클래스 ② 선정한 모델과 반복 호출 여부 ③ 저울 실측 식판 평가 결과(대략의 오차) |
+| **비전 인식** | `IntakeEstimator.estimate(EstimationRequest) -> EstimationResult` ([시스템 구조](system-architecture.md) 5절) | ① VLM 어댑터 클래스 ② 선정한 모델과 반복 호출 여부 ③ 기대 결과를 정한 모의 식판 사진으로 확인한 결과(칸별 기대 섭취 비율과의 차이) |
 | **판단 알고리즘** | `meal_nutrients`, `daily_target`, `daily_intake`, `evaluate_alert`의 시그니처와 입력 레코드 타입 ([시스템 구조](system-architecture.md) 6절) | ① 순수 함수 구현과 경계값 테스트 ② 임계값·기간 설정값 |
 | **RAG** | `search_guidelines(query) -> list[GuidelineHit]` (`doc_id`, `section`, `text`, `source_url`) | ① 검색 구현 ② 문서 분할 결과와 색인 생성 스크립트 ③ 확인용 질의와 기대 근거 몇 개 |
 
@@ -171,7 +171,7 @@ Fake와 실제 구현이 **같은 테스트**를 통과하면 바꿔 끼울 수 
 ### 6-4. 주의할 점
 
 1. **어느 토픽에도 들어 있지 않은 작업**
-   - `scripts/eval_intake.py`(저울 실측 식판으로 VLM 어댑터 비교): T1 범위 밖이고 다른 토픽에도 없다. 비전 트랙이 직접 만든다. 실제 네트워크 호출은 이 스크립트에서만 확인한다(계약 테스트는 외부 응답을 모의한다).
+   - `scripts/eval_intake.py`(기대 결과를 정한 모의 식판 사진으로 VLM 어댑터 비교): T1 범위 밖이고 다른 토픽에도 없다. 비전 트랙이 직접 만든다. 실제 네트워크 호출은 이 스크립트에서만 확인한다(계약 테스트는 외부 응답을 모의한다).
    - RAG 색인 생성 스크립트와 문서 분할: RAG 트랙이 직접 만든다.
 2. **시드 이력의 계산 방식이 미정이다.** T2가 7일 모의 이력의 일별 섭취·경고를 시드 값 그대로 넣는지, 적재할 때 `NutritionEngine`으로 계산하는지 정해지지 않았다. 계산하는 쪽을 택하면 판단 알고리즘은 T2부터 흐름에 들어간다. T2 spec에서 정한다.
 3. **`wiring.py` 동시 수정**: 세 트랙이 같은 등록부 파일에 한 줄씩 추가한다. 등록은 각 트랙의 PR에서 한 줄만 고치는 것으로 맞춘다.

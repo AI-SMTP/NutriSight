@@ -226,3 +226,14 @@ __marimo__/
 # RAG 원문 (재배포 라이선스 미확인 — 출처는 docs/research/rag-sources/README.md)
 docs/research/rag-sources/**/*.pdf
 docs/research/rag-sources/**/*.xml
+
+# 프론트엔드 (frontend/)
+# 루트의 lib/ 패턴이 frontend/src/lib/까지 무시하므로 예외로 되살린다.
+!frontend/src/lib/
+node_modules/
+frontend/coverage/
+frontend/test-results/
+frontend/playwright-report/
+frontend/*.local
+# 번들 검사 보고서·모의 빌드 출력(기본·모의 빌드의 MSW 포함 여부 검사)
+frontend/.build-report/

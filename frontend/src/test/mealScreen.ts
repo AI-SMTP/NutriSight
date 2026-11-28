@@ -1,0 +1,102 @@
+// 화면 ①② 테스트 공용 도우미.
+// - 시계: Date만 가짜로 바꿔 기본 끼니와 모의 등록 시각을 고정한다(타이머는 진짜라 waitFor·MSW가 그대로 돈다).
+// - 사진 입력: PhotoPicker의 미리보기용 object URL 대역을 붙인다.
+// - multipart: 업로드를 보내는 묶음은 `useNodeFileForMultipart()`로 전역 `File`을 Node 것으로 바꾼다.
+//   그런데 화면의 `FormData.append`(jsdom)는 jsdom `Blob`만 받으므로, 사진 자체는 바꾸기 전의 jsdom `File`로
+//   만들어야 한다. 그래서 이 모듈을 불러올 때(각 테스트의 beforeEach보다 먼저) jsdom `File`을 잡아 둔다.
+//   이 조합이면 `<input type="file">`·user-event `upload`(jsdom `File`)와 multipart 전송이 함께 동작한다.
+import { act, within } from "@testing-library/react";
+import type { UserEvent } from "@testing-library/user-event";
+
+import type { Meal } from "../api/provisional";
+import { DEMO_DATE } from "../mocks/fixtures";
+import { stubObjectUrl } from "./objectUrl";
+
+import { MEAL_LABELS } from "../features/shared/meals";
+
+export { MEAL_LABELS };
+
+/** 모듈을 불러온 시점의 전역 `File`(jsdom). `useNodeFileForMultipart()`가 바꾸기 전 값이다 */
+const JsdomFile = globalThis.File;
+
+/** 고른 사진 미리보기 이미지의 이름 조건 */
+export const PREVIEW = { name: "선택한 사진 미리보기" } as const;
+
+/** 끼니 조회 경로 */
+export function mealPath(meal: Meal, date = DEMO_DATE): string {
+  return `/api/meals/${date}/${meal}`;
+}
+
+/** 로컬 시각(시연일 2026-11-27의 HH:MM) */
+export function localTime(hours: number, minutes: number): Date {
+  return new Date(2026, 10, 27, hours, minutes);
+}
+
+/**
+ * 각 테스트 동안 Date를 `at`(로컬 시각)으로 고정하고 object URL 대역을 붙인다.
+ * 기본값 17:20은 기본 끼니가 저녁(기준 사진 없음)이 되는 시각이다.
+ */
+export function useMealScreenEnv(at: () => Date = () => localTime(17, 20)): void {
+  let urls: ReturnType<typeof stubObjectUrl> | null = null;
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(at());
+    urls = stubObjectUrl();
+  });
+  afterEach(() => {
+    urls?.restore();
+    vi.useRealTimers();
+  });
+}
+
+/**
+ * "앨범에서 선택"으로 jsdom `File` 사진 하나를 고른다(전역 `File`이 Node 것으로 바뀐 묶음에서도).
+ * 화면 두 개를 함께 그린 테스트는 `root`로 어느 화면의 입력인지 정한다.
+ */
+export async function pickPhoto(
+  user: UserEvent,
+  name = "tray.jpg",
+  root: HTMLElement = document.body,
+): Promise<File> {
+  const photo = new JsdomFile([new Uint8Array(2048)], name, { type: "image/jpeg" });
+  await user.upload(within(root).getByLabelText("앨범에서 선택"), photo);
+  return photo;
+}
+
+/** 기록된 요청 중 POST만 */
+export function postRequests(requests: readonly string[]): string[] {
+  return requests.filter((r) => r.startsWith("POST"));
+}
+
+/** 기록된 요청 중 끼니 조회만 */
+export function mealGets(requests: readonly string[]): string[] {
+  return requests.filter((r) => r.startsWith("GET /api/meals/"));
+}
+
+/**
+ * `/api/meta` 요청 하나를 보내 응답까지 기다린다. "다시 읽지 않았다"를 확인하기 전에 부른다.
+ * 그보다 먼저 화면이 보낸 요청은 이 요청이 끝날 때까지 모의 서버에 도착해 기록된다.
+ */
+export async function flushApiRequest(): Promise<void> {
+  await act(async () => {
+    await fetch(`${globalThis.location.origin}/api/meta`);
+  });
+}
+
+/** 화면 ①② 공통 입력 */
+export interface MealScreenControls {
+  meal: (meal: Meal) => HTMLElement;
+  camera: HTMLElement;
+  album: HTMLElement;
+  submit: HTMLElement;
+}
+
+/** 끼니 세 개·사진 입력 두 개·제출이 모두 막혀 있다 */
+export function expectMealControlsDisabled(controls: MealScreenControls): void {
+  for (const meal of Object.keys(MEAL_LABELS) as Meal[]) {
+    expect(controls.meal(meal)).toBeDisabled();
+  }
+  expect(controls.camera).toBeDisabled();
+  expect(controls.album).toBeDisabled();
+  expect(controls.submit).toBeDisabled();
+}

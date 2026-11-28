@@ -1,0 +1,64 @@
+.group {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+/* 화면에는 숨기고 보조 기술에는 묶음 이름으로 읽힌다. */
+.legend {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.options {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg);
+}
+
+.option {
+  position: relative;
+  flex: 1 1 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--touch-min);
+  min-width: var(--touch-min);
+  border-radius: var(--radius-md);
+  color: var(--color-text-muted);
+  font-family: var(--font-sans);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* 라디오는 보이지 않게 덮어 두되 포커스·키보드 조작은 그대로 받는다. */
+.input {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: inherit;
+}
+
+.option:has(.input:checked) {
+  background: var(--color-surface);
+  color: var(--color-primary-strong);
+  box-shadow: 0 0 0 1px var(--color-line-strong);
+}
+
+.option:has(.input:focus-visible) {
+  outline: 3px solid var(--color-accent);
+  outline-offset: 1px;
+}
+
+.option:has(.input:disabled) {
+  cursor: not-allowed;
+}

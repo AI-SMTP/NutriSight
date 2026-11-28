@@ -1,0 +1,60 @@
+{
+  "name": "nutrisight-frontend",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "packageManager": "pnpm@12.15.0",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "dev": "vite",
+    "dev:mock": "VITE_API_MOCK=1 vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc -b --noEmit",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "e2e": "playwright test",
+    "gen:api": "uv run --frozen --directory ../backend python -m scripts.export_openapi --out ../frontend/src/api/generated/openapi.json && openapi-typescript src/api/generated/openapi.json -o src/api/generated/schema.d.ts",
+    "check:bundle": "pnpm build && node scripts/check-bundle.mjs --report .build-report/modules.default.json",
+    "check:bundle:mock": "node scripts/hash-dir.mjs dist > .build-report/dist.before.sha256 && VITE_API_MOCK=1 vite build --outDir .build-report/dist-mock --emptyOutDir && node scripts/check-bundle.mjs --report .build-report/modules.mock.json --expect-mock && node scripts/hash-dir.mjs dist > .build-report/dist.after.sha256 && node scripts/compare-files.mjs .build-report/dist.before.sha256 .build-report/dist.after.sha256"
+  },
+  "dependencies": {
+    "openapi-fetch": "0.17.0",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "react-router": "8.5.3"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@playwright/test": "1.65.1",
+    "@testing-library/dom": "10.4.2",
+    "@testing-library/jest-dom": "8.0.0",
+    "@testing-library/react": "16.3.3",
+    "@testing-library/user-event": "14.6.13",
+    "@types/node": "24.19.4",
+    "@types/react": "19.3.3",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "6.3.0",
+    "@vitest/coverage-v8": "5.1.2",
+    "eslint": "10.15.0",
+    "eslint-plugin-react-hooks": "7.1.1",
+    "globals": "17.14.0",
+    "jsdom": "31.0.1",
+    "msw": "3.0.8",
+    "openapi-typescript": "7.13.0",
+    "prettier": "3.10.1",
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.74.0",
+    "vite": "8.4.0",
+    "vitest": "5.1.2"
+  },
+  "msw": {
+    "workerDirectory": [
+      "public"
+    ]
+  }
+}

@@ -184,7 +184,7 @@ stateDiagram-v2
 
 ## 5. 섭취 추정 인터페이스 (VLM 무관)
 
-분석 작업 실행기는 아래 인터페이스만 안다. 모델마다 어댑터를 하나씩 만들고, 설정값으로 어떤 어댑터를 쓸지 고른다. 저울 실측 평가 스크립트도 같은 인터페이스로 여러 어댑터를 돌려 비교한다.
+분석 작업 실행기는 아래 인터페이스만 안다. 모델마다 어댑터를 하나씩 만들고, 설정값으로 어떤 어댑터를 쓸지 고른다. 모의 사진 평가 스크립트(`eval_intake.py`)도 같은 인터페이스로 여러 어댑터를 돌려 비교한다.
 
 ```python
 from __future__ import annotations
@@ -208,7 +208,7 @@ class EstimationRequest:
     meal_order_id: str    # 환자의 한 끼 (예: "NS07_2026-11-23_lunch")
     baseline_image: Path  # 끼니의 기준 식전 사진
     post_image: Path      # 환자의 식후 사진
-    slots: tuple[SlotSpec, ...]
+    slots: tuple[SlotSpec, ...]  # 미배식 칸(served_g = 0)은 넣지 않는다
 
 
 class SlotStatus(StrEnum):
@@ -372,7 +372,8 @@ data: {"photo_id": "p_81", "patient_id": "NS07", "meal_plan_id": "2026-11-27_lun
 | `GET /api/threads/{id}/messages` | ③ | 스레드의 지난 메시지 |
 | `POST /api/threads/{id}/messages` | ③ | 질문 → 대화 스트림 (SSE) |
 | `GET /api/events` | ①~④ | 시스템 이벤트 스트림 (SSE) |
-| `POST /api/admin/reset` | 시연 | 시드 상태로 되돌린다: `app.db`·`checkpoints.db`를 새로 만들고 시드를 다시 넣은 뒤, 시연 중 올린 사진 파일을 지운다 |
+
+리셋은 HTTP API로 두지 않는다(제안). 시드 상태로 되돌릴 때는 앱을 끈 상태에서 `uv run python -m scripts.seed`로 리셋한 뒤 앱을 다시 시작한다. 앱이 실행 중이면 리셋 명령은 `var/app.lock` 때문에 실행을 거절한다.
 
 ## 10. 저장소
 
@@ -382,10 +383,10 @@ data: {"photo_id": "p_81", "patient_id": "NS07", "meal_plan_id": "2026-11-27_lun
 | `var/checkpoints.db` | 에이전트 체크포인터 (대화 상태). 업무 DB와 나눠 리셋을 쉽게 한다. |
 | `var/photos/` | 사진 파일. 이름은 서버가 만든다 (`<photo_id>.jpg`). |
 | `var/logs/intake.jsonl` | 섭취 추정 분석 로그: 사진 ID, 모델 ID, 응답 시간, 칸별 근거(`note`), 원문. 어댑터 비교와 디버깅용 |
-| `data/seed/` | 모의 환자 10명, 배식 계획, 발주(특이사항 포함), 7일 모의 섭취 이력. 배식 계획과 발주는 화면에서 입력하지 않고 여기서만 넣는다. 날짜는 시연일 기준 상대 날짜(D-7~D-1, 시연일 D는 배식 계획만)로 넣는다 ([시연 환자 구성](samples/README.md)). |
+| `data/seed/` | 모의 환자 10명, 배식 계획, 발주(특이사항 포함), 7일 모의 섭취 이력. 배식 계획과 발주는 화면에서 입력하지 않고 여기서만 넣는다. 날짜는 시연일 기준 상대 날짜(D-7~D-1, 시연일 D는 배식 계획과 발주)로 넣는다 ([시연 환자 구성](samples/README.md)). |
 | `docs/research/rag-sources/` | RAG 문서 원본 |
 
-테이블과 필드는 [데이터 모델](data-model.md)에 정리했다. 데이터는 환자, 예정 식단, 실제 발주된 식사의 세 묶음으로 나눈다. 리셋은 행 단위로 업로드분을 골라 지우지 않고 DB를 시드로 다시 만든다. 그래서 일별 섭취·경고·추천·처방·스레드에는 출처 필드를 두지 않는다.
+테이블과 필드는 [데이터 모델](data-model.md)에 정리했다. 데이터는 환자, 예정 식단, 실제 발주된 식사의 세 묶음으로 나눈다. 리셋은 행 단위로 업로드분을 골라 지우지 않고 DB를 시드로 다시 만든다. 리셋은 앱을 끈 상태에서 CLI로만 하고, 임시 파일에 새 DB를 만든 뒤 기존 `app.db`를 원자적으로 교체한다(제안). 그래서 일별 섭취·경고·추천·처방·스레드에는 출처 필드를 두지 않는다.
 
 ## 11. 코드 구성 (제안)
 
@@ -404,7 +405,7 @@ backend/
   tests/
   scripts/
     seed.py            모의 데이터 넣기
-    eval_intake.py     저울 실측 식판으로 어댑터 비교
+    eval_intake.py     기대 결과를 정한 모의 식판 사진으로 어댑터 비교
 frontend/              React (Vite). 빌드 결과를 FastAPI가 제공
 data/seed/
 var/                   실행 중 생기는 파일 (git 제외)
@@ -426,7 +427,7 @@ var/                   실행 중 생기는 파일 (git 제외)
 
 ## 13. 열린 문제
 
-1. **VLM 선정** — 저울 실측 식판으로 어댑터를 비교해 정한다. 반복 호출로 결과를 안정화할지도 함께 정한다.
+1. **VLM 선정** — 칸별 기대 섭취 비율을 정해 둔 모의 식판 사진으로 어댑터를 비교해 정한다(저울 실측은 하지 않는다). 반복 호출로 결과를 안정화할지도 함께 정한다.
 2. **추천 카드 구조화 출력** — `create_agent` + Claude에서 어떤 방식이 동작하는지 오전에 확인한다.
 3. **가이드라인 검색 품질** — BM25로 한국어·영어 혼합 문서에서 근거를 잘 찾는지 확인하고, 부족하면 임베딩으로 바꾼다.
 4. **사진 단위 품질 문제 저장** — 사진 전체가 판단 불가일 때의 `image_issues`를 화면 ④에 보여 줄 칸이 데이터 모델에 없다. `photos`에 `quality_issues`를 더할지 데이터 모델에서 정한다.
