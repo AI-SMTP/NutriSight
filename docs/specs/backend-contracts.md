@@ -14,9 +14,9 @@
 backend/
   pyproject.toml · uv.lock · .python-version (3.12)
   app/
-    main.py                          create_app(settings=None), GET /api/health, lifespan(앱 잠금·자동 시드), 프론트엔드 정적 제공
+    main.py                          create_app(settings=None), GET /api/health, 업무 API 라우터, lifespan(앱 잠금·자동 시드·런타임), 프론트엔드 정적 제공
     config.py                        Settings(frontend_dist 포함), ConfigError, StoragePaths, resolve_demo_date()
-    wiring.py                        계약별 이름 등록부, build_components()
+    wiring.py                        계약별 이름 등록부, build_components(settings, runtime)
     intake/types.py                  IntakeEstimator 계약
     intake/fake.py                   FakeEstimator
     nutrition/types.py               NutritionEngine 계약
@@ -26,6 +26,8 @@ backend/
     services/ports.py                PatientDataPort 계약, 추천 카드 타입, 포트 예외
     services/fake_patient_data.py    FakePatientData
     storage/                         SQLite 저장소·시드·리셋 (docs/specs/storage-seed.md)
+    api/ · events/ · services/{runtime,generation,...}.py · recommender/{generator_types,fake_generator}.py
+                                     환자·추천·처방 API, 이벤트 버스, SqlitePatientData, 추천 생성기 계약 (docs/specs/patient-recommendation-api.md)
   scripts/seed.py                    리셋 CLI
   scripts/export_openapi.py          OpenAPI 스키마를 JSON으로 내보내는 CLI (프론트엔드 생성 타입 입력)
   tests/
@@ -96,13 +98,15 @@ backend/
    | `INTAKE_ADAPTER` | `fake` | `INTAKE_ESTIMATORS` | `intake_estimator` |
    | `NUTRITION_ENGINE` | `fake` | `NUTRITION_ENGINES` | `nutrition_engine` |
    | `GUIDELINE_SEARCH` | `fake` | `GUIDELINE_SEARCHES` | `guideline_search` |
-   | `PATIENT_DATA` | `fake` | `PATIENT_DATA_PORTS` | `patient_data` |
+   | `PATIENT_DATA` | `sqlite` (`fake`도 등록) | `PATIENT_DATA_PORTS` | `patient_data` |
+   | `RECOMMENDER` | `fake` | `RECOMMENDATION_GENERATORS` | `recommendation_generator` |
    | `FAKE_INTAKE_DELAY_S` | `2.0` (0 이상) | — | `FakeEstimator.delay_s` |
+   | `RECOMMENDATION_TIMEOUT_S` | `120` (0 초과) | — | `RecommendationDeps.timeout_s` |
 
    저장소 경로와 시연일 설정(`VAR_DIR`, `SEED_PATH`, `DEMO_DATE`)은 `docs/specs/storage-seed.md`에 정리했다.
 
-2. `create_app()`이 `build_components(settings)`로 네 구현을 만들어 `app.state`에 둔다. 등록되지 않은 이름이면 설정 이름과 값을 담은 `ConfigError`를 던진다.
-3. 실제 구현은 `app/wiring.py`의 해당 등록부에 `이름 → 생성 함수(Settings)`로 추가한다. 생성 함수 안에서 구현 모듈을 import해, 그 이름이 선택됐을 때만 SDK·색인을 읽게 한다.
+2. `create_app()`이 먼저 `AppRuntime`(이벤트 버스·앱 소유 태스크·쓰기 실행기·앱 시계)을 만들고, `build_components(settings, runtime)`로 다섯 구현을 만들어 `app.state`에 둔다. 등록되지 않은 이름이면 설정 이름과 값을 담은 `ConfigError`를 던진다.
+3. 실제 구현은 `app/wiring.py`의 해당 등록부에 `이름 → 생성 함수(Settings)`로 추가한다. `PATIENT_DATA_PORTS`만 생성 함수가 `(Settings, AppRuntime)`을 받는다(`sqlite`는 런타임을 쓰고 `fake`는 무시한다). 생성 함수 안에서 구현 모듈을 import해, 그 이름이 선택됐을 때만 SDK·색인을 읽게 한다.
 
    ```python
    def _build_vlm_estimator(settings: Settings) -> IntakeEstimator:
@@ -119,6 +123,7 @@ backend/
 cd backend
 uv sync --locked
 uv run ruff check && uv run ruff format --check
+uv run pyright             # app 패키지 타입 검사
 uv run pytest --cov=app
 uv run fastapi dev        # http://127.0.0.1:8000/api/health → 200 (var/app.db가 없으면 시드를 적재한다)
 uv run python -m scripts.seed   # 앱을 끈 상태에서 DB 리셋
@@ -130,8 +135,8 @@ uv run python -m scripts.export_openapi   # frontend/src/api/generated/openapi.j
 ## 제약사항
 
 - Python 3.12 계열만 지원한다(`requires-python = ">=3.12,<3.13"`). 의존성 버전은 `uv.lock`으로 고정한다.
-- HTTP 엔드포인트는 `GET /api/health`뿐이다(그 밖에는 프론트엔드 정적 제공). SQLite 저장소와 시드는 있지만(`docs/specs/storage-seed.md`) 업무 API, 이벤트·SSE, 에이전트, 실제 VLM·영양 규칙·가이드라인 검색은 후속 토픽과 병행 트랙에서 붙인다. 프론트엔드 화면 ①②는 임시 계약과 MSW 모의로 동작한다(`docs/specs/frontend-shell-upload.md`).
+- HTTP 엔드포인트는 `GET /api/health`와 환자·추천·처방 API(`docs/specs/patient-recommendation-api.md`)다. 사진 업로드·분석 작업, SSE, 실제 에이전트, 실제 VLM·영양 규칙·가이드라인 검색은 후속 토픽과 병행 트랙에서 붙인다. 프론트엔드 화면 ①②는 임시 계약과 MSW 모의로 동작한다(`docs/specs/frontend-shell-upload.md`).
 - 접근 제어와 rate limiting이 없다(파일럿 전제). 서버는 기본 호스트 `127.0.0.1`로 띄운다.
 - `EstimationRequest`의 이미지 경로는 계약 단계에서 검증하지 않는다. 사진을 실제로 여는 구현(VLM 어댑터·업로드 API)은 경로가 `var/photos/` 안인지 확인하고 이미지 내용을 검증해야 한다.
-- 타입 검사기(mypy·pyright), CI, Docker는 쓰지 않는다.
+- 타입 검사는 pyright(dev 의존성, 대상 `app`)로 한다. CI, Docker는 쓰지 않는다.
 - Fake 데이터는 모의 환자만 쓴다. 판정 수준은 계약 검증용 고정 배치 값이며 `AlertRules`로 계산한 값이 아니다.
