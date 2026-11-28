@@ -108,11 +108,15 @@ def _register_frontend(application: FastAPI, frontend_dist: Path) -> None:
         return
     application.frontend("/", directory=dist, fallback=None)
 
-    async def spa_not_found(request: Request, exc: StarletteHTTPException) -> Response:
+    async def spa_not_found(request: Request, exc: Exception) -> Response:
         """404이고 대체 응답 대상이면 `index.html`, 아니면 기본 HTTP 오류 응답을 돌려준다.
 
         시작 뒤 `index.html`이 사라졌으면(다시 빌드하는 중 등) 500 대신 기본 404로 넘긴다.
+        `StarletteHTTPException`에만 등록하므로 다른 예외는 오지 않는다. 인자 타입은 Starlette
+        처리기 타입(`Exception`)에 맞추고 아래 검사로 좁힌다.
         """
+        if not isinstance(exc, StarletteHTTPException):
+            raise exc
         if exc.status_code == 404 and _wants_spa_fallback(request) and index.is_file():
             return FileResponse(index)
         return await http_exception_handler(request, exc)

@@ -178,10 +178,10 @@ class AlertOut(_ViewModel):
             alert_id=row.alert_id,
             evaluated_at=row.evaluated_at,
             level=result.level,
-            nutrients=result.nutrients,
+            nutrients=list(result.nutrients),
             period_start=result.period_start,
             period_end=result.period_end,
-            evidence=result.evidence,
+            evidence=[EvidenceOut.model_validate(item) for item in result.evidence],
             unrecorded_meals=result.unrecorded_meals,
         )
 

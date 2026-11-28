@@ -46,9 +46,9 @@ class Settings(BaseSettings):
     guideline_search: str = DEFAULT_IMPLEMENTATION
     patient_data: str = DEFAULT_PATIENT_DATA
     recommender: str = DEFAULT_IMPLEMENTATION
-    fake_intake_delay_s: float = Field(DEFAULT_FAKE_INTAKE_DELAY_S, ge=0)
+    fake_intake_delay_s: float = Field(default=DEFAULT_FAKE_INTAKE_DELAY_S, ge=0)
     # 추천 생성기 시간 제한(초). 실행 중 생성을 멈추는 유일한 수단이다(스펙 3.2).
-    recommendation_timeout_s: float = Field(DEFAULT_RECOMMENDATION_TIMEOUT_S, gt=0)
+    recommendation_timeout_s: float = Field(default=DEFAULT_RECOMMENDATION_TIMEOUT_S, gt=0)
     var_dir: Path = DEFAULT_VAR_DIR
     seed_path: Path = DEFAULT_SEED_PATH
     # `pnpm build` 결과 디렉토리. `index.html`이 있을 때만 정적 제공을 켠다
