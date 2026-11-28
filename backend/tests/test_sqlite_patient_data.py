@@ -38,6 +38,7 @@ from tests.contracts.patient_data import (
 )
 from tests.contracts.sqlite_patient_batch import CHAT_THREAD_ID, load_patient_batch
 from tests.services.cards import read_card
+from tests.services.gates import ThreadGate
 from tests.services.generation import APP_NOW, TIMEOUT, GenerationEnv, GenerationEnvs
 
 # 기대 날짜는 Fake 계약 테스트와 같은 값을 따로 고정한다(구현 상수와 비교하지 않기 위해).
@@ -232,37 +233,14 @@ async def test_duplicate_item_id_publishes_nothing_and_keeps_card(
 # ---- 호출자 취소: 쓰기는 커밋·발행까지 끝난다 ----
 
 
-class _Gate:
-    """쓰기 실행기 스레드를 `release`가 켜질 때까지 멈추는 게이트."""
-
-    def __init__(self) -> None:
-        self.entered = threading.Event()
-        self.release = threading.Event()
-
-    def hold(self) -> None:
-        """호출한 스레드에서 들어왔음을 알리고 풀릴 때까지 기다린다."""
-        self.entered.set()
-        if not self.release.wait(TIMEOUT):
-            raise TimeoutError("게이트가 풀리지 않았다")
-
-    async def wait_entered(self) -> None:
-        assert await asyncio.to_thread(self.entered.wait, TIMEOUT)
-
-
 async def test_cancelled_caller_still_commits_and_publishes(
     db_path: Path,
     port_env: tuple[SqlitePatientData, GenerationEnv],
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     port, env = port_env
-    gate = _Gate()
-    real = rec_store.update_card_items
-
-    def gated(*args: Any, **kwargs: Any) -> int:
-        gate.hold()
-        return real(*args, **kwargs)
-
-    monkeypatch.setattr(rec_store, "update_card_items", gated)
+    gate = ThreadGate()
+    gate.patch(monkeypatch, rec_store, "update_card_items")
     items = build_items("doc")
     caller = asyncio.create_task(
         port.update_recommendation(fake.ACTIVE_ID, items, ModifiedBy.DOCTOR, None)
@@ -294,7 +272,7 @@ async def test_cancelled_caller_still_runs_write_queued_behind_another(
     """
     port, env = port_env
     writer = env.runtime.writer
-    gate = _Gate()
+    gate = ThreadGate()
 
     def blocker(conn: sqlite3.Connection) -> WriteResult[None]:
         gate.hold()

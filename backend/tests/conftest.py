@@ -4,7 +4,8 @@
 수집 시점의 앱과 헬스체크 결과를 바꾸지 못하도록, 앱 모듈을 import하기 전에 아래를 먼저 한다.
 
 1. `os.environ`에서 설정 환경 변수(`DEMO_DATE` 포함)를 대소문자와 상관없이 지운다.
-2. 구현 선택 환경 변수 5개와 `SEED_PATH`·`VAR_DIR`·`FRONTEND_DIST`를 기본값으로 고정한다.
+2. 구현 선택 환경 변수 7개(구현 이름 5개와 `FAKE_INTAKE_DELAY_S`·`RECOMMENDATION_TIMEOUT_S`)와
+   `SEED_PATH`·`VAR_DIR`·`FRONTEND_DIST`를 기본값으로 고정한다.
    수집용 `VAR_DIR`는 계산만 한 임시 경로로, 디렉토리를 만들지 않는다. 모듈 수준 앱은
    lifespan을 실행하지 않아 이 경로에 쓰지 않고, 파일을 쓰는 테스트는 autouse fixture가
    `tmp_path / "var"`로 덮어쓴다. 수집용 `FRONTEND_DIST`는 없는 경로라 정적 제공이 꺼진다.
@@ -32,8 +33,10 @@ SETTING_ENV_DEFAULTS: dict[str, str] = {
     "INTAKE_ADAPTER": "fake",
     "NUTRITION_ENGINE": "fake",
     "GUIDELINE_SEARCH": "fake",
-    "PATIENT_DATA": "fake",
+    "PATIENT_DATA": "sqlite",
+    "RECOMMENDER": "fake",
     "FAKE_INTAKE_DELAY_S": "2.0",
+    "RECOMMENDATION_TIMEOUT_S": "120",
     "SEED_PATH": str(DEFAULT_SEED_PATH),
     "VAR_DIR": str(Path(tempfile.gettempdir()) / "nutrisight-test-collect-var"),
     # 존재하지 않는 경로로 고정해 수집 시점의 앱이 저장소의 `frontend/dist`에 영향받지 않게 한다.
@@ -68,7 +71,7 @@ def isolated_var_dir(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Path:
 
 @pytest.fixture
 def clean_settings_env(monkeypatch: pytest.MonkeyPatch) -> pytest.MonkeyPatch:
-    """설정 환경 변수(구현 선택 5개, `SEED_PATH`·`VAR_DIR`·`DEMO_DATE`·`FRONTEND_DIST`)를 지운다."""
+    """설정 환경 변수(구현 선택 7개, `SEED_PATH`·`VAR_DIR`·`DEMO_DATE`·`FRONTEND_DIST`)를 지운다."""
     for env_name in SETTING_ENV_NAMES:
         monkeypatch.delenv(env_name, raising=False)
     return monkeypatch

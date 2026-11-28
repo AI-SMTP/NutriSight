@@ -604,3 +604,39 @@ def test_create_defaults_now_fn_to_real_clock(tmp_path: Path) -> None:
         assert runtime.clock.now().date() in {today, date.fromordinal(today.toordinal() + 1)}
     finally:
         runtime.writer.shutdown()
+
+
+async def test_aclose_cancels_tasks_then_waits_running_write(db_path: Path) -> None:
+    runtime = AppRuntime.create(db_path)
+    started = threading.Event()
+    release = threading.Event()
+
+    def blocked_write(conn: sqlite3.Connection) -> WriteResult[None]:
+        started.set()
+        assert release.wait(TIMEOUT)
+        _insert(conn, "late")
+        return WriteResult(None)
+
+    pending = runtime.tasks.spawn(asyncio.Event().wait())
+    write = asyncio.ensure_future(runtime.writer.run_write(blocked_write))
+    assert await asyncio.to_thread(started.wait, TIMEOUT)
+    assert not runtime.closed
+
+    closing = asyncio.ensure_future(runtime.aclose())
+    await asyncio.sleep(0)
+    assert runtime.closed
+    await asyncio.wait_for(asyncio.gather(pending, return_exceptions=True), TIMEOUT)
+    assert pending.cancelled()
+    assert not closing.done()  # 실행 중인 쓰기를 기다린다
+
+    release.set()
+    await asyncio.wait_for(closing, TIMEOUT)
+    await asyncio.wait_for(write, TIMEOUT)
+
+    assert _meta_keys(db_path) == ["late"]
+    coro = _noop()
+    with pytest.raises(RuntimeClosedError):
+        runtime.tasks.spawn(coro)
+    _assert_closed(coro)
+    with pytest.raises(RuntimeError):
+        runtime.writer.run_sync(lambda conn: WriteResult(None))

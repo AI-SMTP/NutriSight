@@ -5,6 +5,7 @@
 - `WriteExecutor`는 모든 DB 쓰기를 스레드 하나에서 실행한다. 작업 하나는 "커밋 → 이벤트 발행"
   까지이므로, 호출한 코루틴·스레드가 결과를 받기 전에 사라져도 커밋된 쓰기는 발행까지 끝낸다.
 - `AppRuntime`은 버스·태스크 등록부·쓰기 실행기·앱 시계를 묶어 포트와 추천 의존성에 함께 넘긴다.
+  `aclose()`가 종료 정책 1~3단계(새 태스크 차단 → 남은 태스크 취소 → 실행 중인 쓰기 대기)를 한다.
 """
 
 from __future__ import annotations
@@ -39,6 +40,11 @@ class TaskRegistry:
     def __init__(self) -> None:
         self._tasks: set[asyncio.Task[Any]] = set()
         self._closed = False
+
+    @property
+    def closed(self) -> bool:
+        """`close()`(또는 `cancel_all()`)를 불러 새 태스크를 받지 않는 상태인가."""
+        return self._closed
 
     @property
     def tasks(self) -> frozenset[asyncio.Task[Any]]:
@@ -161,3 +167,18 @@ class AppRuntime:
             writer=WriteExecutor(db_path, bus),
             clock=AppClock(now_fn=now_fn),
         )
+
+    @property
+    def closed(self) -> bool:
+        """`aclose()`가 시작돼(또는 끝나) 새 태스크를 받지 않는 상태인가."""
+        return self.tasks.closed
+
+    async def aclose(self) -> None:
+        """종료 정책 1~3단계: 새 태스크 차단 → 남은 태스크 취소·대기 → 실행 중인 쓰기 완료 대기.
+
+        쓰기 실행기 종료는 실행 중인 쓰기(커밋·발행)가 끝날 때까지 막히므로 스레드에서 기다린다.
+        아직 시작하지 않은 쓰기는 버린다.
+        """
+        self.tasks.close()
+        await self.tasks.cancel_all()
+        await asyncio.to_thread(self.writer.shutdown)

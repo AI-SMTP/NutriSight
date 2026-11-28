@@ -22,6 +22,7 @@ from app.storage.app_lock import AppLock
 from app.storage.db import connect
 from app.storage.errors import AppLockedError, ResetCleanupError
 from app.storage.seed import CLEANUP_PENDING_KEY, build_database, load_seed_file
+from tests.app_lock import assert_lock_free, assert_lock_held
 from tests.storage.demo import DEMO
 from tests.storage.dump import main_file_dump
 from tests.storage.reset_support import spy_unlink
@@ -69,12 +70,6 @@ def _has_mark(app_db: Path) -> bool:
     return row is not None
 
 
-def _assert_lock_free(settings: Settings) -> None:
-    lock = AppLock(storage_paths(settings).app_lock)
-    lock.acquire()
-    lock.release()
-
-
 def _fail_checkpoints_unlink(monkeypatch: pytest.MonkeyPatch, enabled: list[bool]) -> None:
     calls: list[str] = []
     spy_unlink(
@@ -93,10 +88,9 @@ def test_lifespan_seeds_empty_var_and_releases_lock(
         assert (isolated_var_dir / "app.db").exists()
         response = client.get("/api/health")
         assert response.status_code == 200
-        with pytest.raises(AppLockedError):
-            AppLock(storage_paths(settings).app_lock).acquire()
+        assert_lock_held(settings)
 
-    _assert_lock_free(settings)
+    assert_lock_free(settings)
     assert not _has_mark(isolated_var_dir / "app.db")
 
 
@@ -166,7 +160,7 @@ def test_lifespan_fails_when_pending_cleanup_fails_again(
 
     assert info.value.failures == ("checkpoints.db",)
     assert _has_mark(isolated_var_dir / "app.db")
-    _assert_lock_free(settings)
+    assert_lock_free(settings)
 
 
 def test_lifespan_recovers_after_first_start_cleanup_failure(
@@ -180,7 +174,7 @@ def test_lifespan_recovers_after_first_start_cleanup_failure(
         with TestClient(create_app(settings)):
             pass  # pragma: no cover
 
-    _assert_lock_free(settings)
+    assert_lock_free(settings)
     assert _has_mark(isolated_var_dir / "app.db")
 
     failing[0] = False

@@ -23,11 +23,12 @@ from app.config import (
     resolve_demo_date,
     storage_paths,
 )
+from app.services.runtime import AppRuntime
 from app.wiring import Components, build_components
 from tests.conftest import disable_dotenv
 
 
-def test_settings_defaults_select_fake_implementations(
+def test_settings_defaults_select_sqlite_patient_data_and_fake_others(
     clean_settings_env: pytest.MonkeyPatch,
 ) -> None:
     settings = Settings(_env_file=None)
@@ -35,8 +36,30 @@ def test_settings_defaults_select_fake_implementations(
     assert settings.intake_adapter == "fake"
     assert settings.nutrition_engine == "fake"
     assert settings.guideline_search == "fake"
-    assert settings.patient_data == "fake"
+    assert settings.patient_data == "sqlite"
+    assert settings.recommender == "fake"
     assert settings.fake_intake_delay_s == pytest.approx(2.0)
+    assert settings.recommendation_timeout_s == pytest.approx(120.0)
+
+
+def test_settings_reads_recommendation_overrides(clean_settings_env: pytest.MonkeyPatch) -> None:
+    clean_settings_env.setenv("RECOMMENDER", "alt")
+    clean_settings_env.setenv("RECOMMENDATION_TIMEOUT_S", "0.5")
+
+    settings = Settings(_env_file=None)
+
+    assert settings.recommender == "alt"
+    assert settings.recommendation_timeout_s == pytest.approx(0.5)
+
+
+@pytest.mark.parametrize("raw", ["0", "-1"])
+def test_settings_rejects_non_positive_recommendation_timeout(
+    clean_settings_env: pytest.MonkeyPatch, raw: str
+) -> None:
+    clean_settings_env.setenv("RECOMMENDATION_TIMEOUT_S", raw)
+
+    with pytest.raises(ValidationError, match="recommendation_timeout_s"):
+        Settings(_env_file=None)
 
 
 def test_settings_reads_environment_overrides(clean_settings_env: pytest.MonkeyPatch) -> None:
@@ -260,9 +283,9 @@ def test_disable_dotenv_blocks_dotenv_values_for_settings_and_create_app(
 
     captured: list[Settings] = []
 
-    def spy(settings: Settings) -> Components:
+    def spy(settings: Settings, runtime: AppRuntime) -> Components:
         captured.append(settings)
-        return build_components(settings)
+        return build_components(settings, runtime)
 
     monkeypatch.setattr(app.main, "build_components", spy)
     app.main.create_app()
