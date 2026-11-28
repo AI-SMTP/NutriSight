@@ -14,7 +14,7 @@
 backend/
   app/
     config.py              Settings(var_dir · seed_path · demo_date), StoragePaths, resolve_demo_date()
-    main.py                lifespan: 시연일 형식 검사 → 앱 잠금 → ensure_storage → 잠금 해제
+    main.py                lifespan: 시연일 형식 검사 → 앱 잠금 → ensure_storage → 이벤트 버스 루프 연결 → 앱 시계 고정 → (종료) 런타임 종료 → 잠금 해제
     storage/
       schema.sql           CREATE TABLE·INDEX·TRIGGER 전체
       db.py                connect(), create_schema(), SCHEMA_VERSION
@@ -91,6 +91,11 @@ var/                       (git 제외) app.db · checkpoints.db · photos/ · a
 | `list_meal_orders(conn, patient_id, start, end)` | 날짜·끼니 순, 칸별 섭취 포함 |
 | `list_daily_intakes(conn, patient_id, start, end)` | 날짜 오름차순 |
 | `list_alerts(conn, patient_id, start, end)` | `evaluated_at` 오름차순, 같으면 `alert_id` 순. 기간은 판정일(날짜 부분) 기준 |
+| `get_latest_alert(conn, patient_id, on)` | 판정일이 `on` 이하인 최신 판정(`evaluated_at`, 같으면 `alert_id`가 큰 것), 없으면 `None` |
+| `get_alert(conn, patient_id, alert_id)` | 그 환자의 판정. 없거나 다른 환자의 판정이면 `None` |
+| `list_left_menu_candidates(conn, patient_id, start, end, *, min_meals, max_avg_fraction, limit)` | 기간 안 `recorded` 발주의 메뉴별 평균 섭취 비율·끼니 수(`LeftMenu`). 끼니 수 `min_meals` 이상·평균 `max_avg_fraction` 이하만, 평균 오름차순 → 끼니 수 내림차순 → `menu_name` 순으로 최대 `limit`개 |
+
+추천 카드·처방 SQL은 `storage/recommendations.py`, 추천 항목 JSON 변환은 `storage/codec.py`에 있다(`docs/specs/patient-recommendation-api.md`).
 
 ### 사진 파일 (`photos.py`)
 
@@ -133,7 +138,7 @@ var/                       (git 제외) app.db · checkpoints.db · photos/ · a
 
 | 쥐는 쪽 | 잡는 때 | 놓는 때 | 잡지 못하면 |
 | --- | --- | --- | --- |
-| 앱 | lifespan 시작(시연일 형식 검사 뒤) | lifespan 종료 | 시작 실패 |
+| 앱 | lifespan 시작(시연일 형식 검사 뒤) | lifespan 종료. 런타임 종료(앱 소유 태스크 취소 → 실행 중인 DB 쓰기 완료 대기) 뒤 | 시작 실패 |
 | CLI 리셋 | 리셋 시작 | 리셋 종료 | 종료 코드 1, DB를 건드리지 않음 |
 
 DB를 직접 여는 외부 도구(sqlite3 셸, DB 브라우저)는 리셋 중에 열지 않는 것을 운영 전제로 둔다.

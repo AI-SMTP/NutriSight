@@ -1,14 +1,15 @@
 """FastAPI 앱 진입점. `fastapi dev`는 이 모듈의 `app`을 찾는다.
 
 모듈 수준 `app = create_app()`은 import만으로 잠금을 잡거나 파일을 만들지 않는다. 시연일 검사,
-앱 잠금, 자동 시드는 lifespan에서만 일어난다(스펙 3.8).
+앱 잠금, 자동 시드, 시계 고정, 종료 정책은 lifespan에서만 일어난다(스펙 3.2·3.8).
 """
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from collections.abc import AsyncIterator, Callable
-from contextlib import AbstractAsyncContextManager, asynccontextmanager
+from contextlib import AbstractAsyncContextManager, AsyncExitStack, asynccontextmanager
 from datetime import date
 from pathlib import Path
 
@@ -17,8 +18,14 @@ from fastapi.exception_handlers import http_exception_handler
 from fastapi.responses import FileResponse, Response
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from app.config import Settings, resolve_demo_date, storage_paths
+from app.api.patients import router as patients_router
+from app.api.recommendations import router as recommendations_router
+from app.config import Settings, StoragePaths, resolve_demo_date, storage_paths
+from app.services.generation import PatientLocks, RecommendationDeps
+from app.services.runtime import AppRuntime
+from app.services.unit_of_work import run_in_db
 from app.storage.app_lock import AppLock
+from app.storage.queries import get_demo_date
 from app.storage.seed import ensure_storage
 from app.wiring import build_components
 
@@ -29,26 +36,43 @@ Lifespan = Callable[[FastAPI], AbstractAsyncContextManager[None]]
 API_PREFIX = "/api"
 INDEX_FILE = "index.html"
 _SPA_FALLBACK_METHODS = frozenset({"GET", "HEAD"})
+ALREADY_STARTED_MESSAGE = "앱 인스턴스는 한 번만 시작한다"
 
 
-def _make_lifespan(settings: Settings) -> Lifespan:
-    """시연일 형식 검사 → 앱 잠금 → `ensure_storage` → 서비스 → 잠금 해제 순서의 lifespan.
+def _make_lifespan(settings: Settings, runtime: AppRuntime, paths: StoragePaths) -> Lifespan:
+    """시연일 형식 검사 → 앱 잠금 → `ensure_storage` → 버스 루프 묶기 → 시계 고정 → 서비스 →
+    런타임 종료 → 잠금 해제 순서의 lifespan.
 
-    형식 오류(`ConfigError`)는 잠금 파일을 만들기 전에 낸다. 잠금을 잡은 뒤 실패하면 잠금을 놓고
-    예외를 그대로 전달해 앱 시작을 멈춘다. 시작 단계는 요청을 받기 전이라 동기 파일·DB 작업을
-    이벤트 루프에서 바로 실행해도 막히는 요청이 없으므로 스레드로 넘기지 않는다.
+    형식 오류(`ConfigError`)는 잠금 파일을 만들기 전에 낸다. 시계는 `seed_meta.demo_date`와 오늘
+    날짜의 차이로 고정한다(설정 시연일이 아니라 DB에 적재된 시연일). 잠금을 잡은 뒤에는 시작
+    실패든 정상 종료든 런타임을 먼저 닫고(`AppRuntime.aclose`, 스펙 3.2 종료 정책) 잠금을 놓는다.
+    런타임 종료가 실패해도 잠금은 놓는다. 그래서 실행 중인 DB 쓰기가 끝나기 전에는 리셋 CLI가
+    잠금을 잡지 못한다. 시작 실패 예외는 그대로 전달해 앱 시작을 멈춘다.
+
+    런타임이 이미 닫힌 앱(종료했거나 잠금을 잡은 뒤 시작에 실패한 앱)으로 다시 시작하면 잠금을
+    잡기 전에 `RuntimeError`를 낸다(새 앱은 `create_app`으로 만든다). 잠금을 잡기 전 실패(형식
+    오류·잠금 충돌)는 런타임을 닫지 않으므로 같은 앱으로 다시 시작할 수 있다. 시작 단계는 요청을
+    받기 전이라 동기 파일·DB 작업을 이벤트 루프에서 바로 실행해도 막히는 요청이 없으므로 스레드로
+    넘기지 않는다.
     """
 
     @asynccontextmanager
     async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
-        resolve_demo_date(None, settings, date.today())
-        lock = AppLock(storage_paths(settings).app_lock)
+        if runtime.closed:
+            raise RuntimeError(ALREADY_STARTED_MESSAGE)
+        today = date.today()
+        resolve_demo_date(None, settings, today)
+        lock = AppLock(paths.app_lock)
         lock.acquire()
-        try:
+        # 정리는 등록 역순이다: 런타임 종료 → 잠금 해제. 종료가 실패해도 잠금 해제는 실행된다.
+        async with AsyncExitStack() as cleanup:
+            cleanup.callback(lock.release)
+            cleanup.push_async_callback(runtime.aclose)
             ensure_storage(settings)
+            runtime.bus.bind_loop(asyncio.get_running_loop())
+            demo_date = run_in_db(paths.app_db, get_demo_date, mode="read")
+            runtime.clock.anchor(demo_date, today)
             yield
-        finally:
-            lock.release()
 
     return lifespan
 
@@ -84,11 +108,15 @@ def _register_frontend(application: FastAPI, frontend_dist: Path) -> None:
         return
     application.frontend("/", directory=dist, fallback=None)
 
-    async def spa_not_found(request: Request, exc: StarletteHTTPException) -> Response:
+    async def spa_not_found(request: Request, exc: Exception) -> Response:
         """404이고 대체 응답 대상이면 `index.html`, 아니면 기본 HTTP 오류 응답을 돌려준다.
 
         시작 뒤 `index.html`이 사라졌으면(다시 빌드하는 중 등) 500 대신 기본 404로 넘긴다.
+        `StarletteHTTPException`에만 등록하므로 다른 예외는 오지 않는다. 인자 타입은 Starlette
+        처리기 타입(`Exception`)에 맞추고 아래 검사로 좁힌다.
         """
+        if not isinstance(exc, StarletteHTTPException):
+            raise exc
         if exc.status_code == 404 and _wants_spa_fallback(request) and index.is_file():
             return FileResponse(index)
         return await http_exception_handler(request, exc)
@@ -99,22 +127,42 @@ def _register_frontend(application: FastAPI, frontend_dist: Path) -> None:
 def create_app(settings: Settings | None = None) -> FastAPI:
     """화면 4개가 공유하는 HTTP API 앱을 만든다.
 
-    시작할 때 설정으로 네 계약의 구현을 만들어 `app.state`에 둔다.
-    등록되지 않은 구현 이름이면 `ConfigError`를 던진다. 저장소 준비는 lifespan이 한다.
-    `frontend_dist`에 빌드 결과가 있으면 정적 제공과 SPA 대체 응답을 등록한다.
+    맨 먼저 앱 런타임(버스·태스크·쓰기 실행기·고정 전 시계)을 만들고, 설정으로 다섯 계약의
+    구현을 만들어 `app.state`에 둔다. 포트와 추천 의존성은 같은 런타임을 쓴다(스펙 3.8 등록 경로).
+    런타임과 구현 생성은 파일을 만들지 않는다. 등록되지 않은 구현 이름이면 `ConfigError`를 던진다.
+    저장소 준비와 시계 고정은 lifespan이 한다. `frontend_dist`에 빌드 결과가 있으면 정적 제공과
+    SPA 대체 응답을 등록한다.
     """
     resolved = settings if settings is not None else Settings()
-    components = build_components(resolved)
-    application = FastAPI(title="NutriSight", lifespan=_make_lifespan(resolved))
+    paths = storage_paths(resolved)
+    runtime = AppRuntime.create(paths.app_db)
+    components = build_components(resolved, runtime)
+    application = FastAPI(title="NutriSight", lifespan=_make_lifespan(resolved, runtime, paths))
+    application.state.runtime = runtime
+    application.state.event_bus = runtime.bus
     application.state.intake_estimator = components.intake_estimator
     application.state.nutrition_engine = components.nutrition_engine
     application.state.guideline_search = components.guideline_search
     application.state.patient_data = components.patient_data
+    application.state.recommendation_generator = components.recommendation_generator
+    application.state.recommendation_deps = RecommendationDeps(
+        generator=components.recommendation_generator,
+        runtime=runtime,
+        db_path=paths.app_db,
+        engine=components.nutrition_engine,
+        locks=PatientLocks(),
+        timeout_s=resolved.recommendation_timeout_s,
+    )
 
     @application.get("/api/health")
     def health() -> dict[str, str]:
         """서버가 응답하는지 확인한다."""
         return {"status": "ok"}
+
+    # 화면 API 라우터. FastAPI `frontend()` 경로는 일반 라우트 뒤에 확인되므로 순서와 무관하게
+    # API가 이기지만, 처리기 등록 규칙(`_register_frontend` docstring)을 따라 앞에 둔다.
+    application.include_router(patients_router)
+    application.include_router(recommendations_router)
 
     # 모든 `/api` 라우트를 등록한 뒤에 정적 제공을 건다(참조 문서 '정적 제공과 SPA 대체 응답').
     _register_frontend(application, resolved.frontend_dist)

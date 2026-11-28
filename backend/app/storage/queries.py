@@ -18,6 +18,7 @@ from app.nutrition.types import (
     Sex,
     TargetSource,
 )
+from app.services.ports import LeftMenu
 from app.storage.codec import (
     evidence_from_json,
     nutrients_from_json,
@@ -265,6 +266,19 @@ def list_daily_intakes(
     )
 
 
+def _alert(r: sqlite3.Row) -> AlertRow:
+    return AlertRow(
+        alert_id=r["alert_id"],
+        patient_id=r["patient_id"],
+        evaluated_at=r["evaluated_at"],
+        level=AlertLevel(r["level"]),
+        basis_period=r["basis_period"],
+        basis_values=evidence_from_json(r["basis_values"]),
+        nutrients=nutrients_from_json(r["nutrients"]),
+        unrecorded_meals=r["unrecorded_meals"],
+    )
+
+
 def list_alerts(
     conn: sqlite3.Connection, patient_id: str, start: date, end: date
 ) -> tuple[AlertRow, ...]:
@@ -274,16 +288,90 @@ def list_alerts(
         "ORDER BY evaluated_at, alert_id",
         (patient_id, start.isoformat(), end.isoformat()),
     ).fetchall()
+    return tuple(_alert(r) for r in rows)
+
+
+def get_latest_alert(conn: sqlite3.Connection, patient_id: str, on: date) -> AlertRow | None:
+    """판정일이 `on` 이하인 경고 중 최신 한 건(`evaluated_at`, 같으면 `alert_id`가 큰 것).
+
+    없으면 None.
+    """
+    row = conn.execute(
+        "SELECT * FROM alerts WHERE patient_id = ? AND substr(evaluated_at, 1, 10) <= ? "
+        "ORDER BY evaluated_at DESC, alert_id DESC LIMIT 1",
+        (patient_id, on.isoformat()),
+    ).fetchone()
+    return None if row is None else _alert(row)
+
+
+def get_alert(conn: sqlite3.Connection, patient_id: str, alert_id: str) -> AlertRow | None:
+    """그 환자의 판정 `alert_id`. 없거나 다른 환자의 판정이면 None."""
+    row = conn.execute(
+        "SELECT * FROM alerts WHERE alert_id = ? AND patient_id = ?", (alert_id, patient_id)
+    ).fetchone()
+    return None if row is None else _alert(row)
+
+
+# 자주 남긴 메뉴 ----------------------------------------------------------------
+
+# 전량 거부·미섭취(`staff`)는 메뉴 선호가 아니라 뺀다. 끼니 수는 발주 수로 센다(한 끼니에 같은
+# 메뉴 칸이 둘이면 1끼). 평균은 칸 섭취 비율의 평균이다.
+_LEFT_MENU_SQL = """
+SELECT s.menu_name, s.dish_type,
+       AVG(i.intake_fraction_est) AS avg_fraction,
+       COUNT(DISTINCT i.meal_order_id) AS meal_count
+FROM slot_intakes AS i
+JOIN meal_orders AS o ON o.meal_order_id = i.meal_order_id
+JOIN meal_plans AS p ON p.meal_plan_id = o.meal_plan_id
+JOIN meal_plan_slots AS s ON s.meal_plan_id = p.meal_plan_id AND s.slot_id = i.slot_id
+WHERE o.patient_id = ? AND p.date BETWEEN ? AND ?
+  AND o.record_status = ?
+  AND i.intake_fraction_est IS NOT NULL
+  -- 스키마가 막지만 방어로 둔다: 칸별 섭취는 trg_slot_intakes_slot_insert·_update 트리거로
+  -- 배식 칸(served_g > 0)만 가리키고, CHECK ((served_g = 0) = (menu_name IS NULL))로 배식 칸은
+  -- menu_name이 있다.
+  AND s.menu_name IS NOT NULL
+  AND i.estimate_basis <> 'staff'
+GROUP BY s.menu_name, s.dish_type
+HAVING meal_count >= ? AND avg_fraction <= ?
+ORDER BY avg_fraction ASC, meal_count DESC, s.menu_name ASC
+LIMIT ?
+"""
+
+
+def list_left_menu_candidates(
+    conn: sqlite3.Connection,
+    patient_id: str,
+    start: date,
+    end: date,
+    *,
+    min_meals: int,
+    max_avg_fraction: float,
+    limit: int,
+) -> tuple[LeftMenu, ...]:
+    """기간 안 `recorded` 발주의 메뉴별 평균 섭취 비율과 끼니 수 (스펙 3.8 자주 남긴 메뉴 규칙).
+
+    끼니 수 `min_meals` 이상·평균 `max_avg_fraction` 이하만, 평균 오름차순 → 끼니 수 내림차순 →
+    `menu_name` 순으로 최대 `limit`개.
+    """
+    rows = conn.execute(
+        _LEFT_MENU_SQL,
+        (
+            patient_id,
+            start.isoformat(),
+            end.isoformat(),
+            str(RecordStatus.RECORDED),
+            min_meals,
+            max_avg_fraction,
+            limit,
+        ),
+    ).fetchall()
     return tuple(
-        AlertRow(
-            alert_id=r["alert_id"],
-            patient_id=r["patient_id"],
-            evaluated_at=r["evaluated_at"],
-            level=AlertLevel(r["level"]),
-            basis_period=r["basis_period"],
-            basis_values=evidence_from_json(r["basis_values"]),
-            nutrients=nutrients_from_json(r["nutrients"]),
-            unrecorded_meals=r["unrecorded_meals"],
+        LeftMenu(
+            menu_name=r["menu_name"],
+            dish_type=r["dish_type"],
+            avg_intake_fraction=r["avg_fraction"],
+            meal_count=r["meal_count"],
         )
         for r in rows
     )
