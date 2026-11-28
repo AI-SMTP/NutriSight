@@ -13,8 +13,8 @@ from datetime import date
 from typing import Literal
 
 from app.agent_preview.bridge import ScopedPatientTools
-from app.recommender.retrieval_guard import RetrievalStatus
-from app.services.ports import PatientNotFoundError
+from app.recommender.retrieval_guard import RetrievalStatus, verify_evidence_refs
+from app.services.ports import EvidenceRef, PatientNotFoundError
 
 EventName = Literal["token", "tool_start", "tool_end", "card_updated", "done", "error"]
 
@@ -61,26 +61,39 @@ class FakeAgentPreview:
             {
                 "tool": "get_intake_summary",
                 "patient_id": self._tools.patient_id,
-                "recorded_days": len(summary.daily),
+                "recorded_days": sum(
+                    1 for day in summary.daily if day.recorded_meals > 0
+                ),
+                "daily_rows": len(summary.daily),
                 "alert": alert,
             },
         )
 
         yield PreviewEvent("tool_start", {"tool": "search_guidelines"})
         result = await self._tools.search_guidelines(question)
+        audit = await verify_evidence_refs(
+            tuple(EvidenceRef(h.doc_id, h.section) for h in result.hits),
+            self._tools.guideline_search,
+        )
         yield PreviewEvent(
             "tool_end",
             {
                 "tool": "search_guidelines",
                 "status": result.status.value,
                 "hit_count": len(result.hits),
+                "citations_verified": audit.all_verified,
                 "requires_clinical_review": result.requires_clinical_review,
             },
         )
-        if result.status is RetrievalStatus.FOUND:
+        if result.status is RetrievalStatus.FOUND and audit.all_verified:
             message = (
-                "관련 문헌 후보를 조회했습니다. 인용 원문 검증과 의료진 검토 전에는 "
-                "환자별 처방이나 추천을 확정할 수 없습니다."
+                "문헌 후보의 출처 ID를 역추적했습니다. 임상적 적절성은 별도 검토가 "
+                "필요하며 환자별 처방이나 추천을 자동 확정할 수 없습니다."
+            )
+        elif result.status is RetrievalStatus.FOUND:
+            message = (
+                "관련 문헌 후보가 있으나 공식 인용이 검증되지 않았습니다. "
+                "인용을 공식 근거로 표시하지 말고 의료진 확인을 요청하세요."
             )
         else:
             message = (
