@@ -107,6 +107,11 @@ class WriteExecutor:
         # 스레드는 첫 작업 때 만들어지므로 생성만으로는 DB·스레드를 건드리지 않는다.
         self._executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix=_WRITER_THREAD_PREFIX)
 
+    @property
+    def db_path(self) -> Path:
+        """쓰기가 연결하는 DB 경로(읽기 전용)."""
+        return self._db_path
+
     def _job[T](self, fn: Callable[[sqlite3.Connection], WriteResult[T]]) -> T:
         # 실행기 스레드에서 돈다. 커밋(run_in_db 블록 종료)이 끝난 뒤에만 발행한다.
         result = run_in_db(self._db_path, fn, mode="write")

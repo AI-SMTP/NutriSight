@@ -25,6 +25,7 @@ from __future__ import annotations
 from collections.abc import Callable, Iterable
 from dataclasses import replace
 from datetime import UTC, date, datetime, timedelta
+from types import MappingProxyType
 
 from app.nutrition.types import (
     AlertLevel,
@@ -181,6 +182,11 @@ _ALERTS: dict[str, tuple[tuple[date, AlertResult], ...]] = {
         ),
     ),
 }
+
+# 다른 구현의 계약 테스트 배치(`tests/contracts/sqlite_patient_batch.py`)가 같은 섭취·판정 값을
+# 넣도록 읽기 전용 보기로 공개한다(Fake 동작은 위 비공개 이름을 그대로 쓴다).
+DAILY_INTAKES = MappingProxyType(_DAILY)
+ALERTS_BY_DAY = MappingProxyType(_ALERTS)
 
 _LEFT_MENUS: tuple[LeftMenu, ...] = (
     LeftMenu(menu_name="시금치나물", dish_type="side", avg_intake_fraction=0.2, meal_count=4),
