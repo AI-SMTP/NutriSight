@@ -7,15 +7,16 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
 import pytest
-from anthropic import APIConnectionError, APITimeoutError
+from anthropic import APIConnectionError, APITimeoutError, BadRequestError
 from anthropic.types import Message
-from httpx2 import Request
+from httpx2 import Request, Response
 from PIL import Image
 
-from app.config import REPOSITORY_ROOT, ConfigError, Settings
+from app.config import REPO_ROOT, ConfigError, Settings, storage_paths
 from app.intake import image_preprocessing
 from app.intake.claude_estimator import (
     _INSTRUCTIONS,
+    ClaudeAPIError,
     ClaudeIntakeEstimator,
     ClaudeResponseError,
 )
@@ -49,7 +50,7 @@ def payload(request_data):
         "slots": [
             {
                 "slot_id": slot.slot_id,
-                "consumed_tenths": 4,
+                "intake_fraction_est": 0.4,
                 "status": "estimated",
                 "quality_issues": [],
                 "note": "Some food remains.",
@@ -95,6 +96,28 @@ async def test_common_result(estimator, create, request_data, payload):
     assert result.meal_order_id == request_data.meal_order_id
     assert [slot.slot_id for slot in result.slots] == [slot.slot_id for slot in request_data.slots]
     assert [slot.intake_fraction_est for slot in result.slots] == [0.4] * 6
+    assert result.raw_response == json.dumps(payload)
+    schema = create.call_args.kwargs["output_config"]["format"]["schema"]
+    slot_ref = schema["properties"]["slots"]["items"]["$ref"]
+    slot_schema = schema["$defs"][slot_ref.rsplit("/", 1)[-1]]
+    fraction_schema = next(
+        branch
+        for branch in slot_schema["properties"]["intake_fraction_est"]["anyOf"]
+        if branch.get("type") == "number"
+    )
+    assert fraction_schema["enum"] == [
+        0.0,
+        0.1,
+        0.2,
+        0.3,
+        0.4,
+        0.5,
+        0.6,
+        0.7,
+        0.8,
+        0.9,
+        1.0,
+    ]
 
 
 @pytest.mark.asyncio
@@ -103,6 +126,7 @@ async def test_common_result(estimator, create, request_data, payload):
     [
         "missing",
         "duplicate",
+        "extra",
         "range",
         "estimated_null",
         "undeterminable_number",
@@ -118,10 +142,20 @@ async def test_invalid_response(estimator, create, request_data, payload, proble
         payload["slots"].pop()
     elif problem == "duplicate":
         slot["slot_id"] = payload["slots"][1]["slot_id"]
+    elif problem == "extra":
+        payload["slots"].append(
+            {
+                "slot_id": "slot_extra",
+                "intake_fraction_est": 0.1,
+                "status": "estimated",
+                "quality_issues": [],
+                "note": "Unexpected slot.",
+            }
+        )
     elif problem == "range":
-        slot["consumed_tenths"] = 11
+        slot["intake_fraction_est"] = 0.35
     elif problem == "estimated_null":
-        slot["consumed_tenths"] = None
+        slot["intake_fraction_est"] = None
     elif problem == "undeterminable_number":
         slot["status"] = "not_determinable"
     elif problem == "unusable_with_estimates":
@@ -141,13 +175,59 @@ async def test_invalid_response(estimator, create, request_data, payload, proble
 async def test_unusable_images(estimator, create, request_data, payload):
     payload.update(image_status="not_determinable", image_issues=["blur"])
     for slot in payload["slots"]:
-        slot.update(status="not_determinable", consumed_tenths=None, quality_issues=["blur"])
+        slot.update(status="not_determinable", intake_fraction_est=None, quality_issues=["blur"])
     create.return_value = reply(json.dumps(payload))
     result = await estimator.estimate(request_data)
     assert result.image_status is SlotStatus.NOT_DETERMINABLE
     assert result.image_issues == (QualityIssue.BLUR,)
     assert len(result.slots) == 6
     assert all(slot.intake_fraction_est is None for slot in result.slots)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("slot_count", [1, 3, 7])
+async def test_requested_slot_count_is_dynamic(estimator, create, request_data, slot_count):
+    slots = list(request_data.slots)
+    if slot_count > len(slots):
+        slots.append(SlotSpec("slot_7", "Dish 7", 70.0, "7"))
+    slots = tuple(slots[:slot_count])
+    request = replace(request_data, slots=slots)
+    payload = {
+        "image_status": "estimated",
+        "image_issues": [],
+        "slots": [
+            {
+                "slot_id": slot.slot_id,
+                "intake_fraction_est": 0.4,
+                "status": "estimated",
+                "quality_issues": [],
+                "note": "Some food remains.",
+            }
+            for slot in reversed(slots)
+        ],
+    }
+    create.return_value = reply(json.dumps(payload))
+
+    result = await estimator.estimate(request)
+
+    assert [slot.slot_id for slot in result.slots] == [slot.slot_id for slot in slots]
+    assert [slot.intake_fraction_est for slot in result.slots] == [0.4] * slot_count
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("problem", ["zero", "blank_id", "duplicate_id"])
+async def test_invalid_requested_slot_ids_are_rejected(estimator, create, request_data, problem):
+    if problem == "zero":
+        slots = ()
+    elif problem == "blank_id":
+        slots = (replace(request_data.slots[0], slot_id=""),)
+    else:
+        slots = (request_data.slots[0], replace(request_data.slots[1], slot_id="slot_1"))
+
+    with pytest.raises(ValueError):
+        await estimator.estimate(replace(request_data, slots=slots))
+
+    create.assert_not_awaited()
 
 
 @pytest.mark.asyncio
@@ -178,7 +258,7 @@ async def test_v3_prompt_and_undeterminable_without_quality_code(
     slot = payload["slots"][0]
     slot.update(
         status="not_determinable",
-        consumed_tenths=None,
+        intake_fraction_est=None,
         quality_issues=[],
         note="The amount belonging to this slot cannot be compared reliably.",
     )
@@ -193,8 +273,12 @@ async def test_v3_prompt_and_undeterminable_without_quality_code(
         "use an empty quality_issues array",
         '"cabbage-like"',
         "does not confirm full consumption",
+        "Report intake_fraction_est as a visual fraction from 0.0 to 1.0",
+        "0.1 through 0.8",
+        "0.9: most of the serving is gone",
     ):
         assert marker in system
+    assert "consumed_tenths" not in system
     last = result.slots[-1]
     assert last.status is SlotStatus.NOT_DETERMINABLE
     assert last.intake_fraction_est is None
@@ -323,7 +407,7 @@ class TestClaudeIntakeContract(IntakeEstimatorContract):
                 {
                     "slot_id": slot.slot_id,
                     "status": "not_determinable" if unknown else "estimated",
-                    "consumed_tenths": None if unknown else 4,
+                    "intake_fraction_est": None if unknown else 0.4,
                     "quality_issues": ["angle"] if unknown and not unusable else [],
                     "note": "Mock comparison",
                 }
@@ -365,6 +449,13 @@ def test_claude_requires_api_key(key):
 async def test_claude_wiring_uses_configured_root(monkeypatch, request_data, payload):
     import anthropic
 
+    photo_root = request_data.baseline_image.parent / "var" / "photos"
+    photo_root.mkdir(parents=True)
+    baseline = photo_root / "before.jpg"
+    post = photo_root / "after.jpg"
+    baseline.write_bytes(request_data.baseline_image.read_bytes())
+    post.write_bytes(request_data.post_image.read_bytes())
+    request = replace(request_data, baseline_image=baseline, post_image=post)
     client = SimpleNamespace(
         messages=SimpleNamespace(create=AsyncMock(return_value=reply(json.dumps(payload)))),
         close=AsyncMock(),
@@ -380,18 +471,19 @@ async def test_claude_wiring_uses_configured_root(monkeypatch, request_data, pay
         _env_file=None,
         intake_adapter="claude",
         anthropic_api_key="mock-key",
-        intake_photo_root=request_data.baseline_image.parent,
+        var_dir=photo_root.parent,
     )
     app = create_app(settings)
     estimator = app.state.intake_estimator
     assert isinstance(estimator, ClaudeIntakeEstimator)
+    assert estimator._allowed_image_root == photo_root.resolve()
     assert options == {
         "api_key": "mock-key",
         "base_url": "https://api.anthropic.com",
         "timeout": 60.0,
         "max_retries": 0,
     }
-    result = await estimator.estimate(request_data)
+    result = await estimator.estimate(request)
     assert result.estimate_basis == "vlm:claude"
     await estimator.aclose()
     client.close.assert_awaited_once()
@@ -399,5 +491,46 @@ async def test_claude_wiring_uses_configured_root(monkeypatch, request_data, pay
 
 def test_photo_root_default_is_independent_of_cwd(monkeypatch, tmp_path):
     monkeypatch.chdir(tmp_path)
-    monkeypatch.delenv("INTAKE_PHOTO_ROOT", raising=False)
-    assert Settings(_env_file=None).intake_photo_root == REPOSITORY_ROOT / "var" / "photos"
+    monkeypatch.delenv("VAR_DIR", raising=False)
+    settings = Settings(_env_file=None)
+    assert settings.var_dir == REPO_ROOT / "var"
+    assert storage_paths(settings).photos_dir == settings.var_dir / "photos"
+
+
+@pytest.mark.asyncio
+async def test_api_error_exposes_only_sanitized_metadata(estimator, create, request_data):
+    detail = (
+        "Invalid request: x-api-key: sk-ant-test-secret "
+        "Authorization: Bearer bearer-test-secret "
+        "data:image/jpeg;base64," + "A" * 80
+    )
+    response = Response(
+        400,
+        json={
+            "type": "error",
+            "error": {
+                "type": "invalid_request_error",
+                "message": detail,
+            },
+        },
+        request=Request("POST", "https://api.anthropic.com/v1/messages"),
+    )
+    create.side_effect = BadRequestError(
+        "Bad request",
+        response=response,
+        body=response.json(),
+    )
+
+    with pytest.raises(ClaudeAPIError) as captured:
+        await estimator.estimate(request_data)
+
+    error = captured.value
+    assert isinstance(error, EstimationError)
+    assert error.http_status_code == 400
+    assert error.error_type == "BadRequestError"
+    assert error.error_category == "invalid_request_error"
+    assert "Invalid request" in (error.error_message or "")
+    assert "sk-ant-test-secret" not in (error.error_message or "")
+    assert "bearer-test-secret" not in (error.error_message or "")
+    assert "data:image/jpeg;base64" not in (error.error_message or "")
+    create.assert_awaited_once()

@@ -1,12 +1,13 @@
 import asyncio
 import base64
 import json
+import re
 from collections.abc import Callable
 from pathlib import Path
 from time import perf_counter
 from typing import Literal
 
-from anthropic import APIError, AsyncAnthropic
+from anthropic import APIError, APIStatusError, AsyncAnthropic
 from anthropic.types import Message
 from pydantic import BaseModel, ConfigDict, ValidationError, model_validator
 
@@ -25,18 +26,32 @@ class _SlotResponse(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
 
     slot_id: str
-    consumed_tenths: int | None
+    intake_fraction_est: (
+        Literal[
+            0.0,
+            0.1,
+            0.2,
+            0.3,
+            0.4,
+            0.5,
+            0.6,
+            0.7,
+            0.8,
+            0.9,
+            1.0,
+        ]
+        | None
+    )
     status: Literal["estimated", "not_determinable"]
     quality_issues: list[Literal["blur", "occluded", "angle", "lighting", "tray_mismatch"]]
     note: str
 
     @model_validator(mode="after")
     def check_estimate(self) -> "_SlotResponse":
-        if self.status == "estimated":
-            if self.consumed_tenths is None or not 0 <= self.consumed_tenths <= 10:
-                raise ValueError("estimated slots require an integer from 0 to 10")
-        elif self.consumed_tenths is not None:
-            raise ValueError("undeterminable slots require a null estimate")
+        if self.status == "estimated" and self.intake_fraction_est is None:
+            raise ValueError("estimated slots require an intake fraction")
+        if self.status == "not_determinable" and self.intake_fraction_est is not None:
+            raise ValueError("undeterminable slots require a null intake fraction")
         return self
 
 
@@ -67,14 +82,15 @@ descriptions such as "visible food pieces", "vegetable fragments", or "sauce
 residue". Explain the visible change or the reason comparison is unreliable.
 
 If the change in amount is reasonably observable, use estimated even if the
-ingredients are unclear. Report consumed_tenths as a visual estimate:
-- 0: no meaningful reduction in visible food.
-- 1 through 8: partial reduction, estimated in tenths from the visible change.
-- 9: most of the serving is gone, with recognizable food still remaining.
-- 10: virtually no meaningful food remains, only surface traces or a tiny
+ingredients are unclear. Report intake_fraction_est as a visual fraction from 0.0 to 1.0,
+using increments of 0.1:
+- 0.0: no meaningful reduction in visible food.
+- 0.1 through 0.8: partial reduction, estimated in tenths from the visible change.
+- 0.9: most of the serving is gone, with recognizable food still remaining.
+- 1.0: virtually no meaningful food remains, only surface traces or a tiny
   remnant. This is a visual approximation and does not confirm full consumption.
-Apply these visual anchors without claiming an exact percentage between steps
-or rounding a clearly recognizable remaining portion up to 10.
+Apply these visual anchors without claiming precision finer than 0.1 or rounding
+a clearly recognizable remaining portion up to 1.0.
 
 Use a quality issue only when it is supported by what is visible:
 - blur: blur makes it hard to compare the amounts.
@@ -99,6 +115,53 @@ class ClaudeResponseError(EstimationError):
         self.model_id = model_id
         self.latency_ms = latency_ms
         self.raw_response = raw_response
+
+
+class ClaudeAPIError(EstimationError):
+    """API failure metadata, excluding response bodies and request headers."""
+
+    def __init__(
+        self,
+        *,
+        http_status_code: int | None,
+        error_type: str,
+        error_category: str | None,
+        error_code: str | None,
+        error_message: str | None,
+    ) -> None:
+        status = f" HTTP {http_status_code}" if http_status_code is not None else ""
+        super().__init__(f"Claude API failure ({error_type}){status}")
+        self.http_status_code = http_status_code
+        self.error_type = error_type
+        self.error_category = error_category
+        self.error_code = error_code
+        self.error_message = error_message
+
+
+def _safe_api_error_message(error: APIError) -> str | None:
+    detail = error.api_message if isinstance(error, APIStatusError) else error.message
+    if not isinstance(detail, str) or not detail.strip():
+        return None
+
+    detail = detail.strip()
+    detail = re.sub(
+        r'(?i)(x-api-key"?\s*[:=]\s*"?)[^\s,;"\']+',
+        r"\1[REDACTED]",
+        detail,
+    )
+    detail = re.sub(
+        r'(?i)(authorization"?\s*[:=]\s*"?)(?:bearer\s+)?[^\s,;"\']+',
+        r"\1[REDACTED]",
+        detail,
+    )
+    detail = re.sub(r"\bsk-ant-[A-Za-z0-9_-]+\b", "[REDACTED]", detail)
+    detail = re.sub(
+        r"(?i)data:image/[^\s,;]+;base64,[A-Za-z0-9+/=]+",
+        "[IMAGE_DATA_REDACTED]",
+        detail,
+    )
+    detail = re.sub(r"\b[A-Za-z0-9+/]{128,}={0,2}\b", "[BLOB_REDACTED]", detail)
+    return detail[:500]
 
 
 class ClaudeIntakeEstimator:
@@ -126,8 +189,10 @@ class ClaudeIntakeEstimator:
 
     async def estimate(self, request: EstimationRequest) -> EstimationResult:
         slot_ids = [slot.slot_id for slot in request.slots]
-        if len(slot_ids) != 6 or len(set(slot_ids)) != 6 or not all(slot_ids):
-            raise ValueError("Claude intake requires six distinct nonempty slot IDs")
+        if not slot_ids:
+            raise ValueError("Claude intake requires at least one requested slot")
+        if len(set(slot_ids)) != len(slot_ids) or not all(slot_ids):
+            raise ValueError("Claude intake requires distinct nonempty slot IDs")
 
         start = perf_counter()
         baseline, post = await asyncio.gather(
@@ -169,7 +234,13 @@ class ClaudeIntakeEstimator:
                 ],
             )
         except APIError as error:
-            raise EstimationError(f"Claude API failure ({type(error).__name__})") from error
+            raise ClaudeAPIError(
+                http_status_code=(error.status_code if isinstance(error, APIStatusError) else None),
+                error_type=type(error).__name__,
+                error_category=(error.type if isinstance(error, APIStatusError) else None),
+                error_code=(error.error_code if isinstance(error, APIStatusError) else None),
+                error_message=_safe_api_error_message(error),
+            ) from None
         finally:
             latency_ms = round((perf_counter() - start) * 1000)
             if self._on_exchange is not None:
@@ -203,9 +274,7 @@ class ClaudeIntakeEstimator:
             estimates.append(
                 SlotEstimate(
                     slot_id=slot_id,
-                    intake_fraction_est=(
-                        slot.consumed_tenths / 10 if slot.consumed_tenths is not None else None
-                    ),
+                    intake_fraction_est=slot.intake_fraction_est,
                     status=SlotStatus(slot.status),
                     quality_issues=tuple(QualityIssue(issue) for issue in slot.quality_issues),
                     note=slot.note,
