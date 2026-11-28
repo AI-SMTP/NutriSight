@@ -5268,7 +5268,7 @@
       "slot_intakes": [
         {
           "slot_id": "slot_1",
-          "intake_fraction_est": 0.5,
+          "intake_fraction_est": 0.7,
           "status": "estimated",
           "quality_issues": [],
           "estimate_basis": "mock"
@@ -5282,7 +5282,7 @@
         },
         {
           "slot_id": "slot_3",
-          "intake_fraction_est": 0.5,
+          "intake_fraction_est": 0.6,
           "status": "estimated",
           "quality_issues": [],
           "estimate_basis": "mock"
@@ -5309,8 +5309,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 208.5,
-      "protein_g_est": 12.4,
+      "energy_kcal_est": 273.0,
+      "protein_g_est": 14.9,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -5330,7 +5330,7 @@
       "slot_intakes": [
         {
           "slot_id": "slot_1",
-          "intake_fraction_est": 0.5,
+          "intake_fraction_est": 0.7,
           "status": "estimated",
           "quality_issues": [],
           "estimate_basis": "mock"
@@ -5344,7 +5344,7 @@
         },
         {
           "slot_id": "slot_3",
-          "intake_fraction_est": 0.4,
+          "intake_fraction_est": 0.6,
           "status": "estimated",
           "quality_issues": [],
           "estimate_basis": "mock"
@@ -5371,8 +5371,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 248.5,
-      "protein_g_est": 7.3,
+      "energy_kcal_est": 349.5,
+      "protein_g_est": 10.6,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
@@ -5392,7 +5392,7 @@
       "slot_intakes": [
         {
           "slot_id": "slot_1",
-          "intake_fraction_est": 0.5,
+          "intake_fraction_est": 0.7,
           "status": "estimated",
           "quality_issues": [],
           "estimate_basis": "mock"
@@ -5406,7 +5406,7 @@
         },
         {
           "slot_id": "slot_3",
-          "intake_fraction_est": 0.4,
+          "intake_fraction_est": 0.6,
           "status": "estimated",
           "quality_issues": [],
           "estimate_basis": "mock"
@@ -5433,8 +5433,8 @@
           "estimate_basis": "mock"
         }
       ],
-      "energy_kcal_est": 208.1,
-      "protein_g_est": 8.3,
+      "energy_kcal_est": 287.9,
+      "protein_g_est": 11.6,
       "incomplete": false,
       "data_source": "mock",
       "source_note": ""
