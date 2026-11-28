@@ -12,12 +12,19 @@ from app.services.item_rules import (
     check_duration_days,
     check_item_id,
     check_review_date,
+    check_thread_id,
     check_title,
     validate_cautions,
     validate_generated_items,
     validate_items,
 )
-from app.services.ports import AddedBy, EvidenceRef, PrescriptionType, RecommendationItem
+from app.services.ports import (
+    AddedBy,
+    EvidenceRef,
+    ModifiedBy,
+    PrescriptionType,
+    RecommendationItem,
+)
 
 
 def _item(**overrides: object) -> RecommendationItem:
@@ -235,3 +242,39 @@ def test_validate_generated_items_rejects_doctor_item():
 def test_validate_generated_items_applies_common_rules(items, cautions):
     with pytest.raises(ValueError):
         validate_generated_items(items, cautions)
+
+
+# ---- thread_id 규칙 --------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("modified_by", "thread_id"),
+    [(ModifiedBy.CHAT, "T0001"), (ModifiedBy.AGENT, None), (ModifiedBy.DOCTOR, None)],
+    ids=["chat_with_thread", "agent_without_thread", "doctor_without_thread"],
+)
+def test_check_thread_id_accepts_valid_pair(modified_by: ModifiedBy, thread_id: str | None) -> None:
+    assert check_thread_id(modified_by, thread_id) is None
+
+
+@pytest.mark.parametrize(
+    ("modified_by", "thread_id"),
+    [
+        (ModifiedBy.CHAT, None),
+        (ModifiedBy.CHAT, ""),
+        (ModifiedBy.AGENT, "T0001"),
+        (ModifiedBy.DOCTOR, "T0001"),
+        (ModifiedBy.AGENT, ""),
+    ],
+    ids=[
+        "chat_without_thread",
+        "chat_empty_thread",
+        "agent_with_thread",
+        "doctor_with_thread",
+        "agent_empty_thread",
+    ],
+)
+def test_check_thread_id_violation_raises_value_error(
+    modified_by: ModifiedBy, thread_id: str | None
+) -> None:
+    with pytest.raises(ValueError):
+        check_thread_id(modified_by, thread_id)

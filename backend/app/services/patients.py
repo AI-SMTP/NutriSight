@@ -118,7 +118,8 @@ class IntakeTrendView:
 # 공통 ----------------------------------------------------------------------
 
 
-def _require_patient(conn: sqlite3.Connection, patient_id: str) -> Patient:
+def require_patient(conn: sqlite3.Connection, patient_id: str) -> Patient:
+    """환자 행을 읽는다. 없으면 `PatientNotFoundError`를 던진다."""
     patient = queries.get_patient(conn, patient_id)
     if patient is None:
         raise PatientNotFoundError(f"환자가 없다: {patient_id}")
@@ -187,7 +188,7 @@ def daily_rows(
     않음)이다. 발주가 없는 날은 저장 행이 있어도 뺀다. 목표는 그날 `engine.daily_target`이다.
     환자 없음 → `PatientNotFoundError`.
     """
-    return _daily_rows(conn, engine, _require_patient(conn, patient_id), start, end)
+    return _daily_rows(conn, engine, require_patient(conn, patient_id), start, end)
 
 
 def _daily_rows(
@@ -259,7 +260,7 @@ def intake_summary(
 
     환자 없음 → `PatientNotFoundError`, `days < 1` → `ValueError`.
     """
-    patient = _require_patient(conn, patient_id)
+    patient = require_patient(conn, patient_id)
     start = _period_start(days, on)
     alert = latest_alert(conn, patient_id, on)
     return IntakeSummary(
@@ -335,7 +336,7 @@ def patient_detail(
 ) -> PatientDetailView:
     """환자 요약. 기준일은 시연일이고, 시연일 뒤 측정·평가는 쓰지 않는다."""
     on = queries.get_demo_date(conn)
-    patient = _require_patient(conn, patient_id)
+    patient = require_patient(conn, patient_id)
     history = queries.get_patient_history(conn, patient_id)
     weights = tuple(w for w in history.weights if w.measured_on <= on)
     latest_weight = weights[-1] if weights else None
@@ -365,7 +366,7 @@ def intake_trend(
 
     환자 없음 → `PatientNotFoundError`, `days < 1` → `ValueError`(1~60 범위는 API가 검증).
     """
-    patient = _require_patient(conn, patient_id)
+    patient = require_patient(conn, patient_id)
     end = queries.get_demo_date(conn)
     start = _period_start(days, end)
     marks = tuple(

@@ -10,7 +10,13 @@ from __future__ import annotations
 import re
 from datetime import date, datetime
 
-from app.services.ports import AddedBy, EvidenceRef, PrescriptionType, RecommendationItem
+from app.services.ports import (
+    AddedBy,
+    EvidenceRef,
+    ModifiedBy,
+    PrescriptionType,
+    RecommendationItem,
+)
 
 ITEM_ID_PATTERN = re.compile(r"^[A-Za-z0-9_-]{1,32}$")
 TITLE_MAX = 100
@@ -66,6 +72,14 @@ def check_review_date(value: object) -> date | None:
     if isinstance(value, datetime) or not isinstance(value, date):
         raise ValueError("review_date는 날짜여야 한다")
     return value
+
+
+def check_thread_id(modified_by: ModifiedBy, thread_id: str | None) -> None:
+    """`chat` 수정은 대화 ID가 있어야 하고, `agent`·`doctor` 수정은 `None`이어야 한다."""
+    if modified_by == ModifiedBy.CHAT and not thread_id:
+        raise ValueError("chat 수정에는 thread_id가 있어야 한다")
+    if modified_by != ModifiedBy.CHAT and thread_id is not None:
+        raise ValueError(f"{modified_by.value} 수정의 thread_id는 None이어야 한다")
 
 
 def _check_evidence(evidence: object) -> None:

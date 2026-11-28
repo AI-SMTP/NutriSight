@@ -35,6 +35,7 @@ from app.nutrition.types import (
     NutrientEvidence,
     TargetSource,
 )
+from app.services.item_rules import check_thread_id
 from app.services.ports import (
     AddedBy,
     EvidenceRef,
@@ -345,7 +346,7 @@ class FakePatientData:
             raise RecommendationNotEditableError(
                 f"{card.status.value} 카드는 고칠 수 없다: {recommendation_id}"
             )
-        _check_thread_id(modified_by, thread_id)
+        check_thread_id(modified_by, thread_id)
         item_ids = [item.item_id for item in items]
         if len(set(item_ids)) != len(item_ids):
             raise ValueError("카드 안의 item_id는 유일해야 한다")
@@ -358,12 +359,3 @@ class FakePatientData:
         )
         self._cards[recommendation_id] = updated
         return updated
-
-
-def _check_thread_id(modified_by: ModifiedBy, thread_id: str | None) -> None:
-    """`chat` 수정은 대화 ID가 있어야 하고, `agent`·`doctor` 수정은 `None`이어야 한다."""
-    if modified_by == ModifiedBy.CHAT:
-        if not thread_id:
-            raise ValueError("chat 수정에는 thread_id가 있어야 한다")
-    elif thread_id is not None:
-        raise ValueError(f"{modified_by.value} 수정의 thread_id는 None이어야 한다")
