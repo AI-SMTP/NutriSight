@@ -304,6 +304,14 @@ def get_latest_alert(conn: sqlite3.Connection, patient_id: str, on: date) -> Ale
     return None if row is None else _alert(row)
 
 
+def get_alert(conn: sqlite3.Connection, patient_id: str, alert_id: str) -> AlertRow | None:
+    """그 환자의 판정 `alert_id`. 없거나 다른 환자의 판정이면 None."""
+    row = conn.execute(
+        "SELECT * FROM alerts WHERE alert_id = ? AND patient_id = ?", (alert_id, patient_id)
+    ).fetchone()
+    return None if row is None else _alert(row)
+
+
 # 자주 남긴 메뉴 ----------------------------------------------------------------
 
 # 전량 거부·미섭취(`staff`)는 메뉴 선호가 아니라 뺀다. 끼니 수는 발주 수로 센다(한 끼니에 같은

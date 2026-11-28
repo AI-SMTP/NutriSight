@@ -20,7 +20,7 @@ from pathlib import Path
 from typing import Literal
 
 from app.events.bus import Event
-from app.nutrition.types import NutritionEngine
+from app.nutrition.types import AlertLevel, NutritionEngine
 from app.recommender.generator_types import (
     GeneratedCard,
     GenerationError,
@@ -47,6 +47,12 @@ RECOMMENDATION_ID_PREFIX = "rec_"
 SUMMARY_DAYS = 14  # 생성기 입력 요약 기간(포트 `get_intake_summary(patient_id, 14, 시연일)`과 같다)
 GenerationMode = Literal["manual", "auto"]
 _MODES: frozenset[str] = frozenset({"manual", "auto"})
+# 경고 수준 순서(none < caution < warning). 이전 수준 `None`(판정 없음)은 `NONE`과 같다.
+_LEVEL_RANK: dict[AlertLevel, int] = {
+    AlertLevel.NONE: 0,
+    AlertLevel.CAUTION: 1,
+    AlertLevel.WARNING: 2,
+}
 
 
 class PatientLocks:
@@ -220,3 +226,43 @@ async def create_recommendation(
     return await deps.runtime.tasks.run_shielded(
         _create_body(patient_id, mode, deps), label=patient_id
     )
+
+
+def read_alert_level(conn: sqlite3.Connection, patient_id: str, alert_id: str) -> AlertLevel:
+    """그 환자의 판정 `alert_id`의 수준. 없거나 다른 환자의 판정이면 `ValueError`."""
+    row = queries.get_alert(conn, patient_id, alert_id)
+    if row is None:
+        raise ValueError(f"환자 {patient_id}의 판정이 아니다: {alert_id}")
+    return row.level
+
+
+def _is_rise(previous_level: AlertLevel | None, level: AlertLevel) -> bool:
+    """`level`이 `previous_level`보다 높은가. `None`은 `NONE`으로 본다."""
+    previous = AlertLevel.NONE if previous_level is None else previous_level
+    return _LEVEL_RANK[level] > _LEVEL_RANK[previous]
+
+
+async def on_alert_evaluated(
+    patient_id: str,
+    previous_level: AlertLevel | None,
+    alert_id: str,
+    *,
+    deps: RecommendationDeps,
+) -> RecommendationCard | None:
+    """경고 판정이 저장된 뒤 T3이 부르는 훅. 수준이 올라갔을 때만 `auto` 생성을 한다.
+
+    `alert_id` 판정의 수준이 `previous_level`(저장 전 최신 수준, 판정이 없었으면 `None`)보다
+    높으면 `create_recommendation(mode="auto")`의 결과(카드, 건너뛰면 `None`)를 돌려준다.
+    높지 않으면 `None`. `alert_id`는 상승 판단에만 쓰고, 카드에 연결되는 판정은 생성 서비스가
+    잠금 안에서 읽은 최신 판정이다. 잠금·스냅샷·취소 보호는 `create_recommendation`이 맡는다.
+    생성 실패는 `failed` 카드로 돌려준다. 없거나 다른 환자의 `alert_id` → `ValueError`.
+    """
+    level = await asyncio.to_thread(
+        run_in_db,
+        deps.db_path,
+        partial(read_alert_level, patient_id=patient_id, alert_id=alert_id),
+        mode="read",
+    )
+    if not _is_rise(previous_level, level):
+        return None
+    return await create_recommendation(patient_id, mode="auto", deps=deps)

@@ -33,6 +33,7 @@ from app.storage.codec import (
 from app.storage.db import connect
 from app.storage.queries import (
     demo_timestamp,
+    get_alert,
     get_demo_date,
     get_latest_alert,
     get_meal_plan,
@@ -624,6 +625,20 @@ def test_get_latest_alert_picks_latest_on_or_before_day(conn: sqlite3.Connection
 def test_get_latest_alert_returns_none_without_judgement(conn: sqlite3.Connection) -> None:
     assert get_latest_alert(conn, "NS01", date(2026, 11, 27)) is None
     assert get_latest_alert(conn, "NS99", date(2026, 12, 31)) is None
+
+
+def test_get_alert_returns_row_of_that_patient(conn: sqlite3.Connection) -> None:
+    alert = get_alert(conn, "NS01", "alert_c")
+    assert alert == list_alerts(conn, "NS01", date(2026, 11, 29), date(2026, 11, 29))[0]
+
+
+def test_get_alert_returns_none_when_missing(conn: sqlite3.Connection) -> None:
+    assert get_alert(conn, "NS01", "alert_missing") is None
+
+
+def test_get_alert_returns_none_for_other_patients_alert(conn: sqlite3.Connection) -> None:
+    assert get_alert(conn, "NS01", "alert_other") is None
+    assert get_alert(conn, "NS02", "alert_other") is not None
 
 
 # 레코드 --------------------------------------------------------------------
