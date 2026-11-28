@@ -8,6 +8,7 @@ dataclass 타입 주석은 실행 중 값을 보장하지 않으므로 값마다
 from __future__ import annotations
 
 import re
+from dataclasses import dataclass
 from datetime import date, datetime
 
 from app.services.ports import (
@@ -25,6 +26,31 @@ DURATION_MAX_DAYS = 365
 EVIDENCE_FIELD_MAX = 100
 CAUTIONS_MAX = 10
 CAUTION_MAX = 300
+
+
+@dataclass(frozen=True)
+class ItemEdit:
+    """의사가 보낸 항목 한 개 (`ItemInput`). `added_by`·`evidence`는 받지 않는다."""
+
+    item_id: str
+    type: PrescriptionType
+    title: str
+    detail: str
+    duration_days: int | None
+    review_date: date | None
+
+    def to_doctor_item(self) -> RecommendationItem:
+        """의사가 새로 만든 항목으로 바꾼다(`added_by = doctor`, `evidence = ()`)."""
+        return RecommendationItem(
+            item_id=self.item_id,
+            type=self.type,
+            title=self.title,
+            detail=self.detail,
+            duration_days=self.duration_days,
+            review_date=self.review_date,
+            added_by=AddedBy.DOCTOR,
+            evidence=(),
+        )
 
 
 def _check_str(value: object, name: str, min_len: int, max_len: int) -> str:

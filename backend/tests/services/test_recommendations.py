@@ -42,53 +42,18 @@ from app.services.recommendations import (
 )
 from app.services.unit_of_work import WriteResult, run_in_db
 from app.storage import recommendations as rec_store
-from app.storage.codec import items_to_json
 from app.storage.db import connect
-from app.storage.recommendations import select_card
+from tests.services.cards import (
+    CARD_ID,
+    NOW,
+    STORED_AT,
+    THREAD_ID,
+    assert_card_unchanged,
+    read_card,
+    set_status,
+)
 from tests.storage.items import AGENT_ITEM, DOCTOR_ITEM
-from tests.storage.rows import PATIENT_ID, insert_patient, insert_recommendation, insert_row
-
-CARD_ID = "R0001"
-THREAD_ID = "T0001"
-STORED_AT = "2026-11-23T12:00:00.000000"  # insert_recommendation 기본 시각
-NOW = datetime(2026, 12, 5, 9, 0, 0, 123456)
-
-
-@pytest.fixture
-def card_db(db_path: Path) -> Path:
-    """환자 NS07, 대화 하나, 항목 2개(`rx1` 에이전트, `rx2` 의사)인 `active` 카드 R0001."""
-    with connect(db_path) as conn:
-        insert_patient(conn)
-        insert_row(
-            conn,
-            "chat_threads",
-            {"thread_id": THREAD_ID, "patient_id": PATIENT_ID, "created_at": STORED_AT},
-        )
-        insert_recommendation(conn, items=items_to_json((AGENT_ITEM, DOCTOR_ITEM)))
-    return db_path
-
-
-def _read(db: Path, recommendation_id: str = CARD_ID) -> RecommendationCard:
-    with connect(db) as conn:
-        card = select_card(conn, recommendation_id)
-    assert card is not None
-    return card
-
-
-@contextmanager
-def assert_card_unchanged(db: Path, exc_type: type[BaseException]) -> Iterator[None]:
-    """블록이 `exc_type`을 던지고, 그 뒤에도 카드가 블록 전과 같은지 확인한다."""
-    before = _read(db)
-    with pytest.raises(exc_type):
-        yield
-    assert _read(db) == before
-
-
-def _set_status(db: Path, status: str) -> None:
-    with connect(db) as conn:
-        conn.execute(
-            "UPDATE recommendations SET status = ? WHERE recommendation_id = ?", (status, CARD_ID)
-        )
+from tests.storage.rows import PATIENT_ID, insert_patient, insert_recommendation
 
 
 def _save(
@@ -224,7 +189,7 @@ def test_save_items_stores_given_items_as_is(card_db: Path) -> None:
 
     result = _save(card_db, items)
 
-    stored = _read(card_db)
+    stored = read_card(card_db)
     assert stored.items == items  # added_by = agent·근거 있는 항목도 그대로
     assert stored.last_modified_by is ModifiedBy.AGENT
     assert stored.thread_id is None
@@ -234,13 +199,13 @@ def test_save_items_stores_given_items_as_is(card_db: Path) -> None:
 def test_save_items_by_chat_sets_thread_id(card_db: Path) -> None:
     _save(card_db, (AGENT_ITEM,), modified_by=ModifiedBy.CHAT, thread_id=THREAD_ID)
 
-    stored = _read(card_db)
+    stored = read_card(card_db)
     assert stored.last_modified_by is ModifiedBy.CHAT
     assert stored.thread_id == THREAD_ID
 
 
 def test_save_items_keeps_other_fields(card_db: Path) -> None:
-    before = _read(card_db)
+    before = read_card(card_db)
 
     after = _save(card_db, (NEW_AGENT_ITEM,)).value
 
@@ -252,7 +217,7 @@ def test_save_items_sets_updated_at_to_clock_value(card_db: Path) -> None:
     result = _save(card_db, (AGENT_ITEM,))
 
     assert result.value.updated_at == NOW
-    assert _read(card_db).updated_at == NOW
+    assert read_card(card_db).updated_at == NOW
 
 
 def test_save_items_updated_at_increases_when_clock_goes_back(card_db: Path) -> None:
@@ -286,7 +251,7 @@ def test_save_items_returns_updated_event(card_db: Path) -> None:
 def test_save_items_with_matching_expected_updated_at_succeeds(card_db: Path) -> None:
     _save(card_db, (NEW_AGENT_ITEM,), expected_updated_at=STORED_AT)
 
-    assert _read(card_db).items == (NEW_AGENT_ITEM,)
+    assert read_card(card_db).items == (NEW_AGENT_ITEM,)
 
 
 def test_save_items_without_expected_updated_at_skips_comparison(card_db: Path) -> None:
@@ -294,7 +259,7 @@ def test_save_items_without_expected_updated_at_skips_comparison(card_db: Path) 
 
     _save(card_db, (NEW_AGENT_ITEM,), expected_updated_at=None, now=NOW + timedelta(seconds=1))
 
-    assert _read(card_db).items == (NEW_AGENT_ITEM,)
+    assert read_card(card_db).items == (NEW_AGENT_ITEM,)
 
 
 # ---- save_items: 실패 ------------------------------------------------------------
@@ -345,7 +310,7 @@ def test_save_items_unknown_card_raises_not_found(card_db: Path) -> None:
 def test_save_items_non_active_card_raises_not_editable(
     card_db: Path, status: str, expected: str | None
 ) -> None:
-    _set_status(card_db, status)
+    set_status(card_db, status)
 
     with assert_card_unchanged(card_db, RecommendationNotEditableError):
         _save(card_db, (NEW_AGENT_ITEM,), expected_updated_at=expected)
@@ -389,7 +354,7 @@ def test_edit_by_doctor_merges_and_saves_through_save_items(
     )
     assert result.value.items == expected_items
     assert result.value.last_modified_by is ModifiedBy.DOCTOR
-    assert _read(card_db).items == expected_items
+    assert read_card(card_db).items == expected_items
     assert [event.name for event in result.events] == ["recommendation.updated"]
 
 
@@ -403,7 +368,7 @@ def test_edit_by_doctor_after_chat_clears_thread_id(card_db: Path) -> None:
         now=NOW + timedelta(seconds=1),
     )
 
-    stored = _read(card_db)
+    stored = read_card(card_db)
     assert stored.last_modified_by is ModifiedBy.DOCTOR
     assert stored.thread_id is None
 
@@ -414,7 +379,7 @@ def test_edit_by_doctor_unknown_card_raises_not_found(card_db: Path) -> None:
 
 
 def test_edit_by_doctor_confirmed_card_raises_not_editable(card_db: Path) -> None:
-    _set_status(card_db, "confirmed")
+    set_status(card_db, "confirmed")
 
     with assert_card_unchanged(card_db, RecommendationNotEditableError):
         _edit(card_db, (_edit_of(AGENT_ITEM, title="수정"),))
@@ -447,7 +412,7 @@ def test_edit_by_doctor_after_clock_goes_back_rejects_old_value_and_accepts_new(
         (_edit_of(AGENT_ITEM, title="셋째 수정"),),
         expected_updated_at=format_app_timestamp(second.updated_at),
     )
-    assert _read(card_db).items[0].title == "셋째 수정"
+    assert read_card(card_db).items[0].title == "셋째 수정"
 
 
 def test_edit_by_doctor_runs_single_begin(card_db: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -466,7 +431,7 @@ def test_edit_by_doctor_runs_single_begin(card_db: Path, monkeypatch: pytest.Mon
 
     begins = [s.strip() for s in statements if s.strip().upper().startswith("BEGIN")]
     assert begins == ["BEGIN IMMEDIATE"]
-    assert _read(card_db).items[0].title == "수정"
+    assert read_card(card_db).items[0].title == "수정"
 
 
 def test_edit_by_doctor_store_failure_leaves_card(

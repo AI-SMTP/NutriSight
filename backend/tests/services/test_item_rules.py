@@ -7,7 +7,9 @@ from datetime import date, datetime
 
 import pytest
 
+from app.services import recommendations
 from app.services.item_rules import (
+    ItemEdit,
     check_detail,
     check_duration_days,
     check_item_id,
@@ -278,3 +280,25 @@ def test_check_thread_id_violation_raises_value_error(
 ) -> None:
     with pytest.raises(ValueError):
         check_thread_id(modified_by, thread_id)
+
+
+# ---- ItemEdit ------------------------------------------------------------------
+
+
+def test_item_edit_to_doctor_item_sets_doctor_and_no_evidence() -> None:
+    edit = ItemEdit("e1", PrescriptionType.ONS, "경구영양보충", "1일 1팩", 14, date(2026, 12, 12))
+
+    assert edit.to_doctor_item() == RecommendationItem(
+        item_id="e1",
+        type=PrescriptionType.ONS,
+        title="경구영양보충",
+        detail="1일 1팩",
+        duration_days=14,
+        review_date=date(2026, 12, 12),
+        added_by=AddedBy.DOCTOR,
+        evidence=(),
+    )
+
+
+def test_item_edit_is_reexported_from_recommendations() -> None:
+    assert recommendations.ItemEdit is ItemEdit

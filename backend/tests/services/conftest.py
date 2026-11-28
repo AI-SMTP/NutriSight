@@ -12,7 +12,12 @@ import pytest
 
 from app.nutrition.fake import FakeNutritionEngine
 from app.nutrition.types import DailyTarget, PatientProfile, Sex
+from app.storage.codec import items_to_json
+from app.storage.db import connect
+from tests.services.cards import STORED_AT, THREAD_ID
 from tests.storage.demo import DEMO
+from tests.storage.items import AGENT_ITEM, DOCTOR_ITEM
+from tests.storage.rows import PATIENT_ID, insert_patient, insert_recommendation, insert_row
 
 
 @pytest.fixture
@@ -33,3 +38,17 @@ def engine() -> FakeNutritionEngine:
 def fake_target(engine: FakeNutritionEngine) -> DailyTarget:
     """`engine`이 입력과 무관하게 돌려주는 고정 목표."""
     return engine.daily_target(PatientProfile(Sex.FEMALE, 1940), (), (), DEMO)
+
+
+@pytest.fixture
+def card_db(db_path: Path) -> Path:
+    """환자 NS07, 대화 하나, 항목 2개(`rx1` 에이전트, `rx2` 의사)인 `active` 카드 R0001."""
+    with connect(db_path) as conn:
+        insert_patient(conn)
+        insert_row(
+            conn,
+            "chat_threads",
+            {"thread_id": THREAD_ID, "patient_id": PATIENT_ID, "created_at": STORED_AT},
+        )
+        insert_recommendation(conn, items=items_to_json((AGENT_ITEM, DOCTOR_ITEM)))
+    return db_path
