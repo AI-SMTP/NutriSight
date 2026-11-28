@@ -10,17 +10,21 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 import sqlite3
 from collections.abc import Callable, Coroutine
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from datetime import datetime
+from functools import partial
 from pathlib import Path
 from typing import Any
 
 from app.events.bus import EventBus
 from app.services.clock import AppClock
 from app.services.unit_of_work import WriteResult, run_in_db
+
+logger = logging.getLogger(__name__)
 
 _WRITER_THREAD_PREFIX = "db-writer"
 
@@ -55,6 +59,20 @@ class TaskRegistry:
         task.add_done_callback(self._tasks.discard)
         return task
 
+    async def run_shielded[T](self, coro: Coroutine[Any, Any, T], *, label: str) -> T:
+        """`coro`를 앱 소유 태스크로 돌리고 결과를 기다린다. 호출자가 취소돼도 태스크는 계속 돈다.
+
+        호출자가 취소되면 태스크에 완료 콜백을 붙여, 태스크가 예외로 끝났을 때 `label`과 함께
+        ERROR 로그를 남긴다(예외도 회수한다). 태스크 자체가 취소되면 로그를 남기지 않는다.
+        `close()` 뒤면 `RuntimeClosedError`.
+        """
+        task = self.spawn(coro)
+        try:
+            return await asyncio.shield(task)
+        except asyncio.CancelledError:
+            task.add_done_callback(partial(_log_orphan_failure, label))
+            raise
+
     def close(self) -> None:
         """새 태스크를 받지 않는다."""
         self._closed = True
@@ -69,6 +87,15 @@ class TaskRegistry:
         for task in pending:
             task.cancel()
         await asyncio.gather(*pending, return_exceptions=True)
+
+
+def _log_orphan_failure(label: str, task: asyncio.Task[Any]) -> None:
+    """호출자가 떠난 태스크가 예외로 끝났으면 ERROR 로그를 남긴다(예외도 회수한다)."""
+    if task.cancelled():
+        return
+    err = task.exception()
+    if err is not None:
+        logger.error("호출자가 취소된 뒤 앱 소유 태스크가 실패했다: %s", label, exc_info=err)
 
 
 class WriteExecutor:
@@ -92,7 +119,7 @@ class WriteExecutor:
         """비동기 경로의 쓰기. 기다리던 코루틴이 취소돼도 이미 시작한 작업은 끝까지 돈다.
 
         대기열에 있어 아직 시작하지 않은 쓰기는 기다리던 코루틴이 취소되면 함께 취소된다.
-        호출자 취소 보호는 `tasks.spawn` + `asyncio.shield`가 맡는다(스펙 3.2).
+        호출자 취소 보호는 `TaskRegistry.run_shielded`가 맡는다(스펙 3.2).
         """
         return await asyncio.wrap_future(self._executor.submit(self._job, fn))
 

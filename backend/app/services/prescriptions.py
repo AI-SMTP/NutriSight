@@ -13,7 +13,7 @@ import uuid
 from datetime import datetime
 
 from app.events.bus import Event
-from app.services.clock import bump_after, format_app_timestamp, parse_app_timestamp
+from app.services.clock import next_timestamp
 from app.services.item_rules import ItemEdit, validate_items
 from app.services.patients import require_patient
 from app.services.ports import RecommendationItem
@@ -65,9 +65,7 @@ def insert_prescription_record(
     if not items:
         raise ValueError("처방 항목은 1개 이상이어야 한다")
     validate_items(items)
-    prior = rec_store.max_prescription_confirmed_at(conn, patient_id)
-    prior_at = parse_app_timestamp(prior) if prior is not None else None
-    confirmed_at = format_app_timestamp(bump_after(now, prior_at))
+    _, confirmed_at = next_timestamp(now, rec_store.max_prescription_confirmed_at(conn, patient_id))
     record = PrescriptionRecord(
         prescription_id=f"{PRESCRIPTION_ID_PREFIX}{uuid.uuid4().hex}",
         patient_id=patient_id,

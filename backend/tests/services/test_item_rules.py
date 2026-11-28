@@ -7,6 +7,7 @@ from datetime import date, datetime
 
 import pytest
 
+from app.recommender.generator_types import GeneratedCard
 from app.services import recommendations
 from app.services.item_rules import (
     ItemEdit,
@@ -17,6 +18,7 @@ from app.services.item_rules import (
     check_thread_id,
     check_title,
     validate_cautions,
+    validate_generated_card,
     validate_generated_items,
     validate_items,
 )
@@ -244,6 +246,38 @@ def test_validate_generated_items_rejects_doctor_item():
 def test_validate_generated_items_applies_common_rules(items, cautions):
     with pytest.raises(ValueError):
         validate_generated_items(items, cautions)
+
+
+# ── validate_generated_card: GeneratedCard 인스턴스 검사 + 생성기 전용 규칙 ──
+
+
+def test_validate_generated_card_accepts_valid_card():
+    card = GeneratedCard(items=(_item(),), cautions=("주의",))
+
+    assert validate_generated_card(card) is None
+
+
+@pytest.mark.parametrize(
+    "value",
+    [None, {"items": (), "cautions": ()}, ((_item(),), ())],
+    ids=["none", "dict", "tuple"],
+)
+def test_validate_generated_card_rejects_non_generated_card(value):
+    with pytest.raises(ValueError):
+        validate_generated_card(value)
+
+
+@pytest.mark.parametrize(
+    "card",
+    [
+        GeneratedCard(items=(), cautions=()),
+        GeneratedCard(items=(_item(added_by=AddedBy.DOCTOR),), cautions=()),
+    ],
+    ids=["empty_items", "doctor_item"],
+)
+def test_validate_generated_card_rejects_generator_rule_violation(card):
+    with pytest.raises(ValueError):
+        validate_generated_card(card)
 
 
 # ---- thread_id 규칙 --------------------------------------------------------------

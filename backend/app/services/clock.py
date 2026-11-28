@@ -54,3 +54,13 @@ def bump_after(candidate: datetime, prior: datetime | None) -> datetime:
     if prior is None or candidate > prior:
         return candidate
     return prior + _ONE_MICROSECOND
+
+
+def next_timestamp(now: datetime, prior_text: str | None) -> tuple[datetime, str]:
+    """저장된 직전 시각 문자열(`None`이면 없음)보다 큰 새 시각과 그 저장 문자열을 돌려준다.
+
+    `now`가 직전 시각 이하이면 직전 시각 + 1µs다(`bump_after`).
+    """
+    prior = parse_app_timestamp(prior_text) if prior_text is not None else None
+    value = bump_after(now, prior)
+    return value, format_app_timestamp(value)

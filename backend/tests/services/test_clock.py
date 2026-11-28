@@ -6,7 +6,13 @@ from datetime import UTC, date, datetime, timedelta
 
 import pytest
 
-from app.services.clock import AppClock, bump_after, format_app_timestamp, parse_app_timestamp
+from app.services.clock import (
+    AppClock,
+    bump_after,
+    format_app_timestamp,
+    next_timestamp,
+    parse_app_timestamp,
+)
 
 
 class _FakeNow:
@@ -169,3 +175,27 @@ def test_bump_after_moves_past_prior_by_one_microsecond(candidate):
 def test_format_app_timestamp_rejects_aware_datetime():
     with pytest.raises(ValueError):
         format_app_timestamp(datetime(2026, 12, 5, 9, 0, tzinfo=UTC))
+
+
+# ── next_timestamp: 저장된 직전 시각 문자열 기준 단조 보정 ──
+
+
+@pytest.mark.parametrize(
+    ("now", "prior_text", "expected"),
+    [
+        (datetime(2026, 12, 5, 9, 0), None, "2026-12-05T09:00:00.000000"),
+        (datetime(2026, 12, 5, 9, 0), "2026-12-05T08:59:59.999999", "2026-12-05T09:00:00.000000"),
+        (datetime(2026, 12, 5, 9, 0), "2026-12-05T09:00:00.000000", "2026-12-05T09:00:00.000001"),
+        (
+            datetime(2026, 12, 5, 8, 59, 50),
+            "2026-12-05T09:00:00.000000",
+            "2026-12-05T09:00:00.000001",
+        ),
+    ],
+    ids=["no_prior", "prior_earlier", "prior_equal", "clock_rewound"],
+)
+def test_next_timestamp_returns_value_and_text(now, prior_text, expected):
+    value, text = next_timestamp(now, prior_text)
+
+    assert text == expected
+    assert value == parse_app_timestamp(expected)

@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import asyncio
 import inspect
+import logging
 import sqlite3
 import threading
 from collections.abc import AsyncIterator, Callable, Coroutine, Iterator
@@ -176,6 +177,135 @@ def test_spawn_without_running_loop_raises_and_closes_coroutine() -> None:
 
     _assert_closed(coro)
     assert registry.tasks == frozenset()
+
+
+# --- TaskRegistry.run_shielded ------------------------------------------------------------------
+
+_RUNTIME_LOGGER = "app.services.runtime"
+
+
+class _BodyError(Exception):
+    pass
+
+
+async def test_run_shielded_returns_body_value() -> None:
+    registry = TaskRegistry()
+
+    async def body() -> int:
+        return 7
+
+    assert await registry.run_shielded(body(), label="p1") == 7
+    assert registry.tasks == frozenset()
+
+
+async def test_run_shielded_propagates_body_error_to_waiting_caller() -> None:
+    registry = TaskRegistry()
+
+    async def body() -> None:
+        raise _BodyError("실패")
+
+    with pytest.raises(_BodyError):
+        await registry.run_shielded(body(), label="p1")
+
+
+async def test_run_shielded_body_finishes_after_caller_cancel() -> None:
+    registry = TaskRegistry()
+    entered = asyncio.Event()
+    release = asyncio.Event()
+    done: list[str] = []
+
+    async def body() -> None:
+        entered.set()
+        await release.wait()
+        done.append("finished")
+
+    caller = asyncio.create_task(registry.run_shielded(body(), label="p1"))
+    await asyncio.wait_for(entered.wait(), TIMEOUT)
+    caller.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await caller
+    (task,) = registry.tasks
+    release.set()
+    await asyncio.wait_for(task, TIMEOUT)
+
+    assert done == ["finished"]
+
+
+async def _cancel_caller_then_finish(registry: TaskRegistry, body_factory, finish) -> None:
+    """본문이 들어온 뒤 호출자를 취소하고, `finish`로 본문을 끝낸 뒤 콜백 차례까지 기다린다."""
+    entered = asyncio.Event()
+    caller = asyncio.create_task(registry.run_shielded(body_factory(entered), label="p1"))
+    await asyncio.wait_for(entered.wait(), TIMEOUT)
+    caller.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await caller
+    (task,) = registry.tasks
+    finish(task)
+    await asyncio.wait_for(asyncio.gather(task, return_exceptions=True), TIMEOUT)
+    await asyncio.sleep(0)  # 완료 콜백은 태스크가 끝난 다음 차례에 실행된다
+
+
+async def test_run_shielded_logs_body_failure_after_caller_cancel(caplog) -> None:
+    release = asyncio.Event()
+
+    def body_factory(entered: asyncio.Event):
+        async def body() -> None:
+            entered.set()
+            await release.wait()
+            raise _BodyError("저장 실패")
+
+        return body()
+
+    with caplog.at_level(logging.ERROR, logger=_RUNTIME_LOGGER):
+        await _cancel_caller_then_finish(TaskRegistry(), body_factory, lambda _t: release.set())
+
+    errors = [r for r in caplog.records if r.name == _RUNTIME_LOGGER]
+    assert len(errors) == 1
+    assert errors[0].levelno == logging.ERROR
+    assert "p1" in errors[0].getMessage()
+    assert isinstance(errors[0].exc_info[1], _BodyError)
+
+
+async def test_run_shielded_logs_nothing_when_body_is_cancelled(caplog) -> None:
+    def body_factory(entered: asyncio.Event):
+        async def body() -> None:
+            entered.set()
+            await asyncio.Event().wait()
+
+        return body()
+
+    with caplog.at_level(logging.DEBUG, logger=_RUNTIME_LOGGER):
+        await _cancel_caller_then_finish(TaskRegistry(), body_factory, lambda t: t.cancel())
+
+    assert [r for r in caplog.records if r.name == _RUNTIME_LOGGER] == []
+
+
+async def test_run_shielded_logs_nothing_when_body_succeeds_after_caller_cancel(caplog) -> None:
+    release = asyncio.Event()
+
+    def body_factory(entered: asyncio.Event):
+        async def body() -> int:
+            entered.set()
+            await release.wait()
+            return 1
+
+        return body()
+
+    with caplog.at_level(logging.DEBUG, logger=_RUNTIME_LOGGER):
+        await _cancel_caller_then_finish(TaskRegistry(), body_factory, lambda _t: release.set())
+
+    assert [r for r in caplog.records if r.name == _RUNTIME_LOGGER] == []
+
+
+async def test_run_shielded_after_close_raises_and_closes_coroutine() -> None:
+    registry = TaskRegistry()
+    registry.close()
+    coro = _noop()
+
+    with pytest.raises(RuntimeClosedError):
+        await registry.run_shielded(coro, label="p1")
+
+    _assert_closed(coro)
 
 
 # --- WriteExecutor ------------------------------------------------------------------------------

@@ -11,6 +11,7 @@ import re
 from dataclasses import dataclass
 from datetime import date, datetime
 
+from app.recommender.generator_types import GeneratedCard
 from app.services.ports import (
     AddedBy,
     EvidenceRef,
@@ -174,3 +175,10 @@ def validate_generated_items(
         raise ValueError("생성 결과에는 항목이 1개 이상 있어야 한다")
     if any(item.added_by is not AddedBy.AGENT for item in items):
         raise ValueError("생성 결과의 항목은 모두 added_by = agent여야 한다")
+
+
+def validate_generated_card(card: object) -> None:
+    """생성기 반환값이 `GeneratedCard` 인스턴스이고 생성기 결과 규칙을 모두 지키는지 확인한다."""
+    if not isinstance(card, GeneratedCard):
+        raise ValueError(f"생성 결과는 GeneratedCard여야 한다: {type(card).__name__}")
+    validate_generated_items(card.items, card.cautions)
