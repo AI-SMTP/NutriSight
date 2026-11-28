@@ -19,7 +19,7 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from app.config import Settings
-from app.main import create_app
+from app.main import API_PREFIX, create_app
 
 INDEX_HTML = "<!doctype html><title>NutriSight</title><div id=root></div>"
 APP_JS = b"console.info('app');"
@@ -195,7 +195,10 @@ def test_dist_without_assets_starts_and_serves_index(tmp_path: Path) -> None:
 def test_openapi_paths_exclude_static_routes(tmp_path: Path) -> None:
     application = _app_with_probe(_make_dist(tmp_path))
 
-    assert set(application.openapi()["paths"]) == {"/api/health", "/api/_probe"}
+    paths = set(application.openapi()["paths"])
+
+    assert {"/api/health", "/api/_probe"} <= paths
+    assert all(path.startswith(f"{API_PREFIX}/") for path in paths)
 
 
 def test_index_removed_after_startup_falls_back_to_json_404(tmp_path: Path) -> None:

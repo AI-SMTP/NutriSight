@@ -23,6 +23,7 @@ from app.nutrition.types import (
     WeightRecord,
 )
 from app.services.patients import (
+    alert_for_patient,
     alert_to_result,
     daily_rows,
     intake_summary,
@@ -313,6 +314,29 @@ def test_latest_alert_picks_latest_on_or_before_day(db_path: Path) -> None:
     assert on_23 is not None and on_23.alert_id == "A3"
     assert on_22 is not None and on_22.alert_id == "A1"
     assert on_21 is None
+
+
+def test_alert_for_patient_uses_demo_date(service_db: Path) -> None:
+    with connect(service_db) as conn:
+        # 시연일(D=2026-12-05) 뒤 판정은 쓰지 않는다.
+        insert_alert(
+            conn, alert_id="A_future", patient_id="NS01", evaluated_at="2026-12-06T09:00:00"
+        )
+        row = alert_for_patient(conn, "NS01")
+
+    assert row is not None and row.alert_id == "alert_NS01_2026-12-04"
+
+
+def test_alert_for_patient_without_judgement_is_none(service_db: Path) -> None:
+    with connect(service_db) as conn:
+        insert_patient(conn, patient_id="NS99")
+
+        assert alert_for_patient(conn, "NS99") is None
+
+
+def test_alert_for_patient_unknown_patient_raises(service_db: Path) -> None:
+    with connect(service_db) as conn, pytest.raises(PatientNotFoundError):
+        alert_for_patient(conn, "XX")
 
 
 # intake_summary ------------------------------------------------------------

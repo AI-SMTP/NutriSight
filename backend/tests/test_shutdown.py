@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import asyncio
 import inspect
-import shutil
 import threading
 from collections.abc import AsyncIterator, Awaitable
 from contextlib import AbstractAsyncContextManager
@@ -31,6 +30,7 @@ from app.storage import recommendations as rec_store
 from app.storage.app_lock import AppLock
 from app.storage.errors import AppLockedError
 from tests.app_lock import assert_lock_free, assert_lock_held
+from tests.conftest import install_app_db
 from tests.contracts.patient_data import build_items
 from tests.services.cards import read_card
 from tests.services.gates import ThreadGate
@@ -57,10 +57,7 @@ DEMO_DAYS = {DEMO, DEMO + timedelta(days=1)}
 def app_db(monkeypatch: pytest.MonkeyPatch, isolated_var_dir: Path, seeded_db: Path) -> Path:
     """`DEMO_DATE`를 시연일로 고정하고 시드 DB를 `VAR_DIR/app.db`로 복사한다."""
     monkeypatch.setenv("DEMO_DATE", DEMO.isoformat())
-    isolated_var_dir.mkdir()
-    path = isolated_var_dir / "app.db"
-    shutil.copyfile(seeded_db, path)
-    return path
+    return install_app_db(isolated_var_dir, seeded_db)
 
 
 @pytest.fixture
@@ -156,8 +153,7 @@ async def test_start_failure_after_lock_closes_runtime_and_releases_lock(
 ) -> None:
     # 스키마만 있고 `seed_meta.demo_date`가 없는 DB: 저장소 준비는 통과하고 시계 고정에서 실패한다.
     monkeypatch.setenv("DEMO_DATE", DEMO.isoformat())
-    isolated_var_dir.mkdir()
-    shutil.copyfile(db_path, isolated_var_dir / "app.db")
+    install_app_db(isolated_var_dir, db_path)
     settings = Settings()
     app = create_app(settings)
 

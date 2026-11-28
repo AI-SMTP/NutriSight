@@ -18,6 +18,7 @@
 from __future__ import annotations
 
 import os
+import shutil
 import tempfile
 from pathlib import Path
 
@@ -58,6 +59,18 @@ def disable_dotenv() -> None:
 
 
 disable_dotenv()
+
+
+def install_app_db(var_dir: Path, source_db: Path) -> Path:
+    """`var_dir`를 만들고 `source_db`를 `var_dir/app.db`로 복사해 그 경로를 돌려준다.
+
+    앱을 실제로 시작하는 테스트(API·종료)가 시드 DB를 앱 저장소 자리에 놓을 때 쓴다.
+    시연일은 호출자가 설정 값이나 `DEMO_DATE` 환경 변수로 고정한다.
+    """
+    var_dir.mkdir(parents=True)
+    path = var_dir / "app.db"
+    shutil.copyfile(source_db, path)
+    return path
 
 
 @pytest.fixture(autouse=True)

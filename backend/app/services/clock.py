@@ -45,8 +45,20 @@ def format_app_timestamp(dt: datetime) -> str:
 
 
 def parse_app_timestamp(raw: str) -> datetime:
-    """`format_app_timestamp`가 만든 저장 문자열을 `datetime`으로 되돌린다."""
-    return datetime.fromisoformat(raw)
+    """`format_app_timestamp`가 만든 저장 문자열을 `datetime`으로 되돌린다.
+
+    엄격 파서다. 다시 형식화한 값이 원문과 같지 않거나(초 단위·밀리초·시간대·구분자 차이)
+    파싱에 실패하면 `ValueError`다. 그래서 읽은 시각을 다시 내보내도 저장 문자열과 같다.
+    """
+    message = f"앱 시각 형식(YYYY-MM-DDTHH:MM:SS.ffffff)이 아니다: {raw!r}"
+    try:
+        value = datetime.fromisoformat(raw)
+        same = format_app_timestamp(value) == raw
+    except ValueError as err:
+        raise ValueError(message) from err
+    if not same:
+        raise ValueError(message)
+    return value
 
 
 def bump_after(candidate: datetime, prior: datetime | None) -> datetime:

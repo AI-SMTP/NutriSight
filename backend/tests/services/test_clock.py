@@ -172,6 +172,21 @@ def test_bump_after_moves_past_prior_by_one_microsecond(candidate):
     assert bump_after(candidate, prior) == datetime(2026, 12, 5, 10, 0, 0, 1)
 
 
+@pytest.mark.parametrize(
+    "raw",
+    [
+        "2026-11-23T12:00:00",  # 초 단위(마이크로초 없음)
+        "2026-11-23T12:00:00.123",  # 밀리초 3자리
+        "2026-11-23T12:00:00.000000+09:00",  # 시간대 붙음
+        "2026-11-23 12:00:00.000000",  # 구분자가 공백
+        "not-a-timestamp",  # 파싱 실패
+    ],
+)
+def test_parse_app_timestamp_rejects_non_app_format(raw):
+    with pytest.raises(ValueError, match="앱 시각 형식"):
+        parse_app_timestamp(raw)
+
+
 def test_format_app_timestamp_rejects_aware_datetime():
     with pytest.raises(ValueError):
         format_app_timestamp(datetime(2026, 12, 5, 9, 0, tzinfo=UTC))

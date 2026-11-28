@@ -236,6 +236,16 @@ def latest_alert(conn: sqlite3.Connection, patient_id: str, on: date) -> AlertRo
     return queries.get_latest_alert(conn, patient_id, on)
 
 
+def alert_for_patient(conn: sqlite3.Connection, patient_id: str) -> AlertRow | None:
+    """시연일 이하 최신 판정 행(화면 경고 조회). 판정이 없으면 None.
+
+    응답에 `alert_id`·`evaluated_at`이 필요해 `AlertResult`가 아니라 행을 돌려준다.
+    환자 없음 → `PatientNotFoundError`.
+    """
+    require_patient(conn, patient_id)
+    return latest_alert(conn, patient_id, queries.get_demo_date(conn))
+
+
 def alert_to_result(row: AlertRow) -> AlertResult:
     """저장된 판정 행을 `AlertResult`로. `basis_period`가 없으면 기간은 None이다."""
     period_start: date | None = None

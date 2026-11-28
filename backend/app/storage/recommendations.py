@@ -3,8 +3,8 @@
 SQL만 둔다. 항목 JSON 인코딩은 `app.storage.codec`, 항목 규칙 검사·커밋·이벤트 발행·
 시각 생성은 서비스가 맡는다.
 시각 열은 저장 문자열(`YYYY-MM-DDTHH:MM:SS.ffffff`)로 받아 그대로 쓰고, 카드로 읽을 때만
-`parse_app_timestamp`로 `datetime`으로 바꾼다. 수정 함수는 영향 행 수를 돌려주며, 0일 때
-원인(없음·상태·시각 불일치)을 가리는 일은 호출자 몫이다.
+엄격 파서 `parse_app_timestamp`로 `datetime`으로 바꾼다(앱 형식이 아니면 `ValueError`).
+수정 함수는 영향 행 수를 돌려주며, 0일 때 원인(없음·상태·시각 불일치)을 가리는 일은 호출자 몫이다.
 """
 
 from __future__ import annotations

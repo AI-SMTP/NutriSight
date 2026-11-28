@@ -374,3 +374,12 @@ def test_max_prescription_confirmed_at(conn):
         )
 
     assert max_prescription_confirmed_at(conn, PATIENT_ID) == T2
+
+
+@pytest.mark.parametrize("column", ["created_at", "updated_at"])
+def test_select_card_rejects_non_app_timestamp(conn, column):
+    # 형식 규칙 자체는 `test_clock.py`의 `parse_app_timestamp` 테스트가 다룬다.
+    _insert(conn, "R1", **{column: "2026-11-23T12:00:00"})
+
+    with pytest.raises(ValueError, match="앱 시각 형식"):
+        select_card(conn, "R1")

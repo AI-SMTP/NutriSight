@@ -18,6 +18,7 @@ from fastapi.exception_handlers import http_exception_handler
 from fastapi.responses import FileResponse, Response
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from app.api.patients import router as patients_router
 from app.config import Settings, StoragePaths, resolve_demo_date, storage_paths
 from app.services.generation import PatientLocks, RecommendationDeps
 from app.services.runtime import AppRuntime
@@ -152,6 +153,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     def health() -> dict[str, str]:
         """서버가 응답하는지 확인한다."""
         return {"status": "ok"}
+
+    # 화면 API 라우터. FastAPI `frontend()` 경로는 일반 라우트 뒤에 확인되므로 순서와 무관하게
+    # API가 이기지만, 처리기 등록 규칙(`_register_frontend` docstring)을 따라 앞에 둔다.
+    application.include_router(patients_router)
 
     # 모든 `/api` 라우트를 등록한 뒤에 정적 제공을 건다(참조 문서 '정적 제공과 SPA 대체 응답').
     _register_frontend(application, resolved.frontend_dist)
