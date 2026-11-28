@@ -78,6 +78,8 @@ result = await tools.search_guidelines("고령자 영양 평가", limit=3)
 
 `FakeAgentPreview.stream(question, on=...)`은 `tool_start`, `tool_end`, `token`, `done`, `error`를 출력하고, `PreviewEvent.to_sse()`는 `event: ...\ndata: ...\n\n` 프레임을 생성한다.
 
+검색 완료 이벤트의 `citations_verified`는 `resolve_evidence` 역조회 결과를 반영한다. Fake 검색처럼 검증 기능이 없으면 **false**로 표시하고 공식 인용으로 제시하지 않는다. 이는 문헌 출처 ID 확인이지 환자별 임상 적합성 검증은 아니다.
+
 팀 명세의 `card_updated`는 **실제 변경이 없으므로 보내지 않는다.** HTTP 경로 `POST /api/threads/{id}/messages`, 체크포인터, 시스템 이벤트 발행은 구현하지 않았다.
 
 ## 4. 오프라인 실행
