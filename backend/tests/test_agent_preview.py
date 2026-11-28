@@ -127,6 +127,7 @@ async def test_fake_agent_sse_contract_and_no_card_mutation() -> None:
         "tool_start", "tool_end", "tool_start", "tool_end", "token", "done"
     ]
     assert "card_updated" not in names
+    assert events[3].data["citations_verified"] is True
     assert events[-1].data["status"] == "read_only_preview"
     assert all(event.to_sse().endswith("\n\n") for event in events)
     assert all("NS02" not in event.to_sse() for event in events)
@@ -143,3 +144,20 @@ async def test_invalid_patient_and_no_cross_patient_tool_input() -> None:
     with pytest.raises(ValueError):
         bind_patient_tools("", patient_data=FakePatientData(),
                            guideline_search=FakeGuidelineSearch())
+
+
+async def test_fake_guideline_hits_are_never_presented_as_official() -> None:
+    tools = _tools(PATIENT_WITH_ACTIVE)
+    events = [
+        event
+        async for event in FakeAgentPreview(tools).stream(
+            "고령자 식사 강화", on=SUMMARY_ON
+        )
+    ]
+    search_done = next(
+        event for event in events
+        if event.name == "tool_end" and event.data["tool"] == "search_guidelines"
+    )
+    assert search_done.data["citations_verified"] is False
+    token = next(event.data["text"] for event in events if event.name == "token")
+    assert "검증되지 않았습니다" in token
