@@ -1,14 +1,14 @@
 # NutriSight RAG — 마스터 진행 보고서와 단계별 개발 로드맵
 
 > **기준일:** 2026-11-28 KST · **소유 트랙:** RAG / 실제 추천 Agent 연동  
-> **형주 Fork:** HJ-GJ/NutriSight, Draft PR #18 head `integration/rag-t2-20261128` (`75f122c`), Stage A 수정 브랜치 `fix/rag-issue20-fail-closed`  
-> **팀 기준:** AI-SMTP/NutriSight `develop@9d56fbc` (T2 저장소·프론트엔드 업로드·문서 정리 반영; PR #18 base 당시 `97ed3cc`)  
-> **현재 단계:** Draft PR [#18](https://github.com/AI-SMTP/NutriSight/pull/18) 제출 및 `smalljiny` 리뷰 수령 → **Stage A(Issue #20 fail-closed) 수정·회귀검증 진행** → 후속 이슈 #21–#25 팀 조율 대기  
+> **형주 Fork:** HJ-GJ/NutriSight — Draft PR #18(`integration/rag-t2-20261128@75f122c`), Draft PR #27(`feature/rag-v0-5-integration-20261128@7fee767`), T4 동기화 검증 브랜치 `sync/rag-pr18-develop-t4-20261128`(`cd52c69`) · `sync/rag-v0-5-1-develop-t4-20261128`  
+> **팀 기준:** AI-SMTP/NutriSight `develop@99d388e` (PR #26 T4 환자·추천·처방 API 및 `pyright` 도입 반영)  
+> **현재 단계:** Draft PR [#18](https://github.com/AI-SMTP/NutriSight/pull/18) · Draft PR [#27](https://github.com/AI-SMTP/NutriSight/pull/27) 등록 완료 → **v0.5.1 T4(`develop@99d388e`) 충돌 해소·Pyright 0 errors·전체 통합 회귀 검증 완료** → PR 반영 승인 및 Stage B(`#21`, `#23`) 대기  
 > **주의:** 이 문서는 개발 상태를 기록하며 의료적 유효성 또는 임상 사용 승인을 의미하지 않습니다.
 
 ## 1. 보고 체계와 정본
 
-이 파일은 **현재 상태·결정·다음 단계**를 관리하는 단일 마스터 보고서입니다. 날짜별 평가 수치와 한계는 [2026-11-28 독립 성능평가](RAG_EVALUATION_2026-11-28.md)에, 실제 API 스모크 결과는 [2026-11-28 Large API 스모크 보고서](RAG_LARGE_API_SMOKE_TEST_2026-11-28.md)에, PR #18 리뷰 반영 검증은 [2026-11-28 PR #18 리뷰 검증 보고서](RAG_PR18_REVIEW_VALIDATION_2026-11-28.md)에, 기존 3종 실험의 상세 수치는 [v0.2 초기 구현 기록](rag-implementation-notes.md)에 보존합니다. Agent와의 함수 계약은 [T5 인계서](rag-agent-handoff.md)를 사용합니다.
+이 파일은 **현재 상태·결정·다음 단계**를 관리하는 단일 마스터 보고서입니다. 날짜별 평가 수치와 한계는 [2026-11-28 독립 성능평가](RAG_EVALUATION_2026-11-28.md)에, 실제 API 스모크 결과는 [2026-11-28 Large API 스모크 보고서](RAG_LARGE_API_SMOKE_TEST_2026-11-28.md)에, 검색 고도화 A/B/C 평가는 [2026-11-28 검색 고도화 보고서](RAG_RETRIEVAL_QUALITY_UPGRADE_2026-11-28.md)에, PR #18 리뷰 반영 검증은 [2026-11-28 PR #18 리뷰 검증 보고서](RAG_PR18_REVIEW_VALIDATION_2026-11-28.md)에, v0.5/v0.5.1 T4 통합 검증은 [v0.5 통합 보고서](RAG_V0_5_INTEGRATION_2026-11-28.md) 및 [v0.5.1 팀 통합 보고서](RAG_V0_5_1_TEAM_INTEGRATION_2026-11-28.md)에, 기존 3종 실험의 상세 수치는 [v0.2 초기 구현 기록](rag-implementation-notes.md)에 보존합니다. Agent와의 함수 계약은 [T5 인계서](rag-agent-handoff.md)를 사용합니다.
 
 **원칙:** 이미 실행한 실험 결과는 덮어쓰지 않습니다. 각 단계의 **기준 SHA / 원문 판본 / 질의셋 / 실행 주체 / 실측·모의 구분 / 남은 위험 / 결정**을 함께 기록합니다. 새 테스트마다 이 파일의 상태만 갱신하고, 재현 가능한 실험 상세는 별도 날짜별 보고서로 추가합니다.
 
@@ -18,12 +18,12 @@
 | --- | --- | --- |
 | 가이드라인 검색 계약 | `GuidelineSearch.search(query, limit)`, `GuidelineHit` 등 공통 계약 유지 | 팀 공통 계약 파일 자체는 변경하지 않음 (`#21` T5 계약 합의 대기) |
 | 로컬 BM25 | 한글 조사·복합명사, 임상 단위 처리, 한영 질의 확장, 근거 역조회 | `#20` 반영: 승인 원문 누락·0청크 시 fail-closed(`ConfigError`) 전환 완료 |
-| Chroma + OpenAI 임베딩 | `text-embedding-3-small` / `text-embedding-3-large`, 코사인 검색 | **파일럿 주력 후보로 Large 제안**(팀 최종 확정 전). 스모크(`d99cd7e`: 3072차원, 1,142청크, 역조회 3/3) 완료 |
-| 출처 관리 | 출처 매니페스트, 승인 정책, SHA-256, PDF/XML 파서, 고유 `(doc_id, section)` | 등록된 5개 아티팩트 중 승인 4개; GLIM Clinical Nutrition PDF는 pending. `#23` 권고 번호 오귀속 검수 예정 |
-| 안전 재색인 | 버전별 새 색인 구축 → 무결성 검사 → 포인터 교체; 실패 시 기존 색인 보존 | 모의 장애 및 계약 테스트 통과 기록 (`#24` 예외/잠금 정리 예정) |
-| 평가 도구 | 질문·정답셋, BM25/Small/Large 비교, 지연·비용·OOS 분석 | Work 독립 평가 38문항; 독립셋 12문항으로 일반화 한계 |
+| Chroma + OpenAI 임베딩 | `text-embedding-3-small` / `text-embedding-3-large`, 코사인 검색 | **파일럿 주력 후보로 Large 제안**(팀 최종 확정 전). 스모크(`d99cd7e`: 3072차원, 1,142청크, 역조회 3/3) 및 v2.2 1,159청크 검증 완료 |
+| Hybrid Search + ONNX Reranker | BM25+Dense RRF(`hybrid`), `BAAI/bge-reranker-v2-m3` ONNX INT8(`hybrid_rerank`) | 38문항 오프라인 A/B/C: Exact Evidence@3 Large 40.7% → Hybrid 48.1% → BGE 59.3% (CPU 8.06초로 Reranker 선택형) |
+| 출처 관리 | 출처 매니페스트, 승인 정책, SHA-256, PDF/XML(GLIM 표 17청크 포함) 파서 | 등록 5종 중 승인 4종(`1,159`청크); GLIM CLNU PDF는 pending. `#23` 권고 번호 오귀속 검수 예정 |
+| 안전 검색·Agent Preview | `retrieval_guard.py`, `app/agent_preview/` 읽기 전용 미리보기 | CKD/약물 9/9 차단, 정상 9/9 비과차단, Fake `R20`/`R23` 공식 표시 차단, `NS01`/`NS02` 격리 검증 |
 | T5 실제 생성 Agent | **미구현·미연결** | 환자별 추천 생성, 근거 충실성 및 처방 보류 점수 미측정 (`#6`, `#21`) |
-| 팀 전체 서비스 | Draft PR [#18](https://github.com/AI-SMTP/NutriSight/pull/18) 제출(`75f122c`), `smalljiny` 리뷰 수령 | `75f122c` 623 passed, `develop` 병합 시험 662 passed(충돌 없음). Stage A(`#20`) 수정 브랜치에서 검증 및 재병합 시험 수행 |
+| 팀 전체 서비스 통합 | Draft PR [#18](https://github.com/AI-SMTP/NutriSight/pull/18) · [#27](https://github.com/AI-SMTP/NutriSight/pull/27) 등록; `develop@99d388e`(T4 `#26`) 동기화 검증 완료 | PR #18용 `sync/rag-pr18-develop-t4-20261128`(`cd52c69`: `pyright 0 errors`, `1,329+1 passed`), v0.5.1용 `sync/rag-v0-5-1-develop-t4-20261128`(`pyright 0 errors`, `1,406+1 passed`). 승인 전 PR head·`develop` 미변경 |
 
 ### 데이터 흐름 및 책임 경계
 
