@@ -34,7 +34,7 @@ export interface MealScreensLayoutProps {
 
 /**
  * 화면 ①② 공통 레이아웃 라우트. SSE 구독 Provider(api/events.tsx)를 두어 ①② 사이를 오가는 동안
- * 연결 하나를 유지한다. 역할 선택과 촬영 확인은 이 라우트 밖이라 구독하지 않는다(스펙 3.3절).
+ * 연결 하나를 유지한다. 역할 선택과 촬영 확인은 이 라우트 밖이라 구독하지 않는다(`docs/specs/frontend-shell-upload.md` 'SSE 구독').
  */
 export function MealScreensLayout({ connectEvents }: MealScreensLayoutProps) {
   return (

@@ -235,5 +235,5 @@ frontend/coverage/
 frontend/test-results/
 frontend/playwright-report/
 frontend/*.local
-# 번들 검사 보고서·모의 빌드 출력(Story 12)
+# 번들 검사 보고서·모의 빌드 출력(기본·모의 빌드의 MSW 포함 여부 검사)
 frontend/.build-report/

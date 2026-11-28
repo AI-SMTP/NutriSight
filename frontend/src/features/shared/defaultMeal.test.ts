@@ -1,4 +1,4 @@
-// 기본 끼니 시각 규칙(스펙 3.5절 화면 ① 1번: 10:30 전 아침, 15:30 전 점심, 그 뒤 저녁) 테스트.
+// 기본 끼니 시각 규칙(`docs/specs/frontend-shell-upload.md` '시연일 초기화': 10:30 전 아침, 15:30 전 점심, 그 뒤 저녁) 테스트.
 import { BREAKFAST_END, LUNCH_END, defaultMeal } from "./defaultMeal";
 
 /** 시연일의 로컬 시각 */

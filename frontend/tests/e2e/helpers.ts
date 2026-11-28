@@ -5,7 +5,7 @@ import { expect, type Locator, type Page } from "@playwright/test";
 /** 합성 식판 이미지(단색 도형, 실제 사진 아님) */
 export const TRAY_IMAGE = path.join(import.meta.dirname, "fixtures", "tray.jpg");
 
-/** 터치 최소 크기(스펙 3.7절 `--touch-min`) */
+/** 터치 최소 크기(`docs/specs/frontend-shell-upload.md` '디자인 토큰'의 `--touch-min`) */
 const TOUCH_MIN_PX = 44;
 
 /** 요소의 실제 크기가 가로·세로 모두 44px 이상인지 확인한다 */

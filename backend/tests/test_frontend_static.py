@@ -1,4 +1,6 @@
-"""빌드된 프론트엔드 정적 제공과 SPA 대체 응답 테스트(스펙 2절 응답 표, 3.8절 정책).
+"""빌드된 프론트엔드 정적 제공과 SPA 대체 응답 테스트.
+
+`docs/specs/frontend-shell-upload.md` '정적 제공과 SPA 대체 응답'의 응답 표와 정책을 검증한다.
 
 `TestClient(app)`를 `with` 없이 써서 lifespan(앱 잠금·자동 시드)을 건너뛴다. 정적 등록은
 `create_app()` 안에서 하므로 lifespan 없이도 검증된다.

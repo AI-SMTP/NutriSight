@@ -1,12 +1,12 @@
 /**
  * 브라우저(개발 모드) 모의 API 시작. `app/bootstrap.ts`가 `VITE_API_MOCK`일 때만 동적 import한다.
  *
- * - 정본: 스펙 3.2절(실행 모드·E2E 단계 제어), 3.4절(MSW 모의).
+ * - 정본: `docs/specs/frontend-shell-upload.md` '실행 모드'·'워커 실패 배너'·'MSW 처리 단계'.
  * - REST 핸들러(`handlers.ts`)와 `GET /api/events` SSE 핸들러로 서비스 워커를 시작한다.
  * - 시작에 성공한 뒤에만 런타임을 설치하고 `window.__nutrisightMock`을 만든다. 실패하면 예외를
  *   그대로 넘겨 부트스트랩이 배너를 띄우게 한다.
  * - MSW 3의 `worker.start()`는 서비스 워커를 쓸 수 없어도 예외 없이 fetch 가로채기로 대신 동작한다.
- *   그러면 HTTP로 접속한 실기기에서 배너 없이 모의 REST가 응답하므로(스펙 3.2절과 어긋남),
+ *   그러면 HTTP로 접속한 실기기에서 배너 없이 모의 REST가 응답하므로(참조 문서 '워커 실패 배너'와 어긋남),
  *   워커를 만들기 전에 보안 컨텍스트와 서비스 워커 API를 직접 확인한다.
  */
 import { setupWorker } from "msw/browser";

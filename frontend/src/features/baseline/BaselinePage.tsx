@@ -1,5 +1,5 @@
 /**
- * 화면 ① 기준 식전 사진(/baseline, 스펙 3.5절 화면 ①).
+ * 화면 ① 기준 식전 사진(/baseline, `docs/specs/frontend-shell-upload.md` '기준 사진 화면').
  * 영양사가 날짜·끼니를 고르고 배식 계획 6칸과 등록 상태를 보며 기준 식전 사진을 올린다.
  * 상태와 업로드 규칙은 `useBaselineScreen`에 있고, 이 파일은 그리기만 한다.
  * 조회 상태별 본문·안내 조각은 화면 ②와 함께 `features/shared`에서 가져온다.

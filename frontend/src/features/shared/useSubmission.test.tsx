@@ -1,4 +1,4 @@
-// 제출 요청 순번 훅 테스트(스펙 3.5절 "요청 대상 고정과 선택 전환 규칙").
+// 제출 요청 순번 훅 테스트(`docs/specs/frontend-shell-upload.md` '제출과 잠금 규칙'의 요청 대상 고정).
 // 응답 시점을 테스트가 정하도록 실제 요청 대신 직접 끝내는 약속(test/deferred)을 쓴다.
 import { act, renderHook } from "@testing-library/react";
 

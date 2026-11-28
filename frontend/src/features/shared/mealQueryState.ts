@@ -2,7 +2,7 @@
  * 끼니 조회 훅(`useMealQuery`)의 상태와 상태 전이 순수 함수.
  *
  * - 조회 결과 반영: 성공은 `ready`, 404는 `no_plan`, 그 밖의 실패는 보여 줄 데이터가 있으면
- *   `refreshError`(스펙 3.5절 나), 없으면 `unreachable`(가)이다.
+ *   `refreshError`(`docs/specs/frontend-shell-upload.md` '끼니 조회 순서 규칙'의 (나)), 없으면 `unreachable`(가)이다.
  * - 로컬 제출 완료 잠금: 대상 키마다 (그 순간의 선택, 그 순간의 마지막 조회 순번)을 남긴다.
  *   같은 선택에서 그 순번보다 뒤에 보낸 조회가 성공해 반영될 때만 지운다.
  * - 제출 성공 안내(`submitNotice`)와 잠금은 선택 전환·조회 실패와 관계없이 유지된다.

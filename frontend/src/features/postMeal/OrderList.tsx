@@ -1,6 +1,6 @@
 /**
- * 화면 ②의 환자 목록 겸 업로드 현황(스펙 3.5절 화면 ② 2·6번).
- * 발주 요약 배열 하나로 그린다(스펙 3.3절 `MealOrderSummary`). 항목은 "room · display_name"과 배지를 담은
+ * 화면 ②의 환자 목록 겸 업로드 현황(`docs/specs/frontend-shell-upload.md` '식후 사진 화면' 3번).
+ * 발주 요약 배열 하나로 그린다(참조 문서 '데이터 형식'의 `MealOrderSummary`). 항목은 "room · display_name"과 배지를 담은
  * 공용 `Button`이고, 금식·취소(`orderBadge(...).selectable === false`)는 회색 배지에 `disabled`다.
  * 머리글은 `summarizeOrders`의 "완료 x / y · 금식 n"이다.
  */

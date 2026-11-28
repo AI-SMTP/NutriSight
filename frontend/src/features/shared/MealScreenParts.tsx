@@ -1,6 +1,6 @@
 /**
  * 화면 ①② 공통 조각: "다시 시도" 안내, 조회 상태별 본문, 성공 안내 영역, 업로드 영역 틀, 요청 실패 안내.
- * 본문 규칙은 스펙 3.5절 공통 규칙(시연일 실패 → 로딩 → 404 → (가) → 데이터)을 따른다.
+ * 본문 규칙은 `docs/specs/frontend-shell-upload.md` '시연일 초기화'·'끼니 조회 순서 규칙'(시연일 실패 → 로딩 → 404 → (가) → 데이터)을 따른다.
  */
 import type { ReactNode, RefObject } from "react";
 
@@ -23,7 +23,7 @@ export function RetryMessage({ message, onRetry }: { message: string; onRetry: (
   );
 }
 
-/** 재조회 실패(스펙 3.5절 나) 안내. 보여 주던 데이터 위에 띄운다 */
+/** 재조회 실패(참조 문서 '끼니 조회 순서 규칙'의 (나)) 안내. 보여 주던 데이터 위에 띄운다 */
 export function RefreshErrorMessage({ query }: { query: MealQuery }) {
   if (!query.refreshError) return null;
   return <RetryMessage message={VIEW_MESSAGES.refreshFailed} onRetry={query.refetch} />;

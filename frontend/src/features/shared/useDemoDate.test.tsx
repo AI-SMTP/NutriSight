@@ -1,4 +1,4 @@
-// 시연일 초기화 훅 테스트(스펙 3.5절 공통 "시연일 초기화"). 기본 MSW 핸들러의 시연일은 2026-11-27이다.
+// 시연일 초기화 훅 테스트(`docs/specs/frontend-shell-upload.md` '시연일 초기화'). 기본 MSW 핸들러의 시연일은 2026-11-27이다.
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { http } from "msw";
 

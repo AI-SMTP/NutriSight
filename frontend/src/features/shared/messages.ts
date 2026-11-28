@@ -1,12 +1,13 @@
 /**
  * 화면 ①② 공통 문구.
- * - 조회 상태 안내(`VIEW_MESSAGES`): 스펙 3.5절 공통 규칙의 문구다. "불러오는 중…"만 Story 15의 제안이다.
- * - 업로드 공통 오류(`COMMON_UPLOAD_ERRORS`): 404·413은 스펙 3.3절, 422·네트워크는 계획 Story 15 완료 기준이
- *   제안한 문구다. 409·500 등 화면마다 다른 실패는 각 화면의 `messages.ts`가 `uploadErrorMessages`로 채운다.
+ * - 조회 상태 안내(`VIEW_MESSAGES`): 설계 단계에서 정한 문구다(`docs/specs/frontend-shell-upload.md` '끼니 조회 순서 규칙'·'시연일 초기화').
+ *   "불러오는 중…"만 구현 중 추가한 제안이다.
+ * - 업로드 공통 오류(`COMMON_UPLOAD_ERRORS`): 404·413은 설계 단계에서, 422·네트워크는 구현 중 제안한 문구다
+ *   (참조 문서 '오류 안내 문구'). 409·500 등 화면마다 다른 실패는 각 화면의 `messages.ts`가 `uploadErrorMessages`로 채운다.
  */
 import type { ApiErrorKind } from "../../api/provisional";
 
-/** 조회 상태 안내(스펙 3.5절 공통) */
+/** 조회 상태 안내(참조 문서 '오류 안내 문구'의 조회 상태 안내) */
 export const VIEW_MESSAGES = {
   demoDateFailed: "시연일을 불러오지 못했습니다",
   noPlan: "이 날짜·끼니의 배식 계획이 없습니다",

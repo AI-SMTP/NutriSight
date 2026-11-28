@@ -1,4 +1,4 @@
-// 화면 ② 식후 사진 테스트(스펙 3.5절 화면 ② 1~4·6번, 2절 완료 기준 ② 흐름).
+// 화면 ② 식후 사진 테스트(`docs/specs/frontend-shell-upload.md` '식후 사진 화면' 1~5·7번, '테스트와 E2E' 화면 ② 흐름).
 // 기본 MSW 핸들러와 픽스처를 쓴다. 점심: 기준 사진 있음, NS01 금식, NS03·NS08 미기록, NS04·NS09 처리 중,
 // NS02·NS07·NS10 완료, NS05 재촬영 필요, NS06 완료 · 전량 거부. 저녁: 기준 사진 없음, 모두 미기록.
 import { act, screen, waitFor } from "@testing-library/react";

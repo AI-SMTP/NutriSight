@@ -1,4 +1,5 @@
-// 화면 ① 오류 테스트(스펙 3.5절 공통 규칙, 2절 완료 기준의 오류 주입·시연일 실패·조회 경합).
+// 화면 ① 오류 테스트(`docs/specs/frontend-shell-upload.md` '끼니 조회 순서 규칙'·'제출과 잠금 규칙'·'시연일 초기화'·'테스트와 E2E'의
+// 오류 주입·시연일 실패·조회 경합).
 // 제출 중 이탈은 `BaselinePage.leave.test.tsx`에 있다.
 import { fireEvent, screen, waitFor } from "@testing-library/react";
 import userEvent, { type UserEvent } from "@testing-library/user-event";

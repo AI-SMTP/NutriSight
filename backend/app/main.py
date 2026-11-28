@@ -54,7 +54,7 @@ def _make_lifespan(settings: Settings) -> Lifespan:
 
 
 def _wants_spa_fallback(request: Request) -> bool:
-    """SPA 대체 응답 대상인지 판정한다: `/api` 밖, GET·HEAD, `Accept`에 `text/html`(스펙 3.8)."""
+    """SPA 대체 응답 대상인지 판정한다: `/api` 밖, GET·HEAD, `Accept`에 `text/html`."""
     path = request.url.path
     is_api = path == API_PREFIX or path.startswith(f"{API_PREFIX}/")
     return (
@@ -74,7 +74,8 @@ def _register_frontend(application: FastAPI, frontend_dist: Path) -> None:
 
     404 처리기는 앱 전역 `StarletteHTTPException` 처리기다. 나중에 같은 예외의 처리기를 등록하면
     서로 덮어쓰므로 `create_app` 끝(모든 라우트·처리기 등록 뒤)에서 부른다. `Accept` 판정은
-    스펙 3.8절대로 `text/html` 부분 문자열 포함 여부만 보고 q값은 해석하지 않는다.
+    설계상(`docs/specs/frontend-shell-upload.md` '정적 제공과 SPA 대체 응답') `text/html`
+    부분 문자열 포함 여부만 보고 q값은 해석하지 않는다.
     """
     dist = frontend_dist.resolve()
     index = dist / INDEX_FILE
@@ -115,7 +116,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         """서버가 응답하는지 확인한다."""
         return {"status": "ok"}
 
-    # 모든 `/api` 라우트를 등록한 뒤에 정적 제공을 건다(스펙 3.8).
+    # 모든 `/api` 라우트를 등록한 뒤에 정적 제공을 건다(참조 문서 '정적 제공과 SPA 대체 응답').
     _register_frontend(application, resolved.frontend_dist)
     return application
 

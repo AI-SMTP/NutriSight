@@ -89,7 +89,7 @@ describe("startMockApi", () => {
   });
 
   // MSW 3의 start()는 서비스 워커를 쓸 수 없으면 예외 없이 fetch 가로채기로 대신 동작한다.
-  // 그러면 HTTP 실기기에서 배너 없이 모의 REST가 응답하므로(스펙 3.2절 위반) 시작 전에 직접 확인한다.
+  // 그러면 HTTP 실기기에서 배너 없이 모의 REST가 응답하므로(워커 실패 배너 설계 위반) 시작 전에 직접 확인한다.
   it.each([
     ["보안 컨텍스트가 아니면(HTTP 실기기)", { secure: false, serviceWorker: true }],
     ["navigator.serviceWorker가 없으면", { secure: true, serviceWorker: false }],

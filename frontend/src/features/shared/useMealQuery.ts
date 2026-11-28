@@ -1,5 +1,6 @@
 /**
- * 끼니 조회 훅(스펙 3.5절 조회 순서 규칙·404·(가)·(나)·제출 성공 뒤 재조회 실패, 3.3절 SSE 재조회).
+ * 끼니 조회 훅(`docs/specs/frontend-shell-upload.md` '끼니 조회 순서 규칙'의 번호·404·(가)·(나), '제출과 잠금 규칙'의
+ * 제출 성공 뒤 재조회 실패, 'SSE 구독'의 SSE 재조회).
  *
  * - 시연일이 준비되지 않았으면(`date === null` 또는 `enabled === false`) 조회를 보내지 않는다.
  *   SSE `open`은 시연일·끼니가 준비되기 전에도 올 수 있으므로 그때의 재조회는 아무것도 하지 않는다.
@@ -45,7 +46,7 @@ export interface MealQueryOptions {
 export interface MealQuery {
   data: MealDetail | null;
   view: MealView;
-  /** 보여 주던 데이터가 있는데 재조회가 실패했는지(스펙 3.5절 나) */
+  /** 보여 주던 데이터가 있는데 재조회가 실패했는지(참조 문서 '끼니 조회 순서 규칙'의 (나)) */
   refreshError: boolean;
   /** 현재 선택을 다시 읽는다. 선택이 준비되지 않았으면 아무것도 하지 않는다 */
   refetch: () => void;

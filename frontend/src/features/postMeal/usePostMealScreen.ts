@@ -1,5 +1,5 @@
 /**
- * 화면 ② 상태 훅(스펙 3.5절 화면 ②, 공통 규칙).
+ * 화면 ② 상태 훅(`docs/specs/frontend-shell-upload.md` '식후 사진 화면', '끼니 조회 순서 규칙'·'제출과 잠금 규칙').
  *
  * - 선택: 날짜는 늘 시연일(`useDemoDate`)이고 끼니만 고른다(기본값은 화면에 들어온 순간의 시각 규칙).
  *   시연일이 준비되기 전에는 끼니를 조회하지 않는다. 환자는 `patient_id`로 기억하고, 지금 끼니 데이터에서
@@ -8,7 +8,7 @@
  *   잠금(대상 키 `meal_order_id`)이 걸린 발주도 기록할 수 없다.
  * - 업로드: `prepareUpload()` → `uploadPostPhoto`를 `useSubmission`으로 보낸다. 대상(날짜·끼니·환자·
  *   `meal_order_id`)과 사진을 요청 객체에 고정하고, 요청 중에는 끼니·환자·사진 입력·업로드를 막는다.
- *   성공하면 `markSubmitted` 뒤에 `refetch`를 부른다. 404·409면 그 끼니를 다시 읽는다(스펙 3.3절).
+ *   성공하면 `markSubmitted` 뒤에 `refetch`를 부른다. 404·409면 그 끼니를 다시 읽는다(참조 문서 '제출과 잠금 규칙').
  * - 사진 보관, 선택 변경 때 사진·오류 지우기, 성공 처리, 안내 필터(안내를 남긴 끼니를 볼 때만)는
  *   화면 ①과 같은 공용 `useUploadFlow`가 맡는다.
  * - `submission`은 화면에 하나다. 전량 기록(`useStaffZero`)도 같은 것을 써서 두 요청이 함께 막힌다.
@@ -48,7 +48,7 @@ interface PostPhotoRequest {
   file: File;
 }
 
-/** 성공하면 그 발주(`meal_order_id`)를 잠그고, 404·409면 다시 읽는다(스펙 3.3절) */
+/** 성공하면 그 발주(`meal_order_id`)를 잠그고, 404·409면 다시 읽는다(참조 문서 '제출과 잠금 규칙') */
 const POST_PHOTO_UPLOAD: UploadOptions<PostPhotoRequest> = {
   lockKey: (request) => request.mealOrderId,
   notice: (request) => uploadedNotice(request.displayName),

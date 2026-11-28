@@ -42,7 +42,8 @@ class Settings(BaseSettings):
     fake_intake_delay_s: float = Field(DEFAULT_FAKE_INTAKE_DELAY_S, ge=0)
     var_dir: Path = DEFAULT_VAR_DIR
     seed_path: Path = DEFAULT_SEED_PATH
-    # `pnpm build` 결과 디렉토리. `index.html`이 있을 때만 정적 제공을 켠다(스펙 3.8).
+    # `pnpm build` 결과 디렉토리. `index.html`이 있을 때만 정적 제공을 켠다
+    # (`docs/specs/frontend-shell-upload.md` '정적 제공과 SPA 대체 응답').
     frontend_dist: Path = DEFAULT_FRONTEND_DIST
     # 원문 그대로 둔다. 형식 검사는 `resolve_demo_date`가 한다(모듈 수준 앱 생성이 실패하지 않게).
     demo_date: str | None = None

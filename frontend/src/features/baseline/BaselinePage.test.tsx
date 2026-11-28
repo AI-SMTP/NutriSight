@@ -1,4 +1,4 @@
-// 화면 ① 기준 식전 사진 테스트(스펙 3.5절 화면 ① 1~5번, 2절 완료 기준 ① 흐름).
+// 화면 ① 기준 식전 사진 테스트(`docs/specs/frontend-shell-upload.md` '기준 사진 화면' 1~6번, '테스트와 E2E' 화면 ① 흐름).
 // 기본 MSW 핸들러와 픽스처(점심 기준 사진 있음, 저녁 없음)를 쓴다. 시계는 Date만 고정한다.
 import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";

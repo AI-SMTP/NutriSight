@@ -1,5 +1,5 @@
 // 화면 ② 배지·현황 규칙 (순수 함수).
-// 정본: 스펙 3.5절 화면 ② 배지 표, data-model.md 5절 "② 요양보호사 화면" 열.
+// 정본: `docs/specs/frontend-shell-upload.md` '배지 규칙' 표, data-model.md 5절 "② 요양보호사 화면" 열.
 // 필드 이름·값은 data-model.md의 meal_orders·photos를 따른다.
 
 /** 배지 계산에 필요한 발주 필드만 담은 구조 타입. API 응답 타입이 구조적으로 만족한다. */
@@ -41,7 +41,7 @@ const PROCESSING_PHOTO_STATUSES: ReadonlySet<string> = new Set([
 /** 5행(처리 중)에 해당하는 기록 상태 */
 const PROCESSING_RECORD_STATUSES: ReadonlySet<string> = new Set(["pending", "failed"]);
 
-/** 업로드·전량 기록을 허용하는 배지 (스펙 3.5절 임시 규칙) */
+/** 업로드·전량 기록을 허용하는 배지 (참조 문서 '제출과 잠금 규칙'의 업로드·전량 기록 임시 규칙) */
 const RECORDABLE_KINDS: ReadonlySet<BadgeKind> = new Set(["not_recorded", "retake"]);
 
 function makeBadge(kind: BadgeKind, label: string, selectable = true): OrderBadge {

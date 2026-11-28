@@ -1,5 +1,5 @@
 /**
- * 화면 ② 식후 사진(/post-meal, 스펙 3.5절 화면 ②).
+ * 화면 ② 식후 사진(/post-meal, `docs/specs/frontend-shell-upload.md` '식후 사진 화면').
  * 요양보호사가 오늘 세 끼 중 하나와 환자를 고르고 식후 사진을 올리며, 그 끼니의 업로드 현황을 본다.
  * 상태와 업로드 규칙은 `usePostMealScreen`에 있고, 이 파일은 그리기만 한다.
  * 전량 기록(전량 거부·전량 미섭취) 버튼과 확인 시트는 `StaffZeroSlot`이 그린다.

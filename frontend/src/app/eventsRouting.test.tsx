@@ -1,5 +1,5 @@
 // 라우트 전환에 따른 SSE 연결 수명 테스트. 실제 라우트(AppRoutes)를 MemoryRouter로 그리고,
-// 연결 함수는 모의 버스를 발행기로 쓰는 주입식 연결로 바꾼다(스펙 3.4절, 계획 T13.4).
+// 연결 함수는 모의 버스를 발행기로 쓰는 주입식 연결로 바꾼다(`docs/specs/frontend-shell-upload.md` 'SSE 구독').
 import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, useNavigate, type NavigateFunction } from "react-router";

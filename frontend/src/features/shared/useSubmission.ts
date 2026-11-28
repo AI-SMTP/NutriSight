@@ -1,5 +1,5 @@
 /**
- * 제출 요청 순번 훅(스펙 3.5절 "요청 대상 고정과 선택 전환 규칙").
+ * 제출 요청 순번 훅(`docs/specs/frontend-shell-upload.md` '제출과 잠금 규칙'의 요청 대상 고정).
  *
  * - `submit(target, run, handlers)`는 대상(날짜·끼니, ②는 환자와 `meal_order_id`)과 고른 사진을 얼린
  *   요청 객체로 고정해 `run`에 넘기고 요청 순번을 올린다. 요청 중에는 `busy`이며 새 제출을 받지 않는다.

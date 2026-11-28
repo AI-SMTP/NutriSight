@@ -54,7 +54,7 @@ test("화면 ②: 점심 NS03 식후 사진을 올리면 처리 중을 거쳐 �
   ).toBeVisible();
   await expect(ns03).toContainText("처리 중");
 
-  // finishAll()은 uploaded·queued·analyzing 어느 시점에 불러도 남은 단계를 끝낸다(계획 Story 10 계약)
+  // finishAll()은 uploaded·queued·analyzing 어느 시점에 불러도 남은 단계를 끝낸다(모의 런타임의 `finishAll()` 계약)
   await page.evaluate(() => window.__nutrisightMock?.finishAll());
   await expect(ns03).toContainText("완료");
 });

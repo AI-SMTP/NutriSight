@@ -19,7 +19,7 @@ import type { MockOrder, MockPhoto } from "./types";
 const STEP_MS = 100;
 const LUNCH_PLAN = `${DEMO_DATE}_lunch_general`;
 const DINNER_PLAN = `${DEMO_DATE}_dinner_general`;
-/** 처리 단계 전체(스펙 3.4절) */
+/** 처리 단계 전체(`docs/specs/frontend-shell-upload.md` 'MSW 처리 단계') */
 const FULL = [
   "uploaded",
   "queued",
@@ -147,7 +147,7 @@ describe("처리 단계(자동 진행)", () => {
   });
 });
 
-describe("기준 사진 등록·교체(스펙 2절 모의 핸들러 테스트)", () => {
+describe("기준 사진 등록·교체(모의 핸들러 테스트)", () => {
   useNodeFileForMultipart();
 
   it("analyzing 중 재등록하면 지금 처리를 마친 뒤 queued부터 한 번 더 처리한다", async () => {

@@ -1,5 +1,5 @@
 // 모든 CSS 모듈이 색·모서리·글꼴을 토큰 변수로만 쓰고, 누를 수 있는 요소가 --touch-min을 지키는지 확인한다.
-// jsdom은 레이아웃을 계산하지 않으므로 44px 실측은 Playwright에서 한다(Story 18).
+// jsdom은 레이아웃을 계산하지 않으므로 44px 실측은 Playwright E2E에서 한다.
 
 // Vitest는 CSS 처리를 끈 상태에서 `?raw` CSS import(import.meta.glob 포함)도 빈 프록시로 바꾸므로
 // node fs로 src 아래 모든 *.module.css를 직접 읽는다.

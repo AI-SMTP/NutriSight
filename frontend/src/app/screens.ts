@@ -1,4 +1,4 @@
-// 경로별 상단 표시(화면 제목·역할 배지). 역할은 화면 구분일 뿐 권한이 아니다(스펙 3.5절).
+// 경로별 상단 표시(화면 제목·역할 배지). 역할은 화면 구분일 뿐 권한이 아니다(`docs/specs/frontend-shell-upload.md` '라우트').
 import { matchPath } from "react-router";
 
 export type ScreenMeta = {

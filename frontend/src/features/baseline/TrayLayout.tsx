@@ -1,7 +1,7 @@
 import type { Slot } from "../../api/provisional";
 import styles from "./TrayLayout.module.css";
 
-/** 식판 배치(스펙 3.5절 화면 ① 2번): 윗줄 칸 3~6, 아랫줄 칸 1~2 */
+/** 식판 배치(`docs/specs/frontend-shell-upload.md` '기준 사진 화면' 2번): 윗줄 칸 3~6, 아랫줄 칸 1~2 */
 const ROWS: readonly { label: string; slotIds: readonly string[] }[] = [
   { label: "윗줄", slotIds: ["slot_3", "slot_4", "slot_5", "slot_6"] },
   { label: "아랫줄", slotIds: ["slot_1", "slot_2"] },

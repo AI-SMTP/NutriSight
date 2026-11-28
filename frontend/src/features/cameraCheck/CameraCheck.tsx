@@ -25,7 +25,7 @@ type Result = { status: "idle" } | { status: "converting" } | { status: "done"; 
 
 /**
  * 촬영 확인(/camera-check). API 없이 사진 입력·미리보기·업로드 전 변환 결과만 보여 준다.
- * 업로드·조회 요청과 SSE 구독을 하지 않는다(스펙 3.5절).
+ * 업로드·조회 요청과 SSE 구독을 하지 않는다(`docs/specs/frontend-shell-upload.md` '이미지 변환').
  */
 export function CameraCheck({ prepare = prepareUpload }: CameraCheckProps) {
   const [file, setFile] = useState<File | null>(null);

@@ -1,4 +1,5 @@
-// 화면 ② 배지·현황 규칙 테스트. 정본은 스펙 3.5절 화면 ② 배지 표(위에서부터 처음 맞는 행).
+// 화면 ② 배지·현황 규칙 테스트. 정본은 `docs/specs/frontend-shell-upload.md` '배지 규칙' 표
+// (위에서부터 처음 맞는 행).
 import {
   canRecord,
   orderBadge,

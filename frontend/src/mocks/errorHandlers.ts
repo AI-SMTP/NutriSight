@@ -1,5 +1,5 @@
 // 오류 시나리오 핸들러. 테스트가 `server.use(errorHandlers.postUpload("conflict"))`처럼 기본 핸들러 위에 얹는다.
-// 화면은 상태 코드로만 안내를 고르므로(스펙 3.3절) 본문은 FastAPI 기본 형태(`{detail}`)만 맞춘다.
+// 화면은 상태 코드로만 안내를 고르므로(`docs/specs/frontend-shell-upload.md` '임시 API 계약') 본문은 FastAPI 기본 형태(`{detail}`)만 맞춘다.
 import { http, HttpResponse, type HttpHandler } from "msw";
 
 import type { ApiErrorKind } from "../api/provisional";

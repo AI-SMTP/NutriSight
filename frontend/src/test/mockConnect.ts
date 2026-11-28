@@ -1,6 +1,6 @@
 // SSE 구독 테스트 도우미: `EventSource` 대신 모의 이벤트 버스를 발행기로 쓰는 연결 함수.
 // jsdom·node에는 `EventSource`가 없으므로 Vitest는 이 연결을 `SystemEventsProvider`에 주입한다
-// (스펙 3.4절 마지막 항목, 계획 구현 전제의 MSW 이벤트 경로).
+// (`docs/specs/frontend-shell-upload.md` 'SSE 구독'의 마지막 항목, MSW 이벤트 경로).
 import { PHOTO_STATUS_CHANGED_EVENT } from "../api/provisional";
 import type { SystemEventSource } from "../api/events";
 import { eventBus as sharedBus, type EventBus } from "../mocks/eventBus";

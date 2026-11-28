@@ -1,7 +1,8 @@
 /**
  * 모의 처리 단계의 상태 전이(순수 함수). 받은 상태를 고치지 않고 새 상태를 돌려준다.
  *
- * - 정본: 스펙 3.4절(처리 단계 순서, 기준 사진 최초 등록·교체 규칙, 사진 상태 ↔ `record_status` 대응),
+ * - 정본: `docs/specs/frontend-shell-upload.md` 'MSW 처리 단계'·'기준 사진 교체와 재분석 예약'(처리 단계 순서, 기준 사진 최초
+ *   등록·교체 규칙, 사진 상태 ↔ `record_status` 대응),
  *   시스템 구조 4절 상태 표, 8-1절 `photo.status_changed` 데이터.
  * - 단계: `uploaded → queued → analyzing(intake) → analyzing(nutrition) → analyzing(alert) → done`.
  *   `recommendation` 단계는 경고 수준이 오를 때만 있으므로 모의에서는 거치지 않는다.
@@ -118,7 +119,7 @@ export function postPhotoEvent(
   return photo.status === "done" ? { ...event, outcome: "no_change" } : event;
 }
 
-/** 기준 사진 저장 직후의 이벤트(스펙 3.4절, 시스템 구조 3-1절 4단계) */
+/** 기준 사진 저장 직후의 이벤트(참조 문서 'MSW 처리 단계', 시스템 구조 3-1절 4단계) */
 export function baselineEvent(photo: MockPhoto, at: string): PhotoStatusChangedEvent {
   return {
     photo_id: photo.photo_id,

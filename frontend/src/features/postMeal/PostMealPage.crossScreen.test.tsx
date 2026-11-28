@@ -1,5 +1,5 @@
-// 화면 ①② 연동 모의 테스트(스펙 2절 완료 기준의 "모의 테스트", 3.4절 기준 사진 등록·교체 규칙, 3.3절 SSE 연결과
-// 조회 순서). 한 테스트 안에서 화면 ①(/baseline)과 화면 ②(/post-meal)를 함께 그려 같은 모의 상태·이벤트 버스를
+// 화면 ①② 연동 모의 테스트(`docs/specs/frontend-shell-upload.md` '테스트와 E2E'의 화면 ①② 연동, 'MSW 처리 단계'·
+// '기준 사진 교체와 재분석 예약'의 기준 사진 등록·교체 규칙, 'SSE 구독'의 SSE 연결과 조회 순서). 한 테스트 안에서 화면 ①(/baseline)과 화면 ②(/post-meal)를 함께 그려 같은 모의 상태·이벤트 버스를
 // 쓴다. 두 화면은 각자 SSE 모의 연결을 가지며, `open`을 보낸 연결만 버스 이벤트를 받는다.
 // 같은 라벨의 입력이 두 화면에 있으므로 화면 ①의 입력은 그 화면의 컨테이너 안에서 찾는다.
 import { act, screen, waitFor, within, type RenderResult } from "@testing-library/react";

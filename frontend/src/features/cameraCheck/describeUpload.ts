@@ -1,4 +1,4 @@
-// /camera-check 결과 문구(스펙 3.5절). 값은 모두 prepareUpload()의 PreparedUpload에서 읽는다.
+// /camera-check 결과 문구(`docs/specs/frontend-shell-upload.md` '이미지 변환'). 값은 모두 prepareUpload()의 PreparedUpload에서 읽는다.
 import { formatBytes } from "../../lib/format";
 import type { PreparedUpload } from "../../lib/image";
 

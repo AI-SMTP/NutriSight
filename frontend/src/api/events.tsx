@@ -1,7 +1,7 @@
 /**
  * 시스템 이벤트(SSE) 구독 Provider와 `useSystemEvents` 훅.
  *
- * - 정본: 스펙 3.3절(SSE 구독)·3.4절(Vitest의 주입식 구독)·3.5절(SSE를 받으면 재조회).
+ * - 정본: `docs/specs/frontend-shell-upload.md` 'SSE 구독'(Vitest의 주입식 구독 포함)·'끼니 조회 순서 규칙'(SSE를 받으면 재조회).
  * - 화면 ①②의 공통 레이아웃에 Provider 하나를 두고, 그 Provider가 마운트된 동안 연결 하나를 연다.
  *   레이아웃 안에서 화면을 오가도 연결은 그대로이고, 레이아웃을 벗어나면 `close()`한다.
  * - 구독 화면에는 `photo.status_changed` 데이터와 연결 `open`(첫 연결·재연결 모두)을 알린다.

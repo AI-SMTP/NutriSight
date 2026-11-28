@@ -1,5 +1,5 @@
 /**
- * 기본 끼니 시각 규칙(스펙 3.5절 화면 ① 1번, 화면 ②도 같다).
+ * 기본 끼니 시각 규칙(`docs/specs/frontend-shell-upload.md` '시연일 초기화', 화면 ①②가 같다).
  * 10:30 전은 아침, 15:30 전은 점심, 그 뒤는 저녁이다. 시각은 기기의 로컬 시각으로 본다.
  */
 import type { Meal } from "../../api/provisional";

@@ -1,6 +1,6 @@
 /// <reference types="vite/client" />
 
-// 앱이 읽는 Vite 환경 변수(스펙 3.2절). 값이 없으면 `undefined`다.
+// 앱이 읽는 Vite 환경 변수(`docs/specs/frontend-shell-upload.md` '실행 모드'). 값이 없으면 `undefined`다.
 interface ImportMetaEnv {
   /** 있으면 MSW 워커로 임시 계약을 모의한다(`pnpm dev:mock`) */
   readonly VITE_API_MOCK?: string;

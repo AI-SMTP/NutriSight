@@ -1,7 +1,7 @@
 /**
  * 앱 부트스트랩. 모의 API 모드면 MSW 워커 시작을 기다린 뒤 렌더하고, 실패하면 배너와 함께 렌더한다.
  *
- * - 정본: 스펙 3.2절(실행 모드·실기기 접속·MSW 워커 실패 배너), 3.5절(`/camera-check`).
+ * - 정본: `docs/specs/frontend-shell-upload.md` '실행 모드'·'워커 실패 배너', '이미지 변환'(`/camera-check`).
  * - `main.tsx`는 이 함수만 부른다. 분기는 모두 여기에 두어 테스트한다.
  * - 모의 코드(`mocks/browser`)는 `VITE_API_MOCK`이 있을 때만 동적 import한다. 기본 빌드에서는
  *   조건이 상수 거짓이 되어 import가 빠지므로 MSW 코드가 번들에 들어가지 않는다.
@@ -36,7 +36,7 @@ async function startMockApiIfEnabled(load: MockApiLoader | null): Promise<boolea
     return true;
   } catch {
     // 보안 컨텍스트가 아니면(HTTP로 접속한 실기기) 서비스 워커 등록이 실패한다.
-    // 앱은 그대로 렌더하고 배너로 알린다(스펙 3.2절). 원인은 배너 문구로만 보인다.
+    // 앱은 그대로 렌더하고 배너로 알린다(참조 문서 '워커 실패 배너'). 원인은 배너 문구로만 보인다.
     return false;
   }
 }

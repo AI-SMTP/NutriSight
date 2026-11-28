@@ -1,8 +1,8 @@
 /**
  * 화면 ①②(기준 식전 사진·식후 사진)의 임시 API 계약.
  *
- * - 정본: 스펙 `docs/_local/active/frontend-shell-upload/spec.md` 3.3절 "임시 계약" 표와 그 아래 항목.
- *   필드 이름과 상태 값은 `docs/data-model.md`를 따른다. 이 파일과 스펙이 어긋나면 스펙을 기준으로 고친다.
+ * - 정본: `docs/specs/frontend-shell-upload.md` '임시 API 계약' 표와 그 아래 항목.
+ *   필드 이름과 상태 값은 `docs/data-model.md`를 따른다. 이 파일과 참조 문서가 어긋나면 참조 문서를 기준으로 고친다.
  * - 화면·훅은 `fetch`를 직접 부르지 않고 이 파일의 함수만 부른다. 오류는 `ApiError.kind`(상태 코드
  *   기반 분류)로만 판단하고 서버 본문의 `detail`에 의존하지 않는다.
  * - T3 연결 시 교체 절차: (1) T3 라우터가 생기면 `pnpm gen:api`로 `generated/schema.d.ts`를 다시 만든다.
@@ -33,7 +33,7 @@ export type PhotoStage = "intake" | "nutrition" | "alert" | "recommendation";
 /** 식후 사진 처리 결과 (`photos.outcome`). `done`일 때만 남는다 */
 export type PhotoOutcome = "no_change" | "alert_changed" | "warning_raised";
 
-// ── 요청·응답 타입 (스펙 3.3절 표) ───────────────────────────────────────
+// ── 요청·응답 타입 (참조 문서 '임시 API 계약' 표) ─────────────────────────
 
 /** 배식 계획 한 칸 (`meal_plan_slots`). 미배식 칸이면 `menu_name = null`, `served_g = 0` */
 export interface Slot {
@@ -220,7 +220,7 @@ function photoForm(blob: Blob): FormData {
   return form;
 }
 
-// ── 호출 함수 (스펙 3.3절 표) ────────────────────────────────────────────
+// ── 호출 함수 (참조 문서 '임시 API 계약' 표) ──────────────────────────────
 
 /** `GET /api/meta` — 시연일 */
 export async function getMeta(): Promise<MetaResponse> {

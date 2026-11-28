@@ -13,7 +13,7 @@ export interface AppRoutesProps {
   connectEvents?: ConnectSystemEvents;
 }
 
-/** 경로 4개(스펙 3.5절). 화면 ①②는 공통 레이아웃 라우트 아래에 둔다. */
+/** 경로 4개(`docs/specs/frontend-shell-upload.md` '라우트'). 화면 ①②는 공통 레이아웃 라우트 아래에 둔다. */
 export function AppRoutes({ connectEvents }: AppRoutesProps = {}) {
   return (
     <Routes>

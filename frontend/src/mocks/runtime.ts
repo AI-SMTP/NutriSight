@@ -2,7 +2,8 @@
  * 모의 처리 단계 런타임. 식후 사진 작업을 단계 타이머로 진행하고, 단계마다 `mockState`를 바꾸며
  * 모의 이벤트 버스에 `photo.status_changed`를 발행한다. 기준 사진 등록·교체 때 재처리 규칙을 적용한다.
  *
- * - 정본: 스펙 3.2절(E2E 단계 제어), 3.4절(처리 단계·기준 사진 규칙·이벤트), 계획 구현 전제의 `finishAll()` 계약.
+ * - 정본: `docs/specs/frontend-shell-upload.md` 'MSW 처리 단계'·'기준 사진 교체와 재분석 예약'(처리 단계·기준 사진 규칙·이벤트),
+ *   'finishAll과 reset'(E2E 단계 제어와 `finishAll()` 계약).
  * - 작업(job)은 단계 진행 중인 식후 사진 하나다. `waiting_baseline` 사진은 작업이 아니다(기준 사진 등록 때 시작).
  * - 수동 모드(`manualSteps`)는 매 처리의 첫 `analyzing(intake)`에서 멈춘다. `finishAll()`은 정지 여부와
  *   무관하게 호출 시점의 작업 전부를 재분석 예약까지 끝낸다.

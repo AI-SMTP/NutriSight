@@ -1,5 +1,5 @@
-// 화면 ② 전량 기록 버튼 활성·비활성 테스트(스펙 3.5절 업로드·전량 기록 임시 규칙, 시연일 초기화,
-// 요청 대상 고정과 선택 전환 규칙). 버튼은 미기록·재촬영 필요 환자를 골랐고 요청이 없을 때만 열린다.
+// 화면 ② 전량 기록 버튼 활성·비활성 테스트(`docs/specs/frontend-shell-upload.md` '제출과 잠금 규칙'의 업로드·전량 기록 임시 규칙과
+// 요청 대상 고정, '시연일 초기화'). 버튼은 미기록·재촬영 필요 환자를 골랐고 요청이 없을 때만 열린다.
 import { act, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 

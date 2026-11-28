@@ -1,5 +1,5 @@
-// 화면 ② 전량 기록 테스트(스펙 3.5절 화면 ② 5번 "사진 없이 기록", 3.3절 409·404 공통 안내,
-// 2절 완료 기준의 전량 기록 오류 주입과 제출 성공 뒤 재조회 실패).
+// 화면 ② 전량 기록 테스트(`docs/specs/frontend-shell-upload.md` '식후 사진 화면' 6번 "사진 없이 기록", '오류 안내 문구'의
+// 409·404 공통 안내, '테스트와 E2E'의 전량 기록 오류 주입과 제출 성공 뒤 재조회 실패).
 // 버튼 활성·비활성은 `PostMealPage.staffZeroGuard.test.tsx`, 이탈은 `PostMealPage.leave.test.tsx`에 있다.
 import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent, { type UserEvent } from "@testing-library/user-event";

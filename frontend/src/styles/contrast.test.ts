@@ -1,4 +1,4 @@
-// 글자·배경 색 조합의 WCAG 2 대비를 tokens.css 값으로 계산해 4.5:1 이상인지 확인한다(스펙 3.5절).
+// 글자·배경 색 조합의 WCAG 2 대비를 tokens.css 값으로 계산해 4.5:1 이상인지 확인한다(`docs/specs/frontend-shell-upload.md` '테스트와 E2E').
 // 배지 조합은 Badge.module.css의 tone 규칙에서 읽어, 배지 색을 바꾸면 이 테스트가 함께 검사한다.
 // Vitest는 CSS 처리를 끈 상태에서 `?raw` CSS import도 빈 프록시로 바꾸므로 node fs로 직접 읽는다.
 /// <reference types="node" />

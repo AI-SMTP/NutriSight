@@ -1,4 +1,5 @@
-// 끼니 조회 훅 테스트(스펙 3.5절 조회 순서 규칙·404·(가)·(나)·제출 성공 뒤 재조회 실패, 3.4절 SSE 재조회).
+// 끼니 조회 훅 테스트(`docs/specs/frontend-shell-upload.md` '끼니 조회 순서 규칙'의 번호·404·(가)·(나), '제출과 잠금 규칙'의
+// 제출 성공 뒤 재조회 실패, 'SSE 구독'의 SSE 재조회).
 // 조회 응답 시점은 heldRequests 도우미로 테스트가 정하고, 요청 수는 MSW 요청 기록으로 센다.
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
