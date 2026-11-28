@@ -2,13 +2,16 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
 from pathlib import Path
 
 import pytest
 
-from app.config import Settings
+from app.config import ConfigError, Settings
 from app.main import create_app
 from app.recommender.bm25_search import Bm25GuidelineSearch, tokenize
+from app.recommender.fake_guideline import FakeGuidelineSearch
 from app.recommender.rag_sources import GuidelineChunk
 from tests.contracts.guideline import GuidelineSearchContract
 
@@ -155,14 +158,191 @@ async def test_bm25_returns_empty_for_blank_or_unmatched_query() -> None:
     assert await searcher.search("스마트폰 충전 케이블") == ()
 
 
-def test_wiring_selects_bm25_implementation(
+def _write_bm25_fixture(
+    tmp_path: Path,
+    *,
+    xml_body: str = (
+        "<article><body><sec><title>Nutrition Care</title>"
+        "<p>Older adults with malnutrition risk should receive food fortification "
+        "and oral nutritional supplements providing 400 kcal and 30 g protein daily.</p>"
+        "</sec></body></article>"
+    ),
+    write_approved_file: bool = True,
+    review_status: str = "approved",
+    override_sha256: str | None = None,
+    raw_bytes_override: bytes | None = None,
+    extra_artifacts: list[dict[str, object]] | None = None,
+) -> tuple[Path, Path]:
+    sources_dir = tmp_path / "rag_sources"
+    rel_path = "glim-2025/sample-guideline.xml"
+    file_path = sources_dir / rel_path
+    payload = raw_bytes_override if raw_bytes_override is not None else xml_body.encode("utf-8")
+    actual_sha = hashlib.sha256(payload).hexdigest()
+    if write_approved_file:
+        file_path.parent.mkdir(parents=True, exist_ok=True)
+        file_path.write_bytes(payload)
+    else:
+        sources_dir.mkdir(parents=True, exist_ok=True)
+
+    artifacts: list[dict[str, object]] = [
+        {
+            "artifact_id": "sample_guideline_xml",
+            "doc_id": "glim_2025",
+            "document_title": "Sample Approved Guideline",
+            "publisher": "Test Society",
+            "published_year_or_edition": "2025",
+            "relative_path": rel_path,
+            "format": "xml",
+            "source_url": "https://example.org/sample-guideline",
+            "language": "en",
+            "expected_sha256": (
+                override_sha256
+                if override_sha256 is not None
+                else (actual_sha if review_status == "approved" else None)
+            ),
+            "review_status": review_status,
+        }
+    ]
+    if extra_artifacts:
+        artifacts.extend(extra_artifacts)
+
+    manifest_path = tmp_path / "manifest.json"
+    manifest_path.write_text(
+        json.dumps({"manifest_version": "test-1.0", "artifacts": artifacts}, ensure_ascii=False),
+        encoding="utf-8",
+    )
+    return sources_dir, manifest_path
+
+
+def test_wiring_bm25_fails_closed_when_all_approved_sources_missing(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.setenv("RAG_SOURCES_DIR", str(tmp_path))
 
-    app = create_app(Settings(_env_file=None, guideline_search="bm25"))
+    with pytest.raises(ConfigError, match="원문 파일 누락"):
+        create_app(Settings(_env_file=None, guideline_search="bm25"))
 
-    assert isinstance(app.state.guideline_search, Bm25GuidelineSearch)
+
+def test_wiring_bm25_fails_closed_when_partial_approved_source_missing(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    sources_dir, manifest_path = _write_bm25_fixture(
+        tmp_path,
+        extra_artifacts=[
+            {
+                "artifact_id": "missing_approved_pdf",
+                "doc_id": "espen_geriatrics",
+                "document_title": "Missing Approved PDF",
+                "publisher": "ESPEN",
+                "published_year_or_edition": "2022",
+                "relative_path": "espen-geriatrics/missing.pdf",
+                "format": "pdf",
+                "source_url": "https://example.org/missing.pdf",
+                "language": "en",
+                "expected_sha256": "a" * 64,
+                "review_status": "approved",
+            }
+        ],
+    )
+    monkeypatch.setenv("RAG_SOURCES_DIR", str(sources_dir))
+    monkeypatch.setenv("RAG_MANIFEST_PATH", str(manifest_path))
+
+    with pytest.raises(ConfigError, match="missing_approved_pdf"):
+        create_app(Settings(_env_file=None, guideline_search="bm25"))
+
+
+def test_wiring_bm25_fails_closed_when_approved_source_has_zero_chunks(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    sources_dir, manifest_path = _write_bm25_fixture(
+        tmp_path,
+        xml_body="<article><body><sec><title></title><p>   </p></sec></body></article>",
+    )
+    monkeypatch.setenv("RAG_SOURCES_DIR", str(sources_dir))
+    monkeypatch.setenv("RAG_MANIFEST_PATH", str(manifest_path))
+
+    with pytest.raises(ConfigError, match="추출된 청크가 0개"):
+        create_app(Settings(_env_file=None, guideline_search="bm25"))
+
+
+def test_wiring_bm25_fails_closed_when_manifest_has_only_pending_sources(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    sources_dir, manifest_path = _write_bm25_fixture(tmp_path, review_status="pending")
+    monkeypatch.setenv("RAG_SOURCES_DIR", str(sources_dir))
+    monkeypatch.setenv("RAG_MANIFEST_PATH", str(manifest_path))
+
+    with pytest.raises(ConfigError, match="청크가 0개"):
+        create_app(Settings(_env_file=None, guideline_search="bm25"))
+
+
+def test_wiring_bm25_fails_closed_on_hash_mismatch_and_invalid_format(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    sources_dir, manifest_path = _write_bm25_fixture(
+        tmp_path / "hash_case",
+        override_sha256="0" * 64,
+    )
+    monkeypatch.setenv("RAG_SOURCES_DIR", str(sources_dir))
+    monkeypatch.setenv("RAG_MANIFEST_PATH", str(manifest_path))
+    with pytest.raises(ConfigError, match="SHA-256 판본 불일치"):
+        create_app(Settings(_env_file=None, guideline_search="bm25"))
+
+    bad_sources_dir, bad_manifest_path = _write_bm25_fixture(
+        tmp_path / "format_case",
+        raw_bytes_override=b"NOT_AN_XML_FILE_CONTENT",
+    )
+    monkeypatch.setenv("RAG_SOURCES_DIR", str(bad_sources_dir))
+    monkeypatch.setenv("RAG_MANIFEST_PATH", str(bad_manifest_path))
+    with pytest.raises(ConfigError, match="형식 불일치"):
+        create_app(Settings(_env_file=None, guideline_search="bm25"))
+
+
+async def test_wiring_bm25_succeeds_with_valid_approved_and_missing_pending(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    sources_dir, manifest_path = _write_bm25_fixture(
+        tmp_path,
+        extra_artifacts=[
+            {
+                "artifact_id": "pending_missing_pdf",
+                "doc_id": "glim_2025",
+                "document_title": "Pending Missing PDF",
+                "publisher": "GLIM",
+                "published_year_or_edition": "2025",
+                "relative_path": "glim-2025/pending-missing.pdf",
+                "format": "pdf",
+                "source_url": "https://example.org/pending.pdf",
+                "language": "en",
+                "expected_sha256": None,
+                "review_status": "pending",
+            }
+        ],
+    )
+    monkeypatch.setenv("RAG_SOURCES_DIR", str(sources_dir))
+    monkeypatch.setenv("RAG_MANIFEST_PATH", str(manifest_path))
+
+    app = create_app(Settings(_env_file=None, guideline_search="bm25"))
+    searcher = app.state.guideline_search
+    assert isinstance(searcher, Bm25GuidelineSearch)
+
+    hits = await searcher.search("food fortification oral nutritional supplements", limit=3)
+    assert len(hits) == 1
+    assert hits[0].doc_id == "glim_2025"
+
+    resolved = await searcher.resolve_evidence(hits[0].doc_id, hits[0].section)
+    assert resolved == hits[0]
+    assert await searcher.search("스마트폰 충전 케이블", limit=3) == ()
+
+
+def test_fake_default_startup_unaffected_without_sources(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("RAG_SOURCES_DIR", str(tmp_path))
+
+    app = create_app(Settings(_env_file=None))
+
+    assert isinstance(app.state.guideline_search, FakeGuidelineSearch)
 
 
 async def test_bm25_cross_lingual_dementia_and_dehydration_queries() -> None:

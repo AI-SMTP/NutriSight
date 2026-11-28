@@ -200,12 +200,18 @@ class Bm25GuidelineSearch:
         enable_bilingual_expand: bool = True,
     ) -> Bm25GuidelineSearch:
         """매니페스트 승인 정책을 통과한 원문에서 BM25 색인을 구성한다."""
-        chunks, _ = load_guideline_chunks(
-            sources_dir or DEFAULT_SOURCES_DIR,
+        resolved_dir = sources_dir or DEFAULT_SOURCES_DIR
+        chunks, report = load_guideline_chunks(
+            resolved_dir,
             manifest_path=manifest_path,
             require_approved=require_approved,
             fail_on_approved_issue=True,
         )
+        if not chunks:
+            raise ValueError(
+                f"BM25 색인을 구성할 승인 원문 청크가 0개입니다: {resolved_dir} "
+                f"(미승인/누락={report.get('missing_or_unapproved_doc_ids')})"
+            )
         return cls(chunks, min_score=min_score, enable_bilingual_expand=enable_bilingual_expand)
 
     def _score(self, query_terms: Sequence[str], doc_idx: int) -> float:
