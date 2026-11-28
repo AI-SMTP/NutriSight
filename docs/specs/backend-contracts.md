@@ -14,8 +14,8 @@
 backend/
   pyproject.toml · uv.lock · .python-version (3.12)
   app/
-    main.py                          create_app(settings=None), GET /api/health, lifespan(앱 잠금·자동 시드)
-    config.py                        Settings, ConfigError, StoragePaths, resolve_demo_date()
+    main.py                          create_app(settings=None), GET /api/health, lifespan(앱 잠금·자동 시드), 프론트엔드 정적 제공
+    config.py                        Settings(frontend_dist 포함), ConfigError, StoragePaths, resolve_demo_date()
     wiring.py                        계약별 이름 등록부, build_components()
     intake/types.py                  IntakeEstimator 계약
     intake/fake.py                   FakeEstimator
@@ -27,11 +27,12 @@ backend/
     services/fake_patient_data.py    FakePatientData
     storage/                         SQLite 저장소·시드·리셋 (docs/specs/storage-seed.md)
   scripts/seed.py                    리셋 CLI
+  scripts/export_openapi.py          OpenAPI 스키마를 JSON으로 내보내는 CLI (프론트엔드 생성 타입 입력)
   tests/
     conftest.py                      설정 환경 변수 고정
     contracts/{intake,nutrition,guideline,patient_data}.py   계약 테스트 기반 클래스
     test_fake_*.py                   Fake별 계약 하위 클래스 + Fake 전용 테스트
-    test_config.py · test_wiring.py · test_health.py
+    test_config.py · test_wiring.py · test_health.py · test_frontend_static.py · test_export_openapi.py
 ```
 
 ### 공통 규칙
@@ -121,12 +122,15 @@ uv run ruff check && uv run ruff format --check
 uv run pytest --cov=app
 uv run fastapi dev        # http://127.0.0.1:8000/api/health → 200 (var/app.db가 없으면 시드를 적재한다)
 uv run python -m scripts.seed   # 앱을 끈 상태에서 DB 리셋
+uv run python -m scripts.export_openapi   # frontend/src/api/generated/openapi.json 갱신
 ```
+
+`FRONTEND_DIST`(기본 `<저장소 루트>/frontend/dist`, 상대 경로는 저장소 루트 기준)에 `index.html`이 있으면 `create_app()`이 모든 `/api` 라우터 뒤에 빌드 결과를 정적 파일로 제공한다. `/api`가 아니고 GET·HEAD이며 `Accept`에 `text/html`이 있는 404에만 `index.html`을 대체 응답으로 주고, `/api`의 404·405는 JSON 그대로 둔다. `index.html`이 없으면 등록하지 않고 INFO 로그만 남긴다. 상세는 `docs/specs/frontend-shell-upload.md`.
 
 ## 제약사항
 
 - Python 3.12 계열만 지원한다(`requires-python = ">=3.12,<3.13"`). 의존성 버전은 `uv.lock`으로 고정한다.
-- HTTP 엔드포인트는 `GET /api/health`뿐이다. SQLite 저장소와 시드는 있지만(`docs/specs/storage-seed.md`) 업무 API, 이벤트·SSE, 에이전트, 실제 VLM·영양 규칙·가이드라인 검색, 프론트엔드는 후속 토픽과 병행 트랙에서 붙인다.
+- HTTP 엔드포인트는 `GET /api/health`뿐이다(그 밖에는 프론트엔드 정적 제공). SQLite 저장소와 시드는 있지만(`docs/specs/storage-seed.md`) 업무 API, 이벤트·SSE, 에이전트, 실제 VLM·영양 규칙·가이드라인 검색은 후속 토픽과 병행 트랙에서 붙인다. 프론트엔드 화면 ①②는 임시 계약과 MSW 모의로 동작한다(`docs/specs/frontend-shell-upload.md`).
 - 접근 제어와 rate limiting이 없다(파일럿 전제). 서버는 기본 호스트 `127.0.0.1`로 띄운다.
 - `EstimationRequest`의 이미지 경로는 계약 단계에서 검증하지 않는다. 사진을 실제로 여는 구현(VLM 어댑터·업로드 API)은 경로가 `var/photos/` 안인지 확인하고 이미지 내용을 검증해야 한다.
 - 타입 검사기(mypy·pyright), CI, Docker는 쓰지 않는다.
