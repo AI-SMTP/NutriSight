@@ -45,8 +45,9 @@ CHROMA_FAIL_NO_KEY: GuidelineSearchError True
 ```
 - `uv sync --locked`: **PASS** (113 packages)
 - `uv run ruff check .` / `uv run ruff format --check .`: **PASS** (0 errors, 72 files formatted)
-- `uv run pytest -q` (`fix/rag-issue20-fail-closed`): **629 passed**, 0 failed, 0 skipped (63.33s; 기존 623 passed 대비 +6 net tests)
-- `upstream/develop@9d56fbc` 로컬 임시 병합 시험: 별도 임시 worktree에서 충돌 여부 및 전체 pytest 검증 수행 (아래 3절·커밋 반영 결과 참조)
+- `uv run pytest -q` (`fix/rag-issue20-fail-closed`): **630 passed**, 0 failed, 0 skipped (50.12s; 기존 623 passed 대비 +7 net tests)
+- `upstream/develop@9d56fbc` 로컬 임시 병합 시험: 충돌 **0건**(`668 passed`, P2 테스트 1건 추가 전 `893ea15` 기준; P2 추가는 `test_bm25_search.py` 테스트 격리만 보강)
+- **Codex CLI (`gpt-6.2-sol`) 교차검수**: `PASS WITH MINOR NOTES` (P0/P1 결함 **0건**; P2 환경변수 격리 및 잘못된 매니페스트/`RAG_BM25_MIN_SCORE` `ConfigError` 변환 테스트 보완 반영 완료)
 
 ---
 

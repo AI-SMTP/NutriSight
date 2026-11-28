@@ -217,9 +217,33 @@ def _write_bm25_fixture(
 def test_wiring_bm25_fails_closed_when_all_approved_sources_missing(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    monkeypatch.setenv("RAG_SOURCES_DIR", str(tmp_path))
+    sources_dir, manifest_path = _write_bm25_fixture(tmp_path, write_approved_file=False)
+    monkeypatch.setenv("RAG_SOURCES_DIR", str(sources_dir))
+    monkeypatch.setenv("RAG_MANIFEST_PATH", str(manifest_path))
 
     with pytest.raises(ConfigError, match="원문 파일 누락"):
+        create_app(Settings(_env_file=None, guideline_search="bm25"))
+
+
+def test_wiring_bm25_fails_closed_on_invalid_manifest_or_min_score(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    sources_dir, manifest_path = _write_bm25_fixture(tmp_path / "bad_score")
+    monkeypatch.setenv("RAG_SOURCES_DIR", str(sources_dir))
+    monkeypatch.setenv("RAG_MANIFEST_PATH", str(manifest_path))
+    monkeypatch.setenv("RAG_BM25_MIN_SCORE", "not-a-float")
+    with pytest.raises(ConfigError, match="GUIDELINE_SEARCH=bm25 초기화 실패"):
+        create_app(Settings(_env_file=None, guideline_search="bm25"))
+
+    monkeypatch.delenv("RAG_BM25_MIN_SCORE", raising=False)
+    monkeypatch.setenv("RAG_MANIFEST_PATH", str(tmp_path / "missing_manifest.json"))
+    with pytest.raises(ConfigError, match="GUIDELINE_SEARCH=bm25 초기화 실패"):
+        create_app(Settings(_env_file=None, guideline_search="bm25"))
+
+    bad_json = tmp_path / "bad_manifest.json"
+    bad_json.write_text("{not valid json", encoding="utf-8")
+    monkeypatch.setenv("RAG_MANIFEST_PATH", str(bad_json))
+    with pytest.raises(ConfigError, match="GUIDELINE_SEARCH=bm25 초기화 실패"):
         create_app(Settings(_env_file=None, guideline_search="bm25"))
 
 
@@ -338,7 +362,10 @@ async def test_wiring_bm25_succeeds_with_valid_approved_and_missing_pending(
 def test_fake_default_startup_unaffected_without_sources(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    monkeypatch.delenv("GUIDELINE_SEARCH", raising=False)
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
     monkeypatch.setenv("RAG_SOURCES_DIR", str(tmp_path))
+    monkeypatch.setenv("RAG_MANIFEST_PATH", str(tmp_path / "missing_manifest.json"))
 
     app = create_app(Settings(_env_file=None))
 
