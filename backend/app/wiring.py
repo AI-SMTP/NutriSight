@@ -98,6 +98,45 @@ def _build_bm25_search(_settings: Settings) -> GuidelineSearch:
     )
 
 
+def _build_hybrid_search(settings: Settings) -> GuidelineSearch:
+    """`GUIDELINE_SEARCH=hybrid` 선택 시에만 BM25 + Chroma RRF 하이브리드 검색기를 지연 로드한다."""
+    from app.recommender.hybrid_search import (
+        DEFAULT_CANDIDATE_K,
+        DEFAULT_RRF_K,
+        HybridGuidelineSearch,
+    )
+
+    candidate_k = int(_read_rag_env("RAG_HYBRID_CANDIDATE_K", str(DEFAULT_CANDIDATE_K)))
+    rrf_k = int(_read_rag_env("RAG_HYBRID_RRF_K", str(DEFAULT_RRF_K)))
+    return HybridGuidelineSearch(
+        bm25_search=_build_bm25_search(settings),
+        dense_search=_build_chroma_search(settings),
+        candidate_k=candidate_k,
+        rrf_k=rrf_k,
+    )
+
+
+def _build_hybrid_rerank_search(settings: Settings) -> GuidelineSearch:
+    """`GUIDELINE_SEARCH=hybrid_rerank` 선택 시 하이브리드 + 로컬 ONNX BGE Reranker를 구성한다."""
+    from app.recommender.reranker import (
+        DEFAULT_BGE_ONNX_DIR,
+        DEFAULT_MAX_TOKENS,
+        DEFAULT_RERANK_CANDIDATES,
+        OnnxBgeReranker,
+        RerankedGuidelineSearch,
+    )
+
+    model_dir = _read_rag_env("RAG_RERANK_MODEL_DIR", str(DEFAULT_BGE_ONNX_DIR))
+    max_tokens = int(_read_rag_env("RAG_RERANK_MAX_TOKENS", str(DEFAULT_MAX_TOKENS)))
+    top_n = int(_read_rag_env("RAG_RERANK_TOP_N", str(DEFAULT_RERANK_CANDIDATES)))
+    reranker = OnnxBgeReranker(model_dir=model_dir, max_tokens=max_tokens)
+    return RerankedGuidelineSearch(
+        base_search=_build_hybrid_search(settings),
+        reranker=reranker,
+        rerank_top_n=top_n,
+    )
+
+
 INTAKE_ESTIMATORS: dict[str, Callable[[Settings], IntakeEstimator]] = {
     "fake": lambda settings: FakeEstimator(delay_s=settings.fake_intake_delay_s),
 }
@@ -108,6 +147,8 @@ GUIDELINE_SEARCHES: dict[str, Callable[[Settings], GuidelineSearch]] = {
     "fake": lambda settings: FakeGuidelineSearch(),
     "chroma": _build_chroma_search,
     "bm25": _build_bm25_search,
+    "hybrid": _build_hybrid_search,
+    "hybrid_rerank": _build_hybrid_rerank_search,
 }
 PATIENT_DATA_PORTS: dict[str, Callable[[Settings], PatientDataPort]] = {
     "fake": lambda settings: FakePatientData(),
