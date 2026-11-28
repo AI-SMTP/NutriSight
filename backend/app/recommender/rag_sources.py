@@ -29,7 +29,7 @@ DEFAULT_README_PATH = DEFAULT_SOURCES_DIR / "README.md"
 DEFAULT_MANIFEST_PATH = Path(__file__).resolve().parent / "source_manifest.json"
 DEFAULT_CHROMA_DIR = Path(__file__).resolve().parents[2] / "var" / "chroma_guidelines"
 
-EXTRACTOR_VERSION = "v2.1"
+EXTRACTOR_VERSION = "v2.2"
 SECTION_ID_VERSION = "v2.0"
 
 _SHA256_HEX_RE = re.compile(r"^[0-9a-f]{64}$")
@@ -402,6 +402,72 @@ def _extract_xml_sections_from_bytes(xml_bytes: bytes) -> list[tuple[int, str, s
     return sections
 
 
+_SAFE_XML_ID_RE = re.compile(r"[^A-Za-z0-9._-]+")
+
+
+def _extract_xml_tables_from_bytes(xml_bytes: bytes) -> list[tuple[str, str, str]]:
+    """JATS/PMC XML의 `<table-wrap>` 표(라벨·캡션·행/열·각주)를 추출한다.
+
+    기존 `<sec>` 기반 `xml:s<n>#c<k>` 청크 ID를 변경하지 않기 위해 표는 별도
+    `table_id` 네임스페이스(`xml:tbl:<table_id>#c<k>`)로 반환한다.
+    """
+    root = ET.fromstring(xml_bytes)
+    tables: list[tuple[str, str, str]] = []
+    tbl_ordinal = 0
+    for elem in root.iter():
+        tag = elem.tag.split("}")[-1].lower()
+        if tag != "table-wrap":
+            continue
+        tbl_ordinal += 1
+        raw_id = (elem.attrib.get("id") or "").strip()
+        safe_id = _SAFE_XML_ID_RE.sub("_", raw_id).strip("_") if raw_id else f"t{tbl_ordinal}"
+        if not safe_id:
+            safe_id = f"t{tbl_ordinal}"
+
+        label_parts: list[str] = []
+        caption_parts: list[str] = []
+        foot_parts: list[str] = []
+        for child in elem:
+            ctag = child.tag.split("}")[-1].lower()
+            if ctag == "label":
+                txt = " ".join("".join(child.itertext()).split())
+                if txt:
+                    label_parts.append(txt)
+            elif ctag == "caption":
+                txt = " ".join("".join(child.itertext()).split())
+                if txt:
+                    caption_parts.append(txt)
+            elif ctag == "table-wrap-foot":
+                txt = " ".join("".join(child.itertext()).split())
+                if txt:
+                    foot_parts.append(txt)
+
+        row_lines: list[str] = []
+        for tr in elem.iter():
+            if tr.tag.split("}")[-1].lower() != "tr":
+                continue
+            cells: list[str] = []
+            for cell in tr:
+                cell_tag = cell.tag.split("}")[-1].lower()
+                if cell_tag in ("th", "td"):
+                    cell_txt = " ".join("".join(cell.itertext()).split())
+                    if cell_txt:
+                        cells.append(cell_txt)
+            if cells:
+                row_lines.append(" | ".join(cells))
+
+        header_title = " ".join(label_parts + caption_parts).strip() or f"Table {tbl_ordinal}"
+        body_parts: list[str] = [header_title]
+        if row_lines:
+            body_parts.append("\n".join(row_lines))
+        if foot_parts:
+            body_parts.append(" ".join(foot_parts))
+        body = clean_extracted_text("\n\n".join(body_parts))
+        if body:
+            tables.append((safe_id, header_title, body))
+    return tables
+
+
 def _assign_unique_sections(raw_chunks: list[GuidelineChunk]) -> list[GuidelineChunk]:
     """문서 내 `(doc_id, section)` 고유성을 강제한다.
 
@@ -555,6 +621,32 @@ def load_guideline_chunks(
                 pieces = chunk_text(sec_body, chunk_size=chunk_size, chunk_overlap=chunk_overlap)
                 for c_idx, piece in enumerate(pieces, start=1):
                     locator = f"xml:s{sec_ord}#c{c_idx}"
+                    rec_no = extract_verified_recommendation_no(piece)
+                    raw_chunks.append(
+                        GuidelineChunk(
+                            chunk_id=f"{spec.artifact_id}::{locator}",
+                            doc_id=spec.doc_id,
+                            artifact_id=spec.artifact_id,
+                            section=locator,
+                            locator=locator,
+                            verified_recommendation_no=rec_no,
+                            text=piece,
+                            source_url=spec.source_url,
+                            document_title=spec.document_title,
+                            publisher=spec.publisher,
+                            published_year_or_edition=spec.published_year_or_edition,
+                            actual_source_file=spec.relative_path,
+                            source_format=spec.format,
+                            language=spec.language,
+                            file_sha256=actual_sha,
+                            review_status=spec.review_status,
+                        )
+                    )
+                    doc_chunk_count += 1
+            for tbl_id, _tbl_title, tbl_body in _extract_xml_tables_from_bytes(raw_bytes):
+                pieces = chunk_text(tbl_body, chunk_size=chunk_size, chunk_overlap=chunk_overlap)
+                for c_idx, piece in enumerate(pieces, start=1):
+                    locator = f"xml:tbl:{tbl_id}#c{c_idx}"
                     rec_no = extract_verified_recommendation_no(piece)
                     raw_chunks.append(
                         GuidelineChunk(
