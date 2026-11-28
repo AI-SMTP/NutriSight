@@ -90,12 +90,15 @@ def _build_bm25_search(_settings: Settings) -> GuidelineSearch:
 
     sources_dir = _read_rag_env("RAG_SOURCES_DIR", str(DEFAULT_SOURCES_DIR))
     manifest_path = _read_rag_env("RAG_MANIFEST_PATH", str(DEFAULT_MANIFEST_PATH))
-    min_score = float(_read_rag_env("RAG_BM25_MIN_SCORE", "0.0"))
-    return Bm25GuidelineSearch.from_sources_dir(
-        sources_dir,
-        manifest_path=manifest_path,
-        min_score=min_score,
-    )
+    try:
+        min_score = float(_read_rag_env("RAG_BM25_MIN_SCORE", "0.0"))
+        return Bm25GuidelineSearch.from_sources_dir(
+            sources_dir,
+            manifest_path=manifest_path,
+            min_score=min_score,
+        )
+    except (ValueError, OSError) as exc:
+        raise ConfigError(f"GUIDELINE_SEARCH=bm25 초기화 실패: {exc}") from exc
 
 
 def _build_hybrid_search(settings: Settings) -> GuidelineSearch:

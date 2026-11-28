@@ -534,7 +534,7 @@ def load_guideline_chunks(
     """매니페스트 검증을 통과한 공식 원문만 청킹하고 감사 리포트와 함께 반환한다.
 
     - `require_approved=True` (기본): `review_status=="approved"` 및 해시 일치 아티팩트만 적재.
-    - `fail_on_approved_issue=True` (기본): 승인 아티팩트 해시 불일치·형식 오류·0청크 시 예외.
+    - `fail_on_approved_issue=True` (기본): 승인 아티팩트 누락·해시 불일치·형식 오류·0청크 시 예외.
     """
     base = Path(sources_dir)
     specs, _ = load_source_manifest(manifest_path)
@@ -553,7 +553,11 @@ def load_guideline_chunks(
         spec = spec_by_id[aid]
         art_status = art["status"]
 
-        if spec.review_status == "approved" and art_status in {"hash_mismatch", "invalid_format"}:
+        if spec.review_status == "approved" and art_status in {
+            "missing_file",
+            "hash_mismatch",
+            "invalid_format",
+        }:
             approved_failures.append(f"{aid}: {art['detail']}")
 
         if art_status not in allowed_statuses:
