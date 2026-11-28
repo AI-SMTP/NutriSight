@@ -9,19 +9,9 @@ import pytest
 
 from app.config import DEFAULT_SEED_PATH
 from app.nutrition.fake import FakeNutritionEngine
-from app.storage.db import connect, create_schema
 from app.storage.seed import build_database, load_seed_file
 from tests.storage.demo import DEMO
 from tests.storage.dump import TableDump, table_dump
-
-
-@pytest.fixture
-def db_path(tmp_path: Path) -> Path:
-    """`tmp_path / "app.db"`에 스키마만 만든 빈 DB 경로."""
-    path = tmp_path / "app.db"
-    with connect(path) as conn:
-        create_schema(conn)
-    return path
 
 
 @pytest.fixture(scope="session")
@@ -30,15 +20,6 @@ def pending_db(tmp_path_factory: pytest.TempPathFactory) -> Path:
     path = tmp_path_factory.mktemp("pending") / "app.db"
     seed = load_seed_file(DEFAULT_SEED_PATH)
     build_database(path, seed, DEMO, FakeNutritionEngine(), cleanup_pending=True)
-    return path
-
-
-@pytest.fixture(scope="session")
-def seeded_db(tmp_path_factory: pytest.TempPathFactory) -> Path:
-    """실제 시드를 D=2026-12-05로 적재한 정상 DB(표시 없음). 복사해서만 쓴다."""
-    path = tmp_path_factory.mktemp("seeded") / "app.db"
-    seed = load_seed_file(DEFAULT_SEED_PATH)
-    build_database(path, seed, DEMO, FakeNutritionEngine())
     return path
 
 

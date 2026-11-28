@@ -34,6 +34,7 @@ from app.storage.db import connect
 from app.storage.queries import (
     demo_timestamp,
     get_demo_date,
+    get_latest_alert,
     get_meal_plan,
     get_patient,
     get_patient_history,
@@ -608,6 +609,21 @@ def test_list_alerts_null_basis_values_is_empty_tuple(conn: sqlite3.Connection) 
     assert none_alert.level is AlertLevel.NONE
     assert none_alert.basis_values == ()
     assert none_alert.nutrients == ()
+
+
+def test_get_latest_alert_picks_latest_on_or_before_day(conn: sqlite3.Connection) -> None:
+    latest = get_latest_alert(conn, "NS01", date(2026, 11, 29))
+    assert latest == list_alerts(conn, "NS01", date(2026, 11, 28), date(2026, 11, 29))[-1]
+    assert latest is not None and latest.alert_id == "alert_c"
+    # 같은 evaluated_at이면 alert_id가 큰 것이다.
+    same_time = get_latest_alert(conn, "NS01", date(2026, 11, 28))
+    assert same_time is not None and same_time.alert_id == "alert_b"
+    assert get_latest_alert(conn, "NS02", date(2026, 12, 31)) is not None
+
+
+def test_get_latest_alert_returns_none_without_judgement(conn: sqlite3.Connection) -> None:
+    assert get_latest_alert(conn, "NS01", date(2026, 11, 27)) is None
+    assert get_latest_alert(conn, "NS99", date(2026, 12, 31)) is None
 
 
 # 레코드 --------------------------------------------------------------------
