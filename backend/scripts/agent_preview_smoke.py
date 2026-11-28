@@ -32,9 +32,7 @@ async def run_demo(patient_id: str, question: str) -> None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(
-        description="NutriSight 읽기 전용 FakeAgent/RAG 연동 미리보기"
-    )
+    parser = argparse.ArgumentParser(description="NutriSight 읽기 전용 FakeAgent/RAG 연동 미리보기")
     parser.add_argument("--patient", default="NS01", help="가상 환자 ID (NS01~NS04)")
     parser.add_argument(
         "--question",

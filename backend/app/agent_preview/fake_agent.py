@@ -61,9 +61,7 @@ class FakeAgentPreview:
             {
                 "tool": "get_intake_summary",
                 "patient_id": self._tools.patient_id,
-                "recorded_days": sum(
-                    1 for day in summary.daily if day.recorded_meals > 0
-                ),
+                "recorded_days": sum(1 for day in summary.daily if day.recorded_meals > 0),
                 "daily_rows": len(summary.daily),
                 "alert": alert,
             },
