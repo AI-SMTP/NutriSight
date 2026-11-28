@@ -17,7 +17,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from functools import partial
 from pathlib import Path
-from typing import Literal
+from typing import Literal, overload
 
 from app.events.bus import Event
 from app.nutrition.types import AlertLevel, NutritionEngine
@@ -208,6 +208,24 @@ async def _create_body(
             now=deps.runtime.clock.now(),
         )
         return await deps.runtime.writer.run_write(save)
+
+
+@overload
+async def create_recommendation(
+    patient_id: str, *, mode: Literal["manual"], deps: RecommendationDeps
+) -> RecommendationCard: ...
+
+
+@overload
+async def create_recommendation(
+    patient_id: str, *, mode: Literal["auto"], deps: RecommendationDeps
+) -> RecommendationCard | None: ...
+
+
+@overload
+async def create_recommendation(
+    patient_id: str, *, mode: GenerationMode, deps: RecommendationDeps
+) -> RecommendationCard | None: ...
 
 
 async def create_recommendation(

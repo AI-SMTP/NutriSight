@@ -247,7 +247,7 @@ class PrescriptionOut(_ViewModel):
 # 요청 ----------------------------------------------------------------------
 
 
-CONFIRM_ITEM_IDS_MAX = 100  # 확정 요청 `item_ids` 상한(요청 크기 제한)
+REQUEST_LIST_MAX = 100  # 요청 목록 상한(확정 `item_ids`, 처방 작성 `items`). 요청 크기 제한
 
 
 _ISO_DATE_TEXT = re.compile(r"^\d{4}-\d{2}-\d{2}$")
@@ -297,14 +297,10 @@ class ItemInput(_RequestModel):
         return item_rules.ItemEdit(**self.model_dump())
 
 
-class RecommendationPatch(_RequestModel):
-    """PATCH 본문. `items`가 카드의 새 항목 목록(순서 포함)이다.
-
-    `expected_updated_at`은 카드 응답의 `updated_at` 문자열 그대로이며 `datetime`으로 바꾸지 않는다.
-    """
+class _ItemsBody(_RequestModel):
+    """항목 목록(`items`)을 받는 요청 본문 기반. `item_id`는 목록 안에서 유일해야 한다(422)."""
 
     items: list[ItemInput]
-    expected_updated_at: str
 
     @model_validator(mode="after")
     def _check_unique(self) -> Self:
@@ -312,14 +308,29 @@ class RecommendationPatch(_RequestModel):
         return self
 
     def edits(self) -> tuple[item_rules.ItemEdit, ...]:
-        """서비스로 넘길 항목 tuple."""
+        """서비스로 넘길 항목 tuple(요청 순서 그대로)."""
         return tuple(item.to_edit() for item in self.items)
+
+
+class RecommendationPatch(_ItemsBody):
+    """PATCH 본문. `items`가 카드의 새 항목 목록(순서 포함)이다.
+
+    `expected_updated_at`은 카드 응답의 `updated_at` 문자열 그대로이며 `datetime`으로 바꾸지 않는다.
+    """
+
+    expected_updated_at: str
+
+
+class PrescriptionCreate(_ItemsBody):
+    """처방 직접 작성 본문. `items`는 1~100개이고 `item_id`는 목록 안에서 유일하다."""
+
+    items: list[ItemInput] = Field(min_length=1, max_length=REQUEST_LIST_MAX)
 
 
 class ConfirmRequest(_RequestModel):
     """확정 본문. `item_ids`는 1~100개이고 중복은 하나로 취급한다(서비스)."""
 
-    item_ids: list[str] = Field(min_length=1, max_length=CONFIRM_ITEM_IDS_MAX)
+    item_ids: list[str] = Field(min_length=1, max_length=REQUEST_LIST_MAX)
     expected_updated_at: str
 
     def to_item_ids(self) -> tuple[str, ...]:

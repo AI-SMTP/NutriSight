@@ -1,32 +1,46 @@
-"""추천 수정·확정 API 테스트가 함께 쓰는 카드 준비·요청 본문 도우미.
+"""API 쓰기 테스트(추천 수정·확정·다시 만들기·처방 작성)가 함께 쓰는 도우미.
 
 카드는 테스트 앱의 쓰기 실행기(`writer.run_sync`)로 넣는다(이벤트 없음). 환자 NS05는 시드에
 추천 카드가 없다. 카드 기본 항목은 `rx1`(에이전트, 근거 2개)·`rx2`·`rx3`(의사)다.
+쓰기 실패(`broken`)와 요청 중단(`run_abandoned`) 도우미도 여기 둔다. 기다림은 모두 `TIMEOUT` 상한을
+둔다(실제 시간 경과에 기대지 않는다).
 """
 
 from __future__ import annotations
 
 import sqlite3
+from collections.abc import Callable
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
 from pathlib import Path
+from typing import Any
 
+import httpx
+import pytest
 from fastapi.testclient import TestClient
 
 from app.config import Settings, storage_paths
+from app.events.bus import Event
 from app.services.clock import format_app_timestamp
 from app.services.ports import RecommendationItem
 from app.services.unit_of_work import WriteResult
+from app.storage import recommendations as rec_store
 from app.storage.codec import items_to_json
 from app.storage.db import connect
 
 # 카드 ID·저장 시각·카드 읽기는 서비스 테스트 도우미를 그대로 쓴다(API 테스트도 여기서 가져간다).
 from tests.services.cards import CARD_ID, STORED_AT, read_card
+from tests.services.gates import ThreadGate
+from tests.services.generation import TIMEOUT
 from tests.storage.items import AGENT_ITEM, DOCTOR_ITEM
 from tests.storage.rows import insert_recommendation
+from tests.support.events import EventRecorder
 
 PATIENT = "NS05"
 THIRD_ITEM = replace(DOCTOR_ITEM, item_id="rx3", title="간식 추가")
 CARD_ITEMS: tuple[RecommendationItem, ...] = (AGENT_ITEM, DOCTOR_ITEM, THIRD_ITEM)
+# 게이트에서 멈춘 요청을 클라이언트가 포기할 때까지 기다리는 시간(초). 짧아도 결과는 같다.
+ABANDON_AFTER_S = 0.05
 
 
 def add_card_via_app(
@@ -114,3 +128,42 @@ def patch_url(recommendation_id: str = CARD_ID) -> str:
 def confirm_url(recommendation_id: str = CARD_ID) -> str:
     """카드 확정(POST) 경로."""
     return f"/api/recommendations/{recommendation_id}/confirm"
+
+
+def broken(*_args: Any, **_kwargs: Any) -> Any:
+    """저장 SQL 대신 넣어 예외를 던지는 함수."""
+    raise RuntimeError("저장 SQL 실패(테스트)")
+
+
+def run_abandoned(
+    client: TestClient,
+    monkeypatch: pytest.MonkeyPatch,
+    pool: ThreadPoolExecutor,
+    *,
+    gated_name: str,
+    send: Callable[[TestClient], httpx.Response],
+    event_name: str,
+    check_unchanged: Callable[[], None],
+    gate: ThreadGate | None = None,
+) -> tuple[Event, httpx.Response]:
+    """저장 SQL `rec_store.<gated_name>`에서 멈춘 요청을 클라이언트가 포기한 뒤 멈춤을 푼다.
+
+    포기 시점에 `check_unchanged()`로 DB가 그대로임을 확인하고, 받은 이벤트와 (끝까지 처리된)
+    응답을 돌려준다. 준비 데이터(카드 등)는 호출자가 먼저 넣는다. 게이트에 기록 등을 덧붙이려면
+    `gate`를 넘긴다.
+    """
+    gate = ThreadGate() if gate is None else gate
+    gate.patch(monkeypatch, rec_store, gated_name)
+
+    with EventRecorder(client) as recorder:
+        sent = pool.submit(send, client)
+        assert gate.entered.wait(TIMEOUT)
+        with pytest.raises(TimeoutError):
+            sent.result(timeout=ABANDON_AFTER_S)
+        check_unchanged()
+
+        gate.release.set()
+        event = recorder.wait_for(event_name)
+
+    # 포기한 호출도 서버에서는 끝까지 처리된다(호출 스레드 정리 겸 응답 확인).
+    return event, sent.result(timeout=TIMEOUT)

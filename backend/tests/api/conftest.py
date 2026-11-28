@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterator
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import pytest
@@ -64,8 +65,22 @@ def write_settings(tmp_path: Path, seeded_db: Path) -> Settings:
 def write_client(write_settings: Settings) -> Iterator[TestClient]:
     """테스트마다 새로 시작하는 앱 클라이언트. 테스트끼리·모듈 앱과 DB를 나누지 않는다.
 
-    서버 예외를 500 응답으로 받아야 하면 `write_settings`로 직접
-    `TestClient(create_app(write_settings), raise_server_exceptions=False)`를 연다.
+    서버 예외를 500 응답으로 받아야 하면 `lenient_client`를 쓴다.
     """
     with TestClient(create_app(write_settings)) as test_client:
         yield test_client
+
+
+@pytest.fixture
+def lenient_client(write_settings: Settings) -> Iterator[TestClient]:
+    """서버 예외를 500 응답으로 돌려주는 테스트 하나용 앱 클라이언트(카드 없음)."""
+    with TestClient(create_app(write_settings), raise_server_exceptions=False) as test_client:
+        yield test_client
+
+
+@pytest.fixture
+def pool() -> Iterator[ThreadPoolExecutor]:
+    """클라이언트 호출을 보낼 스레드들."""
+    executor = ThreadPoolExecutor(max_workers=2)
+    yield executor
+    executor.shutdown(wait=True)

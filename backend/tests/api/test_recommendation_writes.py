@@ -7,7 +7,7 @@
 from __future__ import annotations
 
 import threading
-from collections.abc import Callable, Iterator
+from collections.abc import Callable
 from concurrent.futures import Future, ThreadPoolExecutor, wait
 from typing import Any
 
@@ -16,7 +16,6 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.config import Settings, storage_paths
-from app.events.bus import Event
 from app.main import create_app
 from app.storage import recommendations as rec_store
 from app.storage.app_lock import AppLock
@@ -26,6 +25,7 @@ from tests.api.cards import (
     add_card_via_app,
     app_db,
     assert_card_still_active,
+    broken,
     confirm_body,
     confirm_url,
     count_prescriptions,
@@ -33,6 +33,7 @@ from tests.api.cards import (
     patch_body,
     patch_url,
     read_card,
+    run_abandoned,
 )
 from tests.app_lock import assert_lock_free, assert_lock_held
 from tests.services.gates import ThreadGate
@@ -42,30 +43,14 @@ from tests.support.events import EventRecorder
 
 UPDATED = "recommendation.updated"
 CONFIRMED = "prescription.confirmed"
-# 게이트에서 멈춘 요청을 클라이언트가 포기할 때까지 기다리는 시간(초). 짧아도 결과는 같다.
-ABANDON_AFTER_S = 0.05
-
 PATCH_ITEMS = [item_input(AGENT_ITEM, title="수정한 제목")]
 
 
-def _broken(*_args: Any, **_kwargs: Any) -> Any:
-    raise RuntimeError("저장 SQL 실패(테스트)")
-
-
 @pytest.fixture
-def pool() -> Iterator[ThreadPoolExecutor]:
-    """클라이언트 호출을 보낼 스레드들."""
-    executor = ThreadPoolExecutor(max_workers=2)
-    yield executor
-    executor.shutdown(wait=True)
-
-
-@pytest.fixture
-def lenient_client(write_settings: Settings) -> Iterator[TestClient]:
-    """서버 예외를 500 응답으로 돌려주는 앱 클라이언트. NS05 카드(rx1·rx2·rx3)를 넣어 둔다."""
-    with TestClient(create_app(write_settings), raise_server_exceptions=False) as client:
-        add_card_via_app(client)
-        yield client
+def lenient_client(lenient_client: TestClient) -> TestClient:
+    """공용 `lenient_client`에 NS05 카드(rx1·rx2·rx3)를 넣어 둔다."""
+    add_card_via_app(lenient_client)
+    return lenient_client
 
 
 # ---- 쓰기 실패: 500, 이벤트 없음, DB 그대로 ----
@@ -93,7 +78,7 @@ def test_write_failure_returns_500_without_event_or_change(
     broken_name: str,
     send: Callable[[TestClient], httpx.Response],
 ) -> None:
-    monkeypatch.setattr(rec_store, broken_name, _broken)
+    monkeypatch.setattr(rec_store, broken_name, broken)
 
     with EventRecorder(lenient_client) as recorder:
         response = send(lenient_client)
@@ -107,41 +92,9 @@ def test_write_failure_returns_500_without_event_or_change(
 # ---- 요청 중단: 클라이언트가 포기해도 커밋·발행 ----
 
 
-def _abandon(future: Future[httpx.Response]) -> None:
-    """멈춘 요청을 클라이언트 쪽 시간 초과로 포기한다."""
-    with pytest.raises(TimeoutError):
-        future.result(timeout=ABANDON_AFTER_S)
-
-
-def _run_abandoned(
-    client: TestClient,
-    settings: Settings,
-    monkeypatch: pytest.MonkeyPatch,
-    pool: ThreadPoolExecutor,
-    *,
-    gated_name: str,
-    send: Callable[[TestClient], httpx.Response],
-    event_name: str,
-) -> tuple[Event, httpx.Response]:
-    """저장 SQL `gated_name`에서 멈춘 요청을 클라이언트가 포기한 뒤 멈춤을 푼다.
-
-    포기 시점에 카드가 그대로임을 확인하고, 받은 이벤트와 (끝까지 처리된) 응답을 돌려준다.
-    """
-    add_card_via_app(client)
-    gate = ThreadGate()
-    gate.patch(monkeypatch, rec_store, gated_name)
-
-    with EventRecorder(client) as recorder:
-        sent = pool.submit(send, client)
-        assert gate.entered.wait(TIMEOUT)
-        _abandon(sent)
-        assert_card_still_active(app_db(settings), items=CARD_ITEMS)
-
-        gate.release.set()
-        event = recorder.wait_for(event_name)
-
-    # 포기한 호출도 서버에서는 끝까지 처리된다(호출 스레드 정리 겸 응답 확인).
-    return event, sent.result(timeout=TIMEOUT)
+def _card_unchanged(settings: Settings) -> Callable[[], None]:
+    """포기 시점에 카드가 `active`이고 항목·처방이 그대로인지 확인하는 함수."""
+    return lambda: assert_card_still_active(app_db(settings), items=CARD_ITEMS)
 
 
 def test_abandoned_patch_still_commits_and_publishes(
@@ -150,14 +103,15 @@ def test_abandoned_patch_still_commits_and_publishes(
     monkeypatch: pytest.MonkeyPatch,
     pool: ThreadPoolExecutor,
 ) -> None:
-    event, response = _run_abandoned(
+    add_card_via_app(write_client)
+    event, response = run_abandoned(
         write_client,
-        write_settings,
         monkeypatch,
         pool,
         gated_name="update_card_items",
         send=lambda c: c.patch(patch_url(), json=patch_body(PATCH_ITEMS)),
         event_name=UPDATED,
+        check_unchanged=_card_unchanged(write_settings),
     )
 
     assert event.data["recommendation_id"] == CARD_ID
@@ -171,14 +125,15 @@ def test_abandoned_confirm_still_commits_and_publishes(
     monkeypatch: pytest.MonkeyPatch,
     pool: ThreadPoolExecutor,
 ) -> None:
-    event, response = _run_abandoned(
+    add_card_via_app(write_client)
+    event, response = run_abandoned(
         write_client,
-        write_settings,
         monkeypatch,
         pool,
         gated_name="insert_prescription",
         send=lambda c: c.post(confirm_url(), json=confirm_body(["rx1"])),
         event_name=CONFIRMED,
+        check_unchanged=_card_unchanged(write_settings),
     )
 
     assert event.data["recommendation_id"] == CARD_ID
