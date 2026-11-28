@@ -17,6 +17,7 @@ from app.services.item_rules import (
     check_review_date,
     check_thread_id,
     check_title,
+    check_unique_item_ids,
     validate_cautions,
     validate_generated_card,
     validate_generated_items,
@@ -167,8 +168,19 @@ def test_validate_items_rejects_rule_violation(overrides):
 def test_validate_items_rejects_duplicate_item_id():
     items = (_item(item_id="same"), _item(item_id="same", title="다른 제목"))
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="item_id가 중복된다: same"):
         validate_items(items)
+
+
+@pytest.mark.parametrize("ids", [(), ("a",), ("a", "b", "c")])
+def test_check_unique_item_ids_accepts_distinct_ids(ids):
+    check_unique_item_ids(ids)
+
+
+@pytest.mark.parametrize("ids", [("a", "a"), ("a", "b", "a")])
+def test_check_unique_item_ids_rejects_duplicate(ids):
+    with pytest.raises(ValueError, match="item_id가 중복된다: a"):
+        check_unique_item_ids(ids)
 
 
 def test_validate_items_rejects_violation_in_later_item():

@@ -1,19 +1,33 @@
-"""HTTP API 응답 모델 (스펙 3.3 응답 모델, `docs/data-model.md`).
+"""HTTP API 요청·응답 모델 (스펙 3.3 응답 모델·`ItemInput`, `docs/data-model.md`).
 
 필드 이름은 스펙·data-model 그대로다. 서비스 결과(frozen dataclass)와 필드 이름이 같은 모델은
 `from_attributes`로 `Model.model_validate(view)`가 그대로 읽는다(tuple은 list로 검증된다).
 이름이 다른 필드는 `validation_alias`(`DailyIntakeOut.date` ← `on`) 또는 생성 함수
 (`AlertOut.from_row`)로 맞춘다. 앱이 만든 시각(`created_at`·`updated_at`·`confirmed_at`)과 판정 시각
 (`evaluated_at`)은 저장 문자열 형식 그대로 돌려준다. 실수 값은 반올림하지 않는다.
+
+요청 모델은 모르는 필드를 거부한다(`extra="forbid"`, 422). 항목 값 규칙은 `item_rules`의 검사기를
+그대로 부른다(생성기 결과·포트 저장과 같은 규칙).
 """
 
 from __future__ import annotations
 
 import datetime as dt
+import re
+from typing import Annotated, Literal, Self
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import (
+    AfterValidator,
+    BaseModel,
+    BeforeValidator,
+    ConfigDict,
+    Field,
+    field_validator,
+    model_validator,
+)
 
 from app.nutrition.types import AlertLevel, Nutrient, Sex, TargetSource
+from app.services import item_rules
 from app.services.clock import format_app_timestamp
 from app.services.patients import alert_to_result
 from app.services.ports import AddedBy, ModifiedBy, PrescriptionType, RecommendationStatus
@@ -217,3 +231,97 @@ class RecommendationOut(_ViewModel):
     def _app_timestamp_text(cls, value: object) -> object:
         """카드의 `datetime`을 저장 문자열 형식(`format_app_timestamp`)으로 바꾼다."""
         return format_app_timestamp(value) if isinstance(value, dt.datetime) else value
+
+
+class PrescriptionOut(_ViewModel):
+    """처방 한 건 (`Prescription`). `confirmed_at`은 저장 문자열 그대로다."""
+
+    prescription_id: str
+    patient_id: str
+    recommendation_id: str | None
+    items: list[ItemOut]
+    confirmed_at: str
+    status: Literal["confirmed"]
+
+
+# 요청 ----------------------------------------------------------------------
+
+
+CONFIRM_ITEM_IDS_MAX = 100  # 확정 요청 `item_ids` 상한(요청 크기 제한)
+
+
+_ISO_DATE_TEXT = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+
+
+def _iso_date_text(value: object) -> object:
+    """날짜 입력(`review_date`)을 `YYYY-MM-DD` 문자열·null·`date`로 한정한다.
+
+    FastAPI는 본문을 dict로 바꾼 뒤 Python 모드로 검증하므로 `Field(strict=True)`는 날짜 문자열까지
+    거부한다. 그래서 형식은 여기서 거르고 실제 날짜 변환은 Pydantic에 맡긴다.
+    """
+    if value is None or (isinstance(value, dt.date) and not isinstance(value, dt.datetime)):
+        return value
+    if isinstance(value, str) and _ISO_DATE_TEXT.fullmatch(value):
+        return value
+    raise ValueError("review_date는 YYYY-MM-DD 문자열이어야 한다")
+
+
+# `YYYY-MM-DD` 문자열·null만 받는 날짜 입력 타입. 값 규칙은 필드마다 `AfterValidator`로 더한다.
+IsoDateOrNone = Annotated[dt.date | None, BeforeValidator(_iso_date_text)]
+
+
+class _RequestModel(BaseModel):
+    """요청 본문 기반. 모르는 필드(`added_by`·`evidence` 등)는 422로 거부한다."""
+
+    model_config = ConfigDict(extra="forbid")
+
+
+class ItemInput(_RequestModel):
+    """의사가 보낸 항목 한 개. `added_by`·`evidence`는 받지 않는다(서버가 정한다).
+
+    `duration_days`는 엄격 정수라 JSON `true`·`"7"`을 거부한다. `review_date`는 `YYYY-MM-DD`
+    문자열과 null만 받는다(숫자·시각이 붙은 문자열은 422).
+    """
+
+    item_id: Annotated[str, AfterValidator(item_rules.check_item_id)]
+    type: PrescriptionType
+    title: Annotated[str, AfterValidator(item_rules.check_title)]
+    detail: Annotated[str, AfterValidator(item_rules.check_detail)]
+    duration_days: Annotated[
+        int | None, Field(strict=True), AfterValidator(item_rules.check_duration_days)
+    ]
+    review_date: Annotated[IsoDateOrNone, AfterValidator(item_rules.check_review_date)]
+
+    def to_edit(self) -> item_rules.ItemEdit:
+        """서비스 입력 `ItemEdit`로 바꾼다. 두 타입의 필드는 이름·값이 1:1이다."""
+        return item_rules.ItemEdit(**self.model_dump())
+
+
+class RecommendationPatch(_RequestModel):
+    """PATCH 본문. `items`가 카드의 새 항목 목록(순서 포함)이다.
+
+    `expected_updated_at`은 카드 응답의 `updated_at` 문자열 그대로이며 `datetime`으로 바꾸지 않는다.
+    """
+
+    items: list[ItemInput]
+    expected_updated_at: str
+
+    @model_validator(mode="after")
+    def _check_unique(self) -> Self:
+        item_rules.check_unique_item_ids(item.item_id for item in self.items)
+        return self
+
+    def edits(self) -> tuple[item_rules.ItemEdit, ...]:
+        """서비스로 넘길 항목 tuple."""
+        return tuple(item.to_edit() for item in self.items)
+
+
+class ConfirmRequest(_RequestModel):
+    """확정 본문. `item_ids`는 1~100개이고 중복은 하나로 취급한다(서비스)."""
+
+    item_ids: list[str] = Field(min_length=1, max_length=CONFIRM_ITEM_IDS_MAX)
+    expected_updated_at: str
+
+    def to_item_ids(self) -> tuple[str, ...]:
+        """서비스로 넘길 `item_id` tuple(요청 순서 그대로)."""
+        return tuple(self.item_ids)

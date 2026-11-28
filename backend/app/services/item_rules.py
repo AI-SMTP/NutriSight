@@ -8,6 +8,7 @@ dataclass 타입 주석은 실행 중 값을 보장하지 않으므로 값마다
 from __future__ import annotations
 
 import re
+from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import date, datetime
 
@@ -140,16 +141,22 @@ def _check_item(item: object) -> None:
     _check_evidence(item.evidence)
 
 
+def check_unique_item_ids(ids: Iterable[str]) -> None:
+    """`item_id`가 목록 안에서 유일한지 확인한다. 처음 겹친 ID로 `ValueError`."""
+    seen: set[str] = set()
+    for item_id in ids:
+        if item_id in seen:
+            raise ValueError(f"item_id가 중복된다: {item_id}")
+        seen.add(item_id)
+
+
 def validate_items(items: tuple[RecommendationItem, ...]) -> None:
     """모든 항목의 공통 항목·근거 규칙과 `item_id` 유일성을 확인한다."""
     if not isinstance(items, tuple):
         raise ValueError("items는 tuple이어야 한다")
-    seen: set[str] = set()
     for item in items:
         _check_item(item)
-        if item.item_id in seen:
-            raise ValueError(f"item_id가 중복된다: {item.item_id}")
-        seen.add(item.item_id)
+    check_unique_item_ids(item.item_id for item in items)
 
 
 def validate_cautions(cautions: tuple[str, ...]) -> None:
