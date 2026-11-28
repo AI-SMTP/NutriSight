@@ -1,14 +1,14 @@
 # NutriSight RAG — 마스터 진행 보고서와 단계별 개발 로드맵
 
 > **기준일:** 2026-11-28 KST · **소유 트랙:** RAG / 실제 추천 Agent 연동  
-> **형주 Fork:** HJ-GJ/NutriSight — Draft PR #18(`integration/rag-t2-20261128@75f122c`), Draft PR #27(`feature/rag-v0-5-integration-20261128@7fee767`), T4 동기화 검증 브랜치 `sync/rag-pr18-develop-t4-20261128`(`cd52c69`) · `sync/rag-v0-5-1-develop-t4-20261128`  
-> **팀 기준:** AI-SMTP/NutriSight `develop@99d388e` (PR #26 T4 환자·추천·처방 API 및 `pyright` 도입 반영)  
-> **현재 단계:** Draft PR [#18](https://github.com/AI-SMTP/NutriSight/pull/18) · Draft PR [#27](https://github.com/AI-SMTP/NutriSight/pull/27) 등록 완료 → **v0.5.1 T4(`develop@99d388e`) 충돌 해소·Pyright 0 errors·전체 통합 회귀 검증 완료** → PR 반영 승인 및 Stage B(`#21`, `#23`) 대기  
+> **형주 Fork:** HJ-GJ/NutriSight — **단일 관리 PR [#27](https://github.com/AI-SMTP/NutriSight/pull/27)** (`feature/rag-v0-5-integration-20261128@7fee767`, 기존 Draft PR `#18`은 2026-11-28 종료 완료), 최신 동기화 검증 브랜치 `sync/rag-v0-5-1-develop-t4-20261128`  
+> **팀 기준:** AI-SMTP/NutriSight `develop@e2f89b0` (PR `#26` T4 API/`pyright` + PR `#28` NS03 시연 전환 복원·영양 알고리즘 가이드 반영)  
+> **현재 단계:** PR `#18` 종료 → **PR `#27` 단일 관리 체계 전환** → **v0.5.1 최종 통합 검증(`develop@e2f89b0`, `pyright 0 errors`, `1,406 passed` + T4 플래키 5회 비교) 완료** → 사용자 승인 후 PR `#27` head fast-forward 반영 대기  
 > **주의:** 이 문서는 개발 상태를 기록하며 의료적 유효성 또는 임상 사용 승인을 의미하지 않습니다.
 
 ## 1. 보고 체계와 정본
 
-이 파일은 **현재 상태·결정·다음 단계**를 관리하는 단일 마스터 보고서입니다. 날짜별 평가 수치와 한계는 [2026-11-28 독립 성능평가](RAG_EVALUATION_2026-11-28.md)에, 실제 API 스모크 결과는 [2026-11-28 Large API 스모크 보고서](RAG_LARGE_API_SMOKE_TEST_2026-11-28.md)에, 검색 고도화 A/B/C 평가는 [2026-11-28 검색 고도화 보고서](RAG_RETRIEVAL_QUALITY_UPGRADE_2026-11-28.md)에, PR #18 리뷰 반영 검증은 [2026-11-28 PR #18 리뷰 검증 보고서](RAG_PR18_REVIEW_VALIDATION_2026-11-28.md)에, v0.5/v0.5.1 T4 통합 검증은 [v0.5 통합 보고서](RAG_V0_5_INTEGRATION_2026-11-28.md) 및 [v0.5.1 팀 통합 보고서](RAG_V0_5_1_TEAM_INTEGRATION_2026-11-28.md)에, 기존 3종 실험의 상세 수치는 [v0.2 초기 구현 기록](rag-implementation-notes.md)에 보존합니다. Agent와의 함수 계약은 [T5 인계서](rag-agent-handoff.md)를 사용합니다.
+이 파일은 **현재 상태·결정·다음 단계**를 관리하는 단일 마스터 보고서입니다. 날짜별 평가 수치와 한계는 [2026-11-28 독립 성능평가](RAG_EVALUATION_2026-11-28.md)에, 실제 API 스모크 결과는 [2026-11-28 Large API 스모크 보고서](RAG_LARGE_API_SMOKE_TEST_2026-11-28.md)에, 검색 고도화 A/B/C 평가는 [2026-11-28 검색 고도화 보고서](RAG_RETRIEVAL_QUALITY_UPGRADE_2026-11-28.md)에, PR #18 리뷰 반영 검증은 [2026-11-28 PR #18 리뷰 검증 보고서](RAG_PR18_REVIEW_VALIDATION_2026-11-28.md)에, v0.5/v0.5.1 T4·PR #28 통합 검증은 [v0.5 통합 보고서](RAG_V0_5_INTEGRATION_2026-11-28.md) 및 [v0.5.1 팀 통합 보고서](RAG_V0_5_1_TEAM_INTEGRATION_2026-11-28.md)에, 기존 3종 실험의 상세 수치는 [v0.2 초기 구현 기록](rag-implementation-notes.md)에 보존합니다. Agent와의 함수 계약은 [T5 인계서](rag-agent-handoff.md)를 사용합니다.
 
 **원칙:** 이미 실행한 실험 결과는 덮어쓰지 않습니다. 각 단계의 **기준 SHA / 원문 판본 / 질의셋 / 실행 주체 / 실측·모의 구분 / 남은 위험 / 결정**을 함께 기록합니다. 새 테스트마다 이 파일의 상태만 갱신하고, 재현 가능한 실험 상세는 별도 날짜별 보고서로 추가합니다.
 
@@ -23,7 +23,7 @@
 | 출처 관리 | 출처 매니페스트, 승인 정책, SHA-256, PDF/XML(GLIM 표 17청크 포함) 파서 | 등록 5종 중 승인 4종(`1,159`청크); GLIM CLNU PDF는 pending. `#23` 권고 번호 오귀속 검수 예정 |
 | 안전 검색·Agent Preview | `retrieval_guard.py`, `app/agent_preview/` 읽기 전용 미리보기 | CKD/약물 9/9 차단, 정상 9/9 비과차단, Fake `R20`/`R23` 공식 표시 차단, `NS01`/`NS02` 격리 검증 |
 | T5 실제 생성 Agent | **미구현·미연결** | 환자별 추천 생성, 근거 충실성 및 처방 보류 점수 미측정 (`#6`, `#21`) |
-| 팀 전체 서비스 통합 | Draft PR [#18](https://github.com/AI-SMTP/NutriSight/pull/18) · [#27](https://github.com/AI-SMTP/NutriSight/pull/27) 등록; `develop@99d388e`(T4 `#26`) 동기화 검증 완료 | PR #18용 `sync/rag-pr18-develop-t4-20261128`(`cd52c69`: `pyright 0 errors`, `1,329+1 passed`), v0.5.1용 `sync/rag-v0-5-1-develop-t4-20261128`(`pyright 0 errors`, `1,406+1 passed`). 승인 전 PR head·`develop` 미변경 |
+| 팀 전체 서비스 통합 | **Draft PR [#27](https://github.com/AI-SMTP/NutriSight/pull/27) 단일 관리** (PR `#18` 종료); `develop@e2f89b0`(T4 `#26` + PR `#28`) 무충돌 동기화 완료 | `sync/rag-v0-5-1-develop-t4-20261128`: `ruff` PASS, `pyright 0 errors`, `1,406 passed`(180.06s) + T4 플래키 5회 비교(develop 2/5 vs RAG 3/5). 승인 후 PR `#27` fast-forward 반영 예정 |
 
 ### 데이터 흐름 및 책임 경계
 

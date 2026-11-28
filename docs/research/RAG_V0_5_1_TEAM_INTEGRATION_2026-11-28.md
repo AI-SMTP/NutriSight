@@ -64,3 +64,26 @@
 - **T4 플래키 테스트**: `test_shutdown_waits_running_patch_before_releasing_lock`의 2 vCPU 환경 간헐 타임아웃은 T4 담당자와 공유 필요.
 - **Codex P2 참고**: `inspect.iscoroutinefunction`은 일반 `async def`·`partial`·`AsyncMock`을 지원하지만 `async __call__` 객체는 제외함(현재 코드베이스 모든 구현은 `async def` 메서드); 향후 `#21`에서 `resolve_evidence`가 공통 Protocol에 정식 편입되면 `getattr` 동적 탐색 자체를 제거 예정.
 - **후속 팀 이슈 (`#21`–`#25`)**: `#21`(T5 계약 합의), `#22`(`Settings` 단일화 — T4 병합 완료로 착수 가능), `#23`(권고 번호 검수), `#24`(정리), `#25`(Windows `fcntl` OS 범위 결정).
+
+---
+
+## 6. Final Integration Check (`develop@e2f89b0` · PR `#28` 반영 및 PR `#27` 단일화)
+
+- **최신 `upstream/develop` SHA**: `e2f89b097eff450056ba3d597aca2e72e8da3c18` (PR `#28`: `data/seed/demo_seed.json`, `docs/nutrition-algorithm.md`, `docs/samples/README.md`, `docs/specs/storage-seed.md` 무충돌 병합 `af62a01`, NS03 시연 데이터 및 영양 알고리즘 가이드 100% 보존).
+- **PR `#18` 상태**: `CLOSED` (`2026-11-28T15:45:45Z`) 확인 — 재개·수정하지 않고 **PR `#27` 단일 관리 체계**로 전환.
+- **재검증 실행 결과 (`af62a01` 기준)**:
+  - `uv sync --locked`: **PASS** (118 packages)
+  - `uv run ruff check .` / `uv run ruff format --check .`: **PASS** (0 errors, 149 files)
+  - `uv run pyright`: **PASS — 0 errors** *(기존 `seed_file.py:79` warning 1건)*
+  - `uv run pytest -q -k "not test_shutdown_waits_running_patch_before_releasing_lock"`: **`1,406 passed, 1 deselected` in 180.06s** (0 failed, 0 skipped)
+  - `index_guidelines.py --audit-only` / `agent_preview_smoke.py --patient NS01`: **`AUDIT_OK` / `SMOKE_OK`**
+- **T4 간헐적 타임아웃 테스트 5회 비교 (`test_shutdown_waits_running_patch_before_releasing_lock`, 10초 상한)**:
+
+| 비교 대상 | Run 1 | Run 2 | Run 3 | Run 4 | Run 5 | 합계 |
+| --- | :---: | :---: | :---: | :---: | :---: | --- |
+| 순수 `upstream/develop@e2f89b0` 단독 | PASS | PASS | TIMEOUT(124) | TIMEOUT(124) | TIMEOUT(124) | **2/5 PASS** (3/5 TIMEOUT) |
+| RAG v0.5.1 통합 (`af62a01`) | PASS | TIMEOUT(124) | TIMEOUT(124) | PASS | PASS | **3/5 PASS** (2/5 TIMEOUT) |
+
+→ RAG 통합으로 인한 회귀가 아닌 기존 `develop`(T4 `#26`) 2 vCPU 타이밍 레이스임이 동일 환경 대조로 입증됨.
+
+- **PR `#27` 반영 준비**: 사용자 승인 시 `feature/rag-v0-5-integration-20261128`에 본 브랜치를 **fast-forward** 방식으로 반영 가능.
