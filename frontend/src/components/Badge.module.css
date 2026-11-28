@@ -1,0 +1,31 @@
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* 배지 색 조합은 contrast.test.ts가 이 파일에서 읽어 대비 4.5 이상인지 검사한다. */
+.neutral {
+  background: var(--color-line);
+  color: var(--color-text-muted);
+}
+
+.primary {
+  background: var(--color-primary-soft);
+  color: var(--color-primary-strong);
+}
+
+.danger {
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
+}
+
+.accent {
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+}

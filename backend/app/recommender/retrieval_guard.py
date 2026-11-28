@@ -17,6 +17,7 @@ import unicodedata
 from collections.abc import Sequence
 from dataclasses import dataclass
 from enum import StrEnum
+from typing import Any
 
 from app.recommender.guideline_types import GuidelineHit, GuidelineSearch
 from app.services.ports import EvidenceRef
@@ -200,8 +201,8 @@ async def verify_evidence_refs(
       모의 인용(`R20`, `R23` 등)이 공식 근거로 표시되지 않도록 차단한다.
     - 실제 검색기에서 역조회 결과가 `None`이면 `UNVERIFIED_OR_MOCK`으로 분류한다.
     """
-    resolver = getattr(search, "resolve_evidence", None)
-    if not callable(resolver):
+    resolver: Any = getattr(search, "resolve_evidence", None)
+    if not inspect.iscoroutinefunction(resolver):
         checks = tuple(
             CitationCheck(
                 doc_id=ref.doc_id,

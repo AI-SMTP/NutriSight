@@ -150,8 +150,8 @@ def insert_recommendation(conn: sqlite3.Connection, **overrides: object) -> None
         "cautions": "[]",
         "last_modified_by": "agent",
         "thread_id": None,
-        "created_at": "2026-11-23T12:00:00",
-        "updated_at": "2026-11-23T12:00:00",
+        "created_at": "2026-11-23T12:00:00.000000",
+        "updated_at": "2026-11-23T12:00:00.000000",
         "status": "active",
     }
     insert_row(conn, "recommendations", {**row, **overrides})

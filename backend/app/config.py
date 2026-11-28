@@ -18,8 +18,11 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 BACKEND_ENV_FILE = Path(__file__).resolve().parents[1] / ".env"
 DEFAULT_VAR_DIR = REPO_ROOT / "var"
 DEFAULT_SEED_PATH = REPO_ROOT / "data" / "seed" / "demo_seed.json"
+DEFAULT_FRONTEND_DIST = REPO_ROOT / "frontend" / "dist"
 DEFAULT_IMPLEMENTATION = "fake"
+DEFAULT_PATIENT_DATA = "sqlite"
 DEFAULT_FAKE_INTAKE_DELAY_S = 2.0
+DEFAULT_RECOMMENDATION_TIMEOUT_S = 120.0
 
 _DEMO_DATE_PATTERN = re.compile(r"\d{4}-\d{2}-\d{2}", re.ASCII)
 DEMO_DATE_FORMAT_ERROR = "시연일 형식이 잘못됐다(YYYY-MM-DD)"
@@ -30,21 +33,31 @@ class ConfigError(Exception):
 
 
 class Settings(BaseSettings):
-    """네 계약의 구현 이름, Fake 섭취 추정 지연 시간, 저장소 경로와 시연일."""
+    """다섯 계약의 구현 이름과 실행 설정.
+
+    실행 설정은 Fake 섭취 추정 지연, 추천 생성 시간 제한, 저장소 경로, 시연일, 프론트엔드 빌드
+    경로다. 환자 데이터 포트만 기본이 `sqlite`이고 나머지 구현은 `fake`가 기본이다.
+    """
 
     model_config = SettingsConfigDict(env_file=BACKEND_ENV_FILE, extra="ignore")
 
     intake_adapter: str = DEFAULT_IMPLEMENTATION
     nutrition_engine: str = DEFAULT_IMPLEMENTATION
     guideline_search: str = DEFAULT_IMPLEMENTATION
-    patient_data: str = DEFAULT_IMPLEMENTATION
-    fake_intake_delay_s: float = Field(DEFAULT_FAKE_INTAKE_DELAY_S, ge=0)
+    patient_data: str = DEFAULT_PATIENT_DATA
+    recommender: str = DEFAULT_IMPLEMENTATION
+    fake_intake_delay_s: float = Field(default=DEFAULT_FAKE_INTAKE_DELAY_S, ge=0)
+    # 추천 생성기 시간 제한(초). 실행 중 생성을 멈추는 유일한 수단이다(스펙 3.2).
+    recommendation_timeout_s: float = Field(default=DEFAULT_RECOMMENDATION_TIMEOUT_S, gt=0)
     var_dir: Path = DEFAULT_VAR_DIR
     seed_path: Path = DEFAULT_SEED_PATH
+    # `pnpm build` 결과 디렉토리. `index.html`이 있을 때만 정적 제공을 켠다
+    # (`docs/specs/frontend-shell-upload.md` '정적 제공과 SPA 대체 응답').
+    frontend_dist: Path = DEFAULT_FRONTEND_DIST
     # 원문 그대로 둔다. 형식 검사는 `resolve_demo_date`가 한다(모듈 수준 앱 생성이 실패하지 않게).
     demo_date: str | None = None
 
-    @field_validator("var_dir", "seed_path")
+    @field_validator("var_dir", "seed_path", "frontend_dist")
     @classmethod
     def _anchor_to_repo_root(cls, value: Path) -> Path:
         """`~`를 펼치고, 상대 경로는 실행 위치가 아니라 저장소 루트 기준으로 해석한다."""

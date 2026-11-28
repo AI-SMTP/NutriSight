@@ -481,3 +481,17 @@ def test_wiring_registers_hybrid_without_changing_default_fake() -> None:
     assert Settings().guideline_search == "fake"
     assert "hybrid" in GUIDELINE_SEARCHES
     assert "hybrid_rerank" in GUIDELINE_SEARCHES
+
+
+@pytest.mark.parametrize("mode", ["hybrid", "hybrid_rerank"])
+def test_wiring_hybrid_and_rerank_fail_closed_when_approved_sources_missing(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mode: str
+) -> None:
+    from app.config import ConfigError
+    from app.main import create_app
+
+    monkeypatch.setenv("RAG_SOURCES_DIR", str(tmp_path))
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+
+    with pytest.raises(ConfigError, match="원문 파일 누락"):
+        create_app(Settings(_env_file=None, guideline_search=mode))

@@ -372,8 +372,8 @@ class RerankedGuidelineSearch:
         self, doc_id: str, section: str, *, version_id: str | None = None
     ) -> GuidelineHit | None:
         """`EvidenceRef(doc_id, section)` 역조회를 1단계 검색기에 위임한다."""
-        resolver = getattr(self._base, "resolve_evidence", None)
-        if not callable(resolver):
+        resolver: Any = getattr(self._base, "resolve_evidence", None)
+        if not inspect.iscoroutinefunction(resolver):
             return None
         sig = inspect.signature(resolver)
         if "version_id" in sig.parameters and version_id is not None:

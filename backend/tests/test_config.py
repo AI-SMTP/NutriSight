@@ -13,6 +13,7 @@ from pydantic import ValidationError
 
 import app.main
 from app.config import (
+    DEFAULT_FRONTEND_DIST,
     DEFAULT_SEED_PATH,
     DEFAULT_VAR_DIR,
     REPO_ROOT,
@@ -22,11 +23,12 @@ from app.config import (
     resolve_demo_date,
     storage_paths,
 )
+from app.services.runtime import AppRuntime
 from app.wiring import Components, build_components
 from tests.conftest import disable_dotenv
 
 
-def test_settings_defaults_select_fake_implementations(
+def test_settings_defaults_select_sqlite_patient_data_and_fake_others(
     clean_settings_env: pytest.MonkeyPatch,
 ) -> None:
     settings = Settings(_env_file=None)
@@ -34,8 +36,30 @@ def test_settings_defaults_select_fake_implementations(
     assert settings.intake_adapter == "fake"
     assert settings.nutrition_engine == "fake"
     assert settings.guideline_search == "fake"
-    assert settings.patient_data == "fake"
+    assert settings.patient_data == "sqlite"
+    assert settings.recommender == "fake"
     assert settings.fake_intake_delay_s == pytest.approx(2.0)
+    assert settings.recommendation_timeout_s == pytest.approx(120.0)
+
+
+def test_settings_reads_recommendation_overrides(clean_settings_env: pytest.MonkeyPatch) -> None:
+    clean_settings_env.setenv("RECOMMENDER", "alt")
+    clean_settings_env.setenv("RECOMMENDATION_TIMEOUT_S", "0.5")
+
+    settings = Settings(_env_file=None)
+
+    assert settings.recommender == "alt"
+    assert settings.recommendation_timeout_s == pytest.approx(0.5)
+
+
+@pytest.mark.parametrize("raw", ["0", "-1"])
+def test_settings_rejects_non_positive_recommendation_timeout(
+    clean_settings_env: pytest.MonkeyPatch, raw: str
+) -> None:
+    clean_settings_env.setenv("RECOMMENDATION_TIMEOUT_S", raw)
+
+    with pytest.raises(ValidationError, match="recommendation_timeout_s"):
+        Settings(_env_file=None)
 
 
 def test_settings_reads_environment_overrides(clean_settings_env: pytest.MonkeyPatch) -> None:
@@ -82,6 +106,8 @@ def test_settings_default_paths_are_under_repository_root(
     assert settings.var_dir == EXPECTED_REPO_ROOT / "var"
     assert settings.seed_path == EXPECTED_REPO_ROOT / "data" / "seed" / "demo_seed.json"
     assert settings.demo_date is None
+    assert DEFAULT_FRONTEND_DIST == EXPECTED_REPO_ROOT / "frontend" / "dist"
+    assert settings.frontend_dist == DEFAULT_FRONTEND_DIST
     assert paths.app_db == EXPECTED_REPO_ROOT / "var" / "app.db"
     assert _list_repo_var_files() == before
 
@@ -198,7 +224,8 @@ def test_resolve_demo_date_rejects_invalid_setting_even_with_valid_cli(
 
 
 @pytest.mark.parametrize(
-    ("env_name", "field"), [("VAR_DIR", "var_dir"), ("SEED_PATH", "seed_path")]
+    ("env_name", "field"),
+    [("VAR_DIR", "var_dir"), ("SEED_PATH", "seed_path"), ("FRONTEND_DIST", "frontend_dist")],
 )
 def test_relative_storage_paths_are_anchored_to_repo_root(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path, env_name: str, field: str
@@ -214,6 +241,13 @@ def test_home_relative_var_dir_is_expanded(monkeypatch: pytest.MonkeyPatch, tmp_
     monkeypatch.setenv("VAR_DIR", "~/nutrisight-var")
 
     assert Settings(_env_file=None).var_dir == tmp_path / "nutrisight-var"
+
+
+def test_collection_frontend_dist_points_to_missing_directory() -> None:
+    frontend_dist = Path(os.environ["FRONTEND_DIST"])
+
+    assert not frontend_dist.exists()
+    assert Settings().frontend_dist == frontend_dist
 
 
 def test_autouse_fixture_isolates_var_dir_and_dotenv(tmp_path: Path) -> None:
@@ -249,9 +283,9 @@ def test_disable_dotenv_blocks_dotenv_values_for_settings_and_create_app(
 
     captured: list[Settings] = []
 
-    def spy(settings: Settings) -> Components:
+    def spy(settings: Settings, runtime: AppRuntime) -> Components:
         captured.append(settings)
-        return build_components(settings)
+        return build_components(settings, runtime)
 
     monkeypatch.setattr(app.main, "build_components", spy)
     app.main.create_app()

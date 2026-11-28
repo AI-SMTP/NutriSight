@@ -1,0 +1,16 @@
+.screen {
+  display: grid;
+  gap: 16px;
+}
+
+.intro {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+.result {
+  margin: 0;
+  color: var(--color-text);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}

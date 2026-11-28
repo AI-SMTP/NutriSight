@@ -10,9 +10,11 @@ from __future__ import annotations
 import json
 from collections.abc import Iterable
 from datetime import date
+from typing import Any
 
 from app.intake.types import QualityIssue
 from app.nutrition.types import Nutrient, NutrientEvidence
+from app.services.ports import AddedBy, EvidenceRef, PrescriptionType, RecommendationItem
 
 
 def _dump(value: object) -> str:
@@ -82,3 +84,49 @@ def format_basis_period(start: date | None, end: date | None) -> str | None:
     if start is None or end is None:
         return None
     return f"{start.isoformat()}~{end.isoformat()}"
+
+
+def _item_to_dict(item: RecommendationItem) -> dict[str, Any]:
+    return {
+        "item_id": item.item_id,
+        "type": str(item.type),
+        "title": item.title,
+        "detail": item.detail,
+        "duration_days": item.duration_days,
+        "review_date": item.review_date.isoformat() if item.review_date is not None else None,
+        "added_by": str(item.added_by),
+        "evidence": [{"doc_id": e.doc_id, "section": e.section} for e in item.evidence],
+    }
+
+
+def _item_from_dict(raw: dict[str, Any]) -> RecommendationItem:
+    review_date = raw["review_date"]
+    return RecommendationItem(
+        item_id=raw["item_id"],
+        type=PrescriptionType(raw["type"]),
+        title=raw["title"],
+        detail=raw["detail"],
+        duration_days=raw["duration_days"],
+        review_date=date.fromisoformat(review_date) if review_date is not None else None,
+        added_by=AddedBy(raw["added_by"]),
+        evidence=tuple(
+            EvidenceRef(doc_id=e["doc_id"], section=e["section"]) for e in raw["evidence"]
+        ),
+    )
+
+
+def items_to_json(items: tuple[RecommendationItem, ...]) -> str:
+    """`recommendations.items`·`prescriptions.items` 인코딩. 키는 data-model 6절 이름이다."""
+    return _dump([_item_to_dict(item) for item in items])
+
+
+def items_from_json(raw: str) -> tuple[RecommendationItem, ...]:
+    """`recommendations.items`·`prescriptions.items` 디코딩.
+
+    열거형·`date`·tuple `evidence`로 복원한다. 알 수 없는 `type`·`added_by`와 키 누락은
+    `ValueError`다. 값 규칙(길이·범위)은 검사하지 않는다(서비스의 `item_rules` 몫).
+    """
+    try:
+        return tuple(_item_from_dict(entry) for entry in json.loads(raw))
+    except KeyError as err:
+        raise ValueError(f"추천 항목 JSON에 키가 없다: {err.args[0]}") from err

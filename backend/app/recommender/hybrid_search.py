@@ -18,6 +18,7 @@ import inspect
 import logging
 from dataclasses import dataclass
 from enum import StrEnum
+from typing import Any
 
 from app.recommender.guideline_types import GuidelineHit, GuidelineSearch
 
@@ -114,8 +115,8 @@ async def _query_with_optional_scores(
     backend: GuidelineSearch, query: str, limit: int
 ) -> tuple[tuple[GuidelineHit, ...], dict[tuple[str, str], float]]:
     """백엔드가 `search_with_scores`를 제공하면 점수도 함께 수집하고, 아니면 `search`를 호출한다."""
-    scored_fn = getattr(backend, "search_with_scores", None)
-    if callable(scored_fn):
+    scored_fn: Any = getattr(backend, "search_with_scores", None)
+    if inspect.iscoroutinefunction(scored_fn):
         raw = await scored_fn(query, limit=limit)
         # ChromaGuidelineSearch.search_with_scores -> (list[(hit, score, md)], meta)
         # Bm25GuidelineSearch.search_with_scores -> list[(hit, score)]
@@ -249,8 +250,8 @@ class HybridGuidelineSearch:
     ) -> GuidelineHit | None:
         """`EvidenceRef(doc_id, section)`을 Dense 또는 BM25 승인 색인에서 역조회한다."""
         for backend in (self._dense, self._bm25):
-            resolver = getattr(backend, "resolve_evidence", None)
-            if not callable(resolver):
+            resolver: Any = getattr(backend, "resolve_evidence", None)
+            if not inspect.iscoroutinefunction(resolver):
                 continue
             sig = inspect.signature(resolver)
             if "version_id" in sig.parameters and version_id is not None:

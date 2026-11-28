@@ -1,0 +1,47 @@
+/* 화면 ①② 공통 배치와 안내 상자 */
+.screen {
+  display: grid;
+  gap: 16px;
+}
+
+.notice {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  background: var(--color-primary-soft);
+  color: var(--color-primary-strong);
+  font-weight: 600;
+}
+
+.message {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.messageText {
+  margin: 0;
+  color: var(--color-text);
+}
+
+.panel {
+  display: grid;
+  gap: 12px;
+}
+
+.panelTitle {
+  margin: 0;
+  color: var(--color-text);
+  font-size: 18px;
+}
+
+.error {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
+  font-weight: 600;
+}

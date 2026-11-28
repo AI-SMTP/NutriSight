@@ -408,9 +408,10 @@ def index_guideline_sources(
             if batch_writer_hook is not None:
                 batch_writer_hook(batch_index, batch)
 
+            embeddings_payload: list[Sequence[float]] = [list(v) for v in vectors]
             collection.add(
                 ids=[c.chunk_id for c in batch],
-                embeddings=vectors,
+                embeddings=embeddings_payload,
                 documents=documents,
                 metadatas=[
                     {

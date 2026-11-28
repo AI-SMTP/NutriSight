@@ -1,0 +1,40 @@
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: color-mix(in srgb, var(--color-text) 40%, transparent);
+}
+
+.sheet {
+  width: 100%;
+  max-width: var(--layout-max-width);
+  padding: 20px 16px 24px;
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+}
+
+/* 처리 중에는 시트 자체가 포커스를 받는다. 테두리는 그리지 않는다. */
+.sheet:focus {
+  outline: none;
+}
+
+.title {
+  margin: 0 0 8px;
+  font-size: 18px;
+}
+
+.message {
+  margin: 0 0 20px;
+  color: var(--color-text-muted);
+}
+
+.actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}

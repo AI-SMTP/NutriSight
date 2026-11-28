@@ -25,6 +25,7 @@ from __future__ import annotations
 from collections.abc import Callable, Iterable
 from dataclasses import replace
 from datetime import UTC, date, datetime, timedelta
+from types import MappingProxyType
 
 from app.nutrition.types import (
     AlertLevel,
@@ -35,6 +36,7 @@ from app.nutrition.types import (
     NutrientEvidence,
     TargetSource,
 )
+from app.services.item_rules import check_thread_id
 from app.services.ports import (
     AddedBy,
     EvidenceRef,
@@ -180,6 +182,11 @@ _ALERTS: dict[str, tuple[tuple[date, AlertResult], ...]] = {
         ),
     ),
 }
+
+# 다른 구현의 계약 테스트 배치(`tests/contracts/sqlite_patient_batch.py`)가 같은 섭취·판정 값을
+# 넣도록 읽기 전용 보기로 공개한다(Fake 동작은 위 비공개 이름을 그대로 쓴다).
+DAILY_INTAKES = MappingProxyType(_DAILY)
+ALERTS_BY_DAY = MappingProxyType(_ALERTS)
 
 _LEFT_MENUS: tuple[LeftMenu, ...] = (
     LeftMenu(menu_name="시금치나물", dish_type="side", avg_intake_fraction=0.2, meal_count=4),
@@ -345,7 +352,7 @@ class FakePatientData:
             raise RecommendationNotEditableError(
                 f"{card.status.value} 카드는 고칠 수 없다: {recommendation_id}"
             )
-        _check_thread_id(modified_by, thread_id)
+        check_thread_id(modified_by, thread_id)
         item_ids = [item.item_id for item in items]
         if len(set(item_ids)) != len(item_ids):
             raise ValueError("카드 안의 item_id는 유일해야 한다")
@@ -358,12 +365,3 @@ class FakePatientData:
         )
         self._cards[recommendation_id] = updated
         return updated
-
-
-def _check_thread_id(modified_by: ModifiedBy, thread_id: str | None) -> None:
-    """`chat` 수정은 대화 ID가 있어야 하고, `agent`·`doctor` 수정은 `None`이어야 한다."""
-    if modified_by == ModifiedBy.CHAT:
-        if not thread_id:
-            raise ValueError("chat 수정에는 thread_id가 있어야 한다")
-    elif thread_id is not None:
-        raise ValueError(f"{modified_by.value} 수정의 thread_id는 None이어야 한다")
