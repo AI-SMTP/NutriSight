@@ -57,7 +57,9 @@ _CKD_STAGE_OR_RENAL_RE = re.compile(
 )
 _SPECIFIC_DOSAGE_REQUEST_RE = re.compile(
     r"(?:처방\s*수치|처방량|증량\s*한도|투여\s*용량|투여량|단백질\s*처방|"
-    r"목표가\s*미등록|단백질\s*목표\s*미등록|병기별\s*단백질)",
+    r"목표가\s*미등록|단백질\s*목표\s*미등록|병기별\s*단백질|"
+    r"단백질.{0,30}(?:몇\s*(?:g|그램)|얼마|적절|권장량|목표량|"
+    r"g\s*/\s*kg|하루\s*섭취\s*수치))",
     re.IGNORECASE,
 )
 _DRUG_PROTOCOL_RE = re.compile(
